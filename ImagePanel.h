@@ -39,12 +39,18 @@ public:
 	 *
 	 */
 	bool SetImg(wxImage& img);
+	/** \brief destroy image
+	 *
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool ReleaseImg();
+
     /** \brief zoomin image
      *
      * \return bool true:success false:failed
      *
      */
-
 	bool ImgZoomIn();
     /** \brief zoomout image
      *
@@ -106,10 +112,18 @@ private:
 	bool ImgMove(wxSize szMove);
     /** \brief calculate the rect of the mouse sel
      *
-     * \return bool
+     * \return bool true:success false:failed
      *
      */
 	bool RegulaSelRect();
+
+    /** \brief stop drag
+     *
+     * \param true bool bFuc=true [IN] true:remain the fuc false:reset the func
+     * \return bool true:success false:failed
+     *
+     */
+	bool EndDrag(bool bFuc = true);
 
 	//(*Handlers(ImagePanel)
 	//*)
@@ -155,6 +169,13 @@ private:
      *
      */
 	void OnMouseMove(wxMouseEvent& event);
+    /** \brief kill focus. if capture mouse, should release
+     *
+     * \param event wxFocusEvent&	[INOUT] the event
+     * \return void
+     *
+     */
+	void OnKillFocus(wxFocusEvent& event);
 
 	//(*Identifiers(ImagePanel)
 	//*)
@@ -204,6 +225,11 @@ private:
         wxRect rcSel;
         /**< the size of mouse move */
         wxSize szMv;
+
+        /**< remain the dest rect before move image */
+        wxRect2DDouble rcDO;
+        /**< remain the src rect before move iamge */
+        wxRect2DDouble rcSO;
     } m_stMP;
 
 	DECLARE_EVENT_TABLE()

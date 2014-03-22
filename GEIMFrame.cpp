@@ -126,10 +126,12 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
     Center();
 
     // Event process
-    Connect(wxID_OPEN, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&GEIMFrame::OnOpen);
-    Connect(wxID_EXIT,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&GEIMFrame::OnQuit);
-    Connect(wxID_ABOUT,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&GEIMFrame::OnAbout);
     Connect(wxID_ANY,wxEVT_CLOSE_WINDOW,(wxObjectEventFunction)&GEIMFrame::OnClose);
+    // menu or tool-button command
+    Connect(wxID_OPEN, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileOpen);
+    Connect(wxID_CLOSE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileClose);
+    Connect(wxID_EXIT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
+    Connect(wxID_ABOUT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnAbout);
     // image operate
     Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomIN);
     Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomOut);
@@ -151,7 +153,28 @@ void GEIMFrame::InitFrame()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-void GEIMFrame::OnOpen(wxCommandEvent& event)
+/**< invoke when window will close */
+void GEIMFrame::OnClose(wxCloseEvent& event)
+{
+    if ( event.CanVeto() )
+    {
+        int iDlg = wxMessageBox( _("Are you sure to close the program?"), _("Confirm"), wxYES_NO | wxICON_QUESTION | wxNO_DEFAULT | wxCENTRE );
+        if ( iDlg != wxYES )
+        {
+            event.Veto();
+            return;
+        }
+    }
+    // release resource
+    wxCommandEvent evt(wxEVT_MENU, wxID_CLOSE);
+    evt.SetEventObject(this);
+    GetEventHandler()->ProcessEvent(evt);
+
+    Destroy();
+}
+
+/**< invoke when open a file */
+void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 {
     int iRet = -1;
     // if already open a image, confirm new open
@@ -185,29 +208,26 @@ void GEIMFrame::OnOpen(wxCommandEvent& event)
     m_pImgPanel->SetImg( m_imgA );
 }
 
+/**< command to close the opened file */
+void GEIMFrame::OnFileClose(wxCommandEvent& event)
+{
+    if (m_pImgPanel->IsOK())
+        m_pImgPanel->ReleaseImg();
+    if (m_imgA.IsOk())
+        m_imgA.Destroy();
+}
+
+/**< command to exit the app */
 void GEIMFrame::OnQuit(wxCommandEvent& event)
 {
     Close();
 }
 
+/**< command to display app info */
 void GEIMFrame::OnAbout(wxCommandEvent& event)
 {
     AboutDlg about(this);
     about.ShowModal();
-}
-
-void GEIMFrame::OnClose(wxCloseEvent& event)
-{
-    if ( event.CanVeto() )
-    {
-        int iDlg = wxMessageBox( _("Are you sure to close the program?"), _("Confirm"), wxYES_NO | wxICON_QUESTION | wxNO_DEFAULT | wxCENTRE );
-        if ( iDlg != wxYES )
-        {
-            event.Veto();
-            return;
-        }
-    }
-    Destroy();
 }
 
 void GEIMFrame::OnZoomIN(wxCommandEvent& event)

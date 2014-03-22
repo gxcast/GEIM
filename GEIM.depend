@@ -3665,7 +3665,7 @@
 	"GEIMFrame.h"
 	<wx/wx.h>
 
-1395383636 /home/nicolas/dev/GEIM/GEIMFrame.h
+1395479986 /home/nicolas/dev/GEIM/GEIMFrame.h
 	<wx/frame.h>
 	<wx/sizer.h>
 	<wx/menu.h>
@@ -3673,12 +3673,12 @@
 	<wx/statusbr.h>
 	"ImagePanel.h"
 
-1395394221 /home/nicolas/dev/GEIM/ImagePanel.h
+1395481827 /home/nicolas/dev/GEIM/ImagePanel.h
 	<wx/panel.h>
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1395388254 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1395481477 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
 	<wx/wx.h>
 
@@ -3686,7 +3686,7 @@
 	<wx/dialog.h>
 	<wx/html/htmlwin.h>
 
-1395395709 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
+1395486878 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
 	<wx/wx.h>
 
 1386313812 source:/home/nicolas/dev/GEIM/resource.rc

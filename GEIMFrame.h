@@ -23,10 +23,12 @@ class GEIMFrame: public wxFrame
 
         //(*Handlers(GEIMFrame)
         //*)
-        void OnOpen(wxCommandEvent& event);
+        void OnClose(wxCloseEvent& event);
+        // menu or tool-button command
+        void OnFileOpen(wxCommandEvent& event);
+        void OnFileClose(wxCommandEvent& event);
         void OnQuit(wxCommandEvent& event);
         void OnAbout(wxCommandEvent& event);
-        void OnClose(wxCloseEvent& event);
         // image operate
         void OnZoomIN(wxCommandEvent& event);
         void OnZoomOut(wxCommandEvent& event);
