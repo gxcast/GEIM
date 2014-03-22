@@ -8,6 +8,12 @@ This is my graduation subject, match the gel pot with eclectrophoresis, so it ma
 Project address: _https://github.com/gxcast/GEIM.git_
 
 **note**
+22.03.2014
+----------
+1. Perfect scaling and positon control of image-display module
+2. fix memorydc of double buffer draw exception
+3. finish mouse drag function: iamge move, zoom rect
+
 21.03.2014
 ----------
 1. finish the image dispaly mode, and image zoom/move
