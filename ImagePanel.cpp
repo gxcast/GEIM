@@ -171,7 +171,7 @@ bool ImagePanel::ImgZoomActual()
 	else
 	{
 		// only part of image be displayed
-		m_rcSrc.m_x = (rcWnd.m_width - rcImg.m_width)/2.0;
+		m_rcSrc.m_x = (rcImg.m_width - rcWnd.m_width)/2.0;
 		m_rcSrc.m_width = rcWnd.m_width;
 		// wnd is filled width
 		m_rcDest.m_x = 0.0;

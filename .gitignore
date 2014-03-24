@@ -11,3 +11,18 @@
 *.lai
 *.la
 *.a
+
+# Executables
+*.exe
+*.out
+*.app
+bin/Debug/GEIM
+
+# VIM
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
