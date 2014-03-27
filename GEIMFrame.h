@@ -27,6 +27,8 @@ class GEIMFrame: public wxFrame
         // menu or tool-button command
         void OnFileOpen(wxCommandEvent& event);
         void OnFileClose(wxCommandEvent& event);
+        void OnDt(wxCommandEvent& event);
+        void OnMt(wxCommandEvent& event);
         void OnQuit(wxCommandEvent& event);
         void OnAbout(wxCommandEvent& event);
         // image operate
@@ -41,6 +43,8 @@ class GEIMFrame: public wxFrame
         //*)
         static const long ID_PANEL_MAIN;
         static const long ID_STATUSBAR_MAIN;
+        static const long ID_CMD_DT;
+        static const long ID_CMD_MT;
         // tools buttons
         static const long ID_BMPBTN_IMG_ZOOMIN;
         static const long ID_BMPBTN_IMG_ZOOMOUT;
@@ -63,7 +67,7 @@ class GEIMFrame: public wxFrame
         /**< current image */
         wxImage m_imgA;
        /**< panel for image display */
-        ImagePanel* m_pImgPanel;
+        ImagePanel* m_pImgPanel = nullptr;
 
         DECLARE_EVENT_TABLE()
 };

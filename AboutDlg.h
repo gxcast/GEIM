@@ -1,4 +1,5 @@
-﻿#ifndef ABOUTDLG_H
+﻿#pragma once
+#ifndef ABOUTDLG_H
 #define ABOUTDLG_H
 
 //(*Headers(AboutDlg)

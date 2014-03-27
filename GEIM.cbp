@@ -44,10 +44,13 @@
 		<Unit filename="AboutDlg.h" />
 		<Unit filename="GEIMApp.cpp" />
 		<Unit filename="GEIMApp.h" />
+		<Unit filename="GEIMDef.h" />
 		<Unit filename="GEIMFrame.cpp" />
 		<Unit filename="GEIMFrame.h" />
 		<Unit filename="ImagePanel.cpp" />
 		<Unit filename="ImagePanel.h" />
+		<Unit filename="SpotDtDlg.cpp" />
+		<Unit filename="SpotDtDlg.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

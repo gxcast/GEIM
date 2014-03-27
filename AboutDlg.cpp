@@ -20,7 +20,7 @@ AboutDlg::AboutDlg(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSiz
 {
     //(*Initialize(AboutDlg)
     //*)
-    Create(parent, id, _("About GEIM..."), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE, _T("id"));
+    Create(parent, id, _("About GEIM..."), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE, _T("About GEIM"));
     SetClientSize(wxDLG_UNIT(parent, wxSize(200,138)));
     Center();
     m_pHtmWnd = new wxHtmlWindow( this,

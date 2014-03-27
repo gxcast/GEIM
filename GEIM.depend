@@ -3656,7 +3656,7 @@
 	<wx/image.h>
 	<wx/string.h>
 
-1395211049 source:/home/nicolas/dev/GEIM/AboutDlg.cpp
+1395819377 source:/home/nicolas/dev/GEIM/AboutDlg.cpp
 	<wx/wx.h>
 	<wx/intl.h>
 	<wx/string.h>
@@ -3665,7 +3665,7 @@
 	"GEIMFrame.h"
 	<wx/wx.h>
 
-1395479986 /home/nicolas/dev/GEIM/GEIMFrame.h
+1395841634 /home/nicolas/dev/GEIM/GEIMFrame.h
 	<wx/frame.h>
 	<wx/sizer.h>
 	<wx/menu.h>
@@ -3673,20 +3673,21 @@
 	<wx/statusbr.h>
 	"ImagePanel.h"
 
-1395481827 /home/nicolas/dev/GEIM/ImagePanel.h
+1395821264 /home/nicolas/dev/GEIM/ImagePanel.h
 	<wx/panel.h>
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1395481477 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1395889102 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
+	"SpotDtDlg.h"
 	<wx/wx.h>
 
-1395063927 /home/nicolas/dev/GEIM/AboutDlg.h
+1395821276 /home/nicolas/dev/GEIM/AboutDlg.h
 	<wx/dialog.h>
 	<wx/html/htmlwin.h>
 
-1395486878 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
+1395571233 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
 	<wx/wx.h>
 
 1386313812 source:/home/nicolas/dev/GEIM/resource.rc
@@ -7149,4 +7150,55 @@
 1386184753 /usr/include/wx-3.0/wx/html/htmlfilt.h
 	"wx/defs.h"
 	"wx/filesys.h"
+
+1395890236 /home/nicolas/dev/GEIM/SpotDtDlg.h
+	<wx/dialog.h>
+	"GEIMDef.h"
+	"ImagePanel.h"
+
+1395841888 /home/nicolas/dev/GEIM/GEIMDef.h
+
+1395891774 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+	"SpotDtDlg.h"
+	<wx/wx.h>
+	<wx/spinctrl.h>
+	"ImagePanel.h"
+
+1386184753 /usr/include/wx-3.0/wx/spinctrl.h
+	"wx/defs.h"
+	"wx/spinbutt.h"
+	"wx/msw/spinctrl.h"
+	"wx/os2/spinctrl.h"
+	"wx/gtk/spinctrl.h"
+	"wx/gtk1/spinctrl.h"
+	"wx/generic/spinctlg.h"
+
+1386184753 /usr/include/wx-3.0/wx/spinbutt.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/event.h"
+	"wx/range.h"
+	"wx/univ/spinbutt.h"
+	"wx/msw/spinbutt.h"
+	"wx/motif/spinbutt.h"
+	"wx/gtk/spinbutt.h"
+	"wx/gtk1/spinbutt.h"
+	"wx/osx/spinbutt.h"
+	"wx/cocoa/spinbutt.h"
+	"wx/os2/spinbutt.h"
+
+1386184752 /usr/include/wx-3.0/wx/range.h
+	"wx/defs.h"
+
+1386184753 /usr/include/wx-3.0/wx/gtk/spinbutt.h
+
+1386184753 /usr/include/wx-3.0/wx/gtk/spinctrl.h
+
+1386184752 /usr/include/wx-3.0/wx/generic/spinctlg.h
+	"wx/compositewin.h"
+	"wx/textctrl.h"
+
+1386184752 /usr/include/wx-3.0/wx/compositewin.h
+	"wx/window.h"
+	"wx/containr.h"
 

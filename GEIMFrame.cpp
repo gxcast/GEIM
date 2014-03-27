@@ -1,5 +1,6 @@
 ﻿#include "GEIMFrame.h"
 #include "AboutDlg.h"
+#include "SpotDtDlg.h"
 
 //(*InternalHeaders(GEIMFrame)
 //*)
@@ -10,6 +11,8 @@
 //*)
 const long GEIMFrame::ID_PANEL_MAIN = wxNewId();
 const long GEIMFrame::ID_STATUSBAR_MAIN = wxNewId();
+const long GEIMFrame::ID_CMD_DT = wxNewId();
+const long GEIMFrame::ID_CMD_MT = wxNewId();
 // tools buttons
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMOUT = wxNewId();
@@ -51,6 +54,12 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	pMenu->Append(pMenuItem);
 	m_pMenuBarMain->Append(pMenu, _("&File"));
 	pMenu = new wxMenu();
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT, _("&Detect"), _("Detect Spots"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT, _("&Match"), _("Match Spots"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	m_pMenuBarMain->Append(pMenu, _("&Proc"));
+	pMenu = new wxMenu();
 	pMenuItem = new wxMenuItem(pMenu, wxID_ABOUT, _("&About\tF1"), _("About GEIM"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
 	m_pMenuBarMain->Append(pMenu, _("Help"));
@@ -73,7 +82,7 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
         m_pBoxSizerMain = new wxBoxSizer(wxVERTICAL);
         {
             // tools buttons
-            wxSizer* pBoxSizerTools = new wxBoxSizer(wxHORIZONTAL);
+            wxBoxSizer* pBoxSizerTools = new wxBoxSizer(wxHORIZONTAL);
             {
                 wxBitmapButton* pBmpBtn = nullptr;
 
@@ -106,7 +115,7 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
             m_pBoxSizerMain->Add(pBoxSizerTools, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
 
             // create image display panel
-            wxSizer* pBoxSizerImg = new wxBoxSizer(wxHORIZONTAL);
+            wxBoxSizer* pBoxSizerImg = new wxBoxSizer(wxHORIZONTAL);
             {
                 m_pImgPanel = new ImagePanel(m_pPanelMain, wxID_ANY, wxDefaultPosition, wxSize(700, 500) );
                 pBoxSizerImg->Add(m_pImgPanel, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 0);
@@ -130,6 +139,8 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
     // menu or tool-button command
     Connect(wxID_OPEN, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileOpen);
     Connect(wxID_CLOSE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileClose);
+    Connect(ID_CMD_DT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDt);
+    Connect(ID_CMD_MT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMt);
     Connect(wxID_EXIT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
     Connect(wxID_ABOUT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnAbout);
     // image operate
@@ -215,6 +226,22 @@ void GEIMFrame::OnFileClose(wxCommandEvent& event)
         m_pImgPanel->ReleaseImg();
     if (m_imgA.IsOk())
         m_imgA.Destroy();
+}
+
+/**< detect spots */
+void GEIMFrame::OnDt(wxCommandEvent& event)
+{
+    int iRet = 0;
+    SpotDtDlg dlg(this, wxNewId());
+    iRet = dlg.ShowModal();
+    if (iRet != wxID_OK)
+        return;
+}
+
+/**< match spots */
+void GEIMFrame::OnMt(wxCommandEvent& event)
+{
+
 }
 
 /**< command to exit the app */

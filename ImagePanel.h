@@ -1,4 +1,5 @@
-﻿#ifndef IMAGEPANEL_H
+﻿#pragma once
+#ifndef IMAGEPANEL_H
 #define IMAGEPANEL_H
 
 //(*Headers(ImagePanel)
