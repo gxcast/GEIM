@@ -64,21 +64,45 @@ class SpotDtDlg : public wxDialog
 					long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER,
 					const wxString& name = wxDialogNameStr);
 
-	protected:
-
-	private:
         /** \brief Initialize member
          *
+         * \param
          * \return bool true:success false:failed
          *
          */
 		bool Init();
+
+	protected:
+
+	private:
         /** \brief create controls and layout in the dialog
          *
          * \return bool true:success false:failed
          *
          */
         bool CreateControl();
+        /** \brief dynamic evet map
+         *
+         * \return bool true:success false:failed
+         *
+         */
+        bool DyEventMap();
+
+        // image operate buttons
+        void OnZoomIN(wxCommandEvent& event);
+        void OnZoomOut(wxCommandEvent& event);
+        void OnZoomRect(wxCommandEvent& event);
+        void OnZoomFit(wxCommandEvent& event);
+        void OnZoomActual(wxCommandEvent& event);
+        void OnImgMove(wxCommandEvent& event);
+        void OnDtFaint(wxCommandEvent& event);
+        void OnDtMin(wxCommandEvent& event);
+        void OnDtMax(wxCommandEvent& event);
+        void OnBtnsUpdate(wxUpdateUIEvent& event);
+        // other controls
+        void OnRbxMedianUpdate(wxUpdateUIEvent& event);
+        void OnRbxGaussUpdate(wxUpdateUIEvent& event);
+        void OnSpMaxUpdate(wxUpdateUIEvent& event);
 
 		/**< control id */
         // tools buttons
@@ -94,6 +118,7 @@ class SpotDtDlg : public wxDialog
         static const long ID_BMPBTN_DT_FAINT;
         static const long ID_BMPBTN_DT_MIN;
         static const long ID_BMPBTN_DT_MAX;
+        static const long ID_CB_BKGCORRECT;
         // filter param
         static const long ID_CB_MEDIAN;
         static const long ID_CB_GAUSS;

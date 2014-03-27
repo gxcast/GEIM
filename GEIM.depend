@@ -3665,7 +3665,7 @@
 	"GEIMFrame.h"
 	<wx/wx.h>
 
-1395841634 /home/nicolas/dev/GEIM/GEIMFrame.h
+1395907873 /home/nicolas/dev/GEIM/GEIMFrame.h
 	<wx/frame.h>
 	<wx/sizer.h>
 	<wx/menu.h>
@@ -3673,12 +3673,12 @@
 	<wx/statusbr.h>
 	"ImagePanel.h"
 
-1395821264 /home/nicolas/dev/GEIM/ImagePanel.h
+1395921774 /home/nicolas/dev/GEIM/ImagePanel.h
 	<wx/panel.h>
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1395889102 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1395924188 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
 	"SpotDtDlg.h"
 	<wx/wx.h>
@@ -3687,7 +3687,7 @@
 	<wx/dialog.h>
 	<wx/html/htmlwin.h>
 
-1395571233 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
+1395922725 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
 	<wx/wx.h>
 
 1386313812 source:/home/nicolas/dev/GEIM/resource.rc
@@ -7151,14 +7151,14 @@
 	"wx/defs.h"
 	"wx/filesys.h"
 
-1395890236 /home/nicolas/dev/GEIM/SpotDtDlg.h
+1395926546 /home/nicolas/dev/GEIM/SpotDtDlg.h
 	<wx/dialog.h>
 	"GEIMDef.h"
 	"ImagePanel.h"
 
 1395841888 /home/nicolas/dev/GEIM/GEIMDef.h
 
-1395891774 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+1395927380 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
 	<wx/wx.h>
 	<wx/spinctrl.h>

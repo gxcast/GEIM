@@ -119,17 +119,17 @@ bool ImagePanel::ImgZoomRect()
 	if (!m_img.IsOk())
 		return false;
 
-	if (m_stMP.iFuc != 2)
+	if (m_stMP.emFuc != IMGPL_CMD::IMG_ZRECT)
 	{
-		// mouse function is image move
-		m_stMP.iFuc = 2;
+		// mouse function is image zoom rect
+		m_stMP.emFuc = IMGPL_CMD::IMG_ZRECT;
 		// set mouse cur
 		SetCursor(wxCursor(_("./skin/ZoomRect.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{
-		// mouse function is image move
-		m_stMP.iFuc = 0;
+		// mouse function is none
+		m_stMP.emFuc = IMGPL_CMD::NONE;
 		// set mouse cur
 		SetCursor(wxCursor(wxCURSOR_ARROW));
 	}
@@ -263,21 +263,127 @@ bool ImagePanel::ImgMove()
 	if (!m_img.IsOk())
 		return false;
 
-	if (m_stMP.iFuc != 1)
+	if (m_stMP.emFuc != IMGPL_CMD::IMG_MOVE)
 	{
 		// mouse function is image move
-		m_stMP.iFuc = 1;
+		m_stMP.emFuc = IMGPL_CMD::IMG_MOVE;
 		// set mouse cur
 		SetCursor(wxCursor(_("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{
-		// mouse function is image move
-		m_stMP.iFuc = 0;
+		// mouse function is none
+		m_stMP.emFuc = IMGPL_CMD::NONE;
 		// set mouse cur
 		SetCursor(wxCursor(wxCURSOR_ARROW));
 	}
 
+	return true;
+}
+
+/**< select faint spot in image */
+bool ImagePanel::SelFaint()
+{
+	if (!m_img.IsOk())
+		return false;
+
+	if (m_stMP.emFuc != IMGPL_CMD::SEL_FAINT)
+	{
+		// mouse function is sel faint spot
+		m_stMP.emFuc = IMGPL_CMD::SEL_FAINT;
+		// set mouse cur
+		wxImage img(_T("./skin/SelFaint.png"), wxBITMAP_TYPE_PNG);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
+		SetCursor(wxCursor(img));
+	}
+	else
+	{
+		// mouse function is none
+		m_stMP.emFuc = IMGPL_CMD::NONE;
+		// set mouse cur
+		SetCursor(wxCursor(wxCURSOR_ARROW));
+	}
+
+	return true;
+}
+
+/**< select min spot in image */
+bool ImagePanel::SelMin()
+{
+	if (!m_img.IsOk())
+		return false;
+
+	if (m_stMP.emFuc != IMGPL_CMD::SEL_MIN)
+	{
+		// mouse function is sel min radius spot
+		m_stMP.emFuc = IMGPL_CMD::SEL_MIN;
+		// set mouse cur
+		wxImage img(_T("./skin/SelMin.png"), wxBITMAP_TYPE_PNG);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
+		SetCursor(wxCursor(img));
+	}
+	else
+	{
+		// mouse function is none
+		m_stMP.emFuc = IMGPL_CMD::NONE;
+		// set mouse cur
+		SetCursor(wxCursor(wxCURSOR_ARROW));
+	}
+
+	return true;
+}
+
+/**< select max spot in image */
+bool ImagePanel::SelMax()
+{
+	if (!m_img.IsOk())
+		return false;
+
+	if (m_stMP.emFuc != IMGPL_CMD::SEL_MAX)
+	{
+		// mouse function is sel max radius spot
+		m_stMP.emFuc = IMGPL_CMD::SEL_MAX;
+		// set mouse cur
+		wxImage img(_T("./skin/SelMax.png"), wxBITMAP_TYPE_PNG);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
+		SetCursor(wxCursor(img));
+	}
+	else
+	{
+		// mouse function is none
+		m_stMP.emFuc = IMGPL_CMD::NONE;
+		// set mouse cur
+		SetCursor(wxCursor(wxCURSOR_ARROW));
+	}
+
+	return true;
+}
+
+/**< proc func btn ui update */
+bool ImagePanel::UpdateUI(IMGPL_CMD cmd, wxUpdateUIEvent& event)
+{
+	switch (cmd)
+	{
+	case IMGPL_CMD::IMG_ZIN:
+	case IMGPL_CMD::IMG_ZOUT:
+	case IMGPL_CMD::IMG_ZFIT:
+	case IMGPL_CMD::IMG_ZACTUAL:
+		event.Enable(m_img.IsOk());
+		break;
+	case IMGPL_CMD::IMG_MOVE:
+	case IMGPL_CMD::IMG_ZRECT:
+	case IMGPL_CMD::SEL_FAINT:
+	case IMGPL_CMD::SEL_MIN:
+	case IMGPL_CMD::SEL_MAX:
+		event.Enable(m_img.IsOk());
+		event.Check(m_stMP.emFuc == cmd);
+		break;
+	default:
+		break;
+	}
 	return true;
 }
 
@@ -532,12 +638,178 @@ bool ImagePanel::RegulaSelRect()
 	return true;
 }
 
+/**< Image Move Mouse event */
+bool ImagePanel::MLDImgMove(wxMouseEvent& event)
+{
+	// flag
+	m_stMP.iState = 1;              // button down
+	m_stMP.ptB.x = event.m_x;   // start point
+	m_stMP.ptB.y = event.m_y;
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+
+	m_stMP.szMv.x = 0;
+	m_stMP.szMv.y = 0;
+	// cursor
+	SetCursor(wxCursor(_T("./skin/HandClose.cur"), wxBITMAP_TYPE_CUR));
+	// capture mouse
+	CaptureMouse();
+
+	return true;
+}
+bool ImagePanel::MLUImgMove(wxMouseEvent& event)
+{
+	if (m_stMP.iState == 2)
+	{
+		m_stMP.iState = 0;
+
+		// new point & move incremention
+		m_stMP.ptE.x = event.m_x;
+		m_stMP.ptE.y = event.m_y;
+		m_stMP.szMv.x = m_stMP.ptE.x - m_stMP.ptB.x;
+		m_stMP.szMv.y = m_stMP.ptE.y - m_stMP.ptB.y;
+		// move the image
+		m_rcDest = m_stMP.rcDO;
+		m_rcSrc = m_stMP.rcSO;
+		ImgMove(m_stMP.szMv);
+	}
+	m_stMP.iState = 0;
+	// cursor
+	SetCursor(wxCursor(_T("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
+	// release mouse
+	ReleaseMouse();
+
+	return true;
+}
+bool ImagePanel::MMVImgMove(wxMouseEvent& event)
+{
+	if (m_stMP.iState == 1)
+	{
+		// switch to drag
+		m_stMP.iState = 2;
+		// remain old dest and src rect
+		m_stMP.rcDO = m_rcDest;
+		m_stMP.rcSO = m_rcSrc;
+	}
+	// new point & move incremention
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+	m_stMP.szMv.x = m_stMP.ptE.x - m_stMP.ptB.x;
+	m_stMP.szMv.y = m_stMP.ptE.y - m_stMP.ptB.y;
+	// move the image
+	m_rcDest = m_stMP.rcDO;
+	m_rcSrc = m_stMP.rcSO;
+	ImgMove(m_stMP.szMv);
+
+	return true;
+}
+
+/**< Image zoom rect mouse event */
+bool ImagePanel::MLDImgZRect(wxMouseEvent& event)
+{
+	// flag
+	m_stMP.iState = 1;              // button down
+	m_stMP.ptB.x = event.m_x;   // start point
+	m_stMP.ptB.y = event.m_y;
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+
+	m_stMP.rcSel.x = 0;
+	m_stMP.rcSel.y = 0;
+	m_stMP.rcSel.width = 0;
+	m_stMP.rcSel.height = 0;
+	// capture mouse
+	CaptureMouse();
+
+	return true;
+}
+bool ImagePanel::MLUImgZRect(wxMouseEvent& event)
+{
+	if (m_stMP.iState == 2)
+	{
+		m_stMP.iState = 0;
+		// new point
+		m_stMP.ptE.x = event.m_x;
+		m_stMP.ptE.y = event.m_y;
+		// calculate the sel rect
+		RegulaSelRect();
+		// Zoom rect
+		ImgZoomRect(m_stMP.rcSel);
+	}
+	else
+	{
+		m_stMP.iState = 0;
+		// update ui
+		Refresh(false);
+	}
+	// Release Mouse
+	ReleaseMouse();
+
+	return true;
+}
+bool ImagePanel::MMVImgZRect(wxMouseEvent& event)
+{
+	if (m_stMP.iState == 1)
+		m_stMP.iState = 2;  // switch to drag
+	// new point
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+	// calculate the sel recty
+	RegulaSelRect();
+	// draw the sel rectangle
+	Refresh(false);
+
+	return true;
+}
+
+/**< Select faint spot mouse event */
+bool ImagePanel::MLDSelFaint(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MLUSelFaint(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MMVSelFaint(wxMouseEvent& event)
+{
+	return true;
+}
+
+/**< Select min spot mouse event */
+bool ImagePanel::MLDSelMin(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MLUSelMin(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MMVSelMin(wxMouseEvent& event)
+{
+	return true;
+}
+
+/**< Select max spot mouse event */
+bool ImagePanel::MLDSelMax(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MLUSelMax(wxMouseEvent& event)
+{
+	return true;
+}
+bool ImagePanel::MMVSelMax(wxMouseEvent& event)
+{
+	return true;
+}
+
 /**< stop drag */
 bool ImagePanel::EndDrag(bool bFuc /*= true*/)
 {
-	switch(m_stMP.iFuc)
+	switch(m_stMP.emFuc)
 	{
-	case 1:		// iamge move
+	case IMGPL_CMD::IMG_MOVE:		// iamge move
 	{
 		if (m_stMP.iState != 0)
 		{
@@ -548,12 +820,12 @@ bool ImagePanel::EndDrag(bool bFuc /*= true*/)
 			SetCursor(wxCursor(_T("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
 		else
 		{
-			m_stMP.iFuc = 0;
+			m_stMP.emFuc = IMGPL_CMD::NONE;
 			SetCursor(wxCursor(wxCURSOR_ARROW));
 		}
 	}
 	break;
-	case 2:		// zoom rect
+	case IMGPL_CMD::IMG_ZRECT:		// zoom rect
 	{
 		if (m_stMP.iState != 0)
 		{
@@ -563,11 +835,58 @@ bool ImagePanel::EndDrag(bool bFuc /*= true*/)
 		}
 		if (!bFuc)
 		{
-			m_stMP.iFuc = 0;
+			m_stMP.emFuc = IMGPL_CMD::NONE;
 			SetCursor(wxCursor(wxCURSOR_ARROW));
 		}
 	}
 	break;
+	case IMGPL_CMD::SEL_FAINT:
+	{
+		if (m_stMP.iState != 0)
+		{
+			m_stMP.iState = 0;
+			ReleaseMouse();
+			Refresh(false);
+		}
+		if (!bFuc)
+		{
+			m_stMP.emFuc = IMGPL_CMD::NONE;
+			SetCursor(wxCursor(wxCURSOR_ARROW));
+		}
+	}
+	break;
+	case IMGPL_CMD::SEL_MIN:
+	{
+		if (m_stMP.iState != 0)
+		{
+			m_stMP.iState = 0;
+			ReleaseMouse();
+			Refresh(false);
+		}
+		if (!bFuc)
+		{
+			m_stMP.emFuc = IMGPL_CMD::NONE;
+			SetCursor(wxCursor(wxCURSOR_ARROW));
+		}
+	}
+	break;
+	case IMGPL_CMD::SEL_MAX:
+	{
+		if (m_stMP.iState != 0)
+		{
+			m_stMP.iState = 0;
+			ReleaseMouse();
+			Refresh(false);
+		}
+		if (!bFuc)
+		{
+			m_stMP.emFuc = IMGPL_CMD::NONE;
+			SetCursor(wxCursor(wxCURSOR_ARROW));
+		}
+	}
+	break;
+	default:
+		break;
 	}
 
 	return true;
@@ -601,7 +920,7 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 	}
 
 	// draw sel rect fot zoom
-	if (m_stMP.iFuc == 2 && m_stMP.iState == 2)
+	if (m_stMP.emFuc == IMGPL_CMD::IMG_ZRECT && m_stMP.iState == 2)
 	{
 		wxPen pen(*wxWHITE, 1, wxPENSTYLE_DOT);
 		m_dcMem.SetPen(pen);
@@ -695,42 +1014,25 @@ void ImagePanel::OnMouseLD(wxMouseEvent& event)
 {
 	if (!m_img.IsOk())
 		return;
-	switch (m_stMP.iFuc)
+	switch (m_stMP.emFuc)
 	{
-	case 1:     // image move
-	{
-		// flag
-		m_stMP.iState = 1;              // button down
-		m_stMP.ptB.x = event.m_x;   // start point
-		m_stMP.ptB.y = event.m_y;
-		m_stMP.ptE.x = event.m_x;
-		m_stMP.ptE.y = event.m_y;
-
-		m_stMP.szMv.x = 0;
-		m_stMP.szMv.y = 0;
-		// cursor
-		SetCursor(wxCursor(_T("./skin/HandClose.cur"), wxBITMAP_TYPE_CUR));
-		// capture mouse
-		CaptureMouse();
-	}
-	break;
-	case 2:     // zoom rect
-	{
-		// flag
-		m_stMP.iState = 1;              // button down
-		m_stMP.ptB.x = event.m_x;   // start point
-		m_stMP.ptB.y = event.m_y;
-		m_stMP.ptE.x = event.m_x;
-		m_stMP.ptE.y = event.m_y;
-
-		m_stMP.rcSel.x = 0;
-		m_stMP.rcSel.y = 0;
-		m_stMP.rcSel.width = 0;
-		m_stMP.rcSel.height = 0;
-		// capture mouse
-		CaptureMouse();
-	}
-	break;
+	case IMGPL_CMD::IMG_MOVE:     // image move
+		MLDImgMove(event);
+		break;
+	case IMGPL_CMD::IMG_ZRECT:     // zoom rect
+		MLDImgZRect(event);
+		break;
+	case IMGPL_CMD::SEL_FAINT:
+		MLDSelFaint(event);
+		break;
+	case IMGPL_CMD::SEL_MIN:
+		MLDSelMin(event);
+		break;
+	case IMGPL_CMD::SEL_MAX:
+		MLDSelMax(event);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -741,54 +1043,25 @@ void ImagePanel::OnMouseLU(wxMouseEvent& event)
 		return;
 	if (m_stMP.iState == 0)
 		return;
-	switch (m_stMP.iFuc)
+	switch (m_stMP.emFuc)
 	{
-	case 1:     // image move
-	{
-		if (m_stMP.iState == 2)
-		{
-			m_stMP.iState = 0;
-
-			// new point & move incremention
-			m_stMP.ptE.x = event.m_x;
-			m_stMP.ptE.y = event.m_y;
-			m_stMP.szMv.x = m_stMP.ptE.x - m_stMP.ptB.x;
-			m_stMP.szMv.y = m_stMP.ptE.y - m_stMP.ptB.y;
-			// move the image
-			m_rcDest = m_stMP.rcDO;
-			m_rcSrc = m_stMP.rcSO;
-			ImgMove(m_stMP.szMv);
-		}
-		m_stMP.iState = 0;
-		// cursor
-		SetCursor(wxCursor(_T("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
-		// release mouse
-		ReleaseMouse();
-	}
-	break;
-	case 2:     // zoom rect
-	{
-		if (m_stMP.iState == 2)
-		{
-			m_stMP.iState = 0;
-			// new point
-			m_stMP.ptE.x = event.m_x;
-			m_stMP.ptE.y = event.m_y;
-			// calculate the sel rect
-			RegulaSelRect();
-			// Zoom rect
-			ImgZoomRect(m_stMP.rcSel);
-		}
-		else
-		{
-			m_stMP.iState = 0;
-			// update ui
-			Refresh(false);
-		}
-		// Release Mouse
-		ReleaseMouse();
-	}
-	break;
+	case IMGPL_CMD::IMG_MOVE:     // image move
+		MLUImgMove(event);
+		break;
+	case IMGPL_CMD::IMG_ZRECT:     // zoom rect
+		MLUImgZRect(event);
+		break;
+	case IMGPL_CMD::SEL_FAINT:
+		MLUSelFaint(event);
+		break;
+	case IMGPL_CMD::SEL_MIN:
+		MLUSelMin(event);
+		break;
+	case IMGPL_CMD::SEL_MAX:
+		MLUSelMax(event);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -799,42 +1072,25 @@ void ImagePanel::OnMouseMove(wxMouseEvent& event)
 		return;
 	if (m_stMP.iState == 0)
 		return;
-	switch (m_stMP.iFuc)
+	switch (m_stMP.emFuc)
 	{
-	case 1:
-	{
-		if (m_stMP.iState == 1)
-		{
-			// switch to drag
-			m_stMP.iState = 2;
-			// remain old dest and src rect
-			m_stMP.rcDO = m_rcDest;
-			m_stMP.rcSO = m_rcSrc;
-		}
-		// new point & move incremention
-		m_stMP.ptE.x = event.m_x;
-		m_stMP.ptE.y = event.m_y;
-		m_stMP.szMv.x = m_stMP.ptE.x - m_stMP.ptB.x;
-		m_stMP.szMv.y = m_stMP.ptE.y - m_stMP.ptB.y;
-		// move the image
-		m_rcDest = m_stMP.rcDO;
-		m_rcSrc = m_stMP.rcSO;
-		ImgMove(m_stMP.szMv);
-	}
-	break;
-	case 2:
-	{
-		if (m_stMP.iState == 1)
-			m_stMP.iState = 2;  // switch to drag
-		// new point
-		m_stMP.ptE.x = event.m_x;
-		m_stMP.ptE.y = event.m_y;
-		// calculate the sel recty
-		RegulaSelRect();
-		// draw the sel rectangle
-		Refresh(false);
-	}
-	break;
+	case IMGPL_CMD::IMG_MOVE:
+		MMVImgMove(event);
+		break;
+	case IMGPL_CMD::IMG_ZRECT:
+		MMVImgZRect(event);
+		break;
+	case IMGPL_CMD::SEL_FAINT:
+		MMVSelFaint(event);
+		break;
+	case IMGPL_CMD::SEL_MIN:
+		MMVSelMin(event);
+		break;
+	case IMGPL_CMD::SEL_MAX:
+		MMVSelMax(event);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -843,3 +1099,4 @@ void ImagePanel::OnKillFocus(wxFocusEvent& event)
 {
 	EndDrag(false);
 }
+

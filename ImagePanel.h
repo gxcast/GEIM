@@ -1,14 +1,4 @@
-﻿#pragma once
-#ifndef IMAGEPANEL_H
-#define IMAGEPANEL_H
-
-//(*Headers(ImagePanel)
-//*)
-#include <wx/panel.h>
-#include <wx/geometry.h>
-#include <wx/dcmemory.h>
-
-/** \brief ImagePanel
+﻿/** \brief ImagePanel
  *
  * a panel for display image
  * and offer some zoom function to modify the disp-style
@@ -18,6 +8,32 @@
  * \date date:2014.03.19
  *
  */
+#pragma once
+#ifndef IMAGEPANEL_H
+#define IMAGEPANEL_H
+
+//(*Headers(ImagePanel)
+//*)
+#include <wx/panel.h>
+#include <wx/geometry.h>
+#include <wx/dcmemory.h>
+
+enum IMGPL_CMD
+{
+	NONE,
+
+	IMG_ZIN,
+	IMG_ZOUT,
+	IMG_ZRECT,
+	IMG_ZFIT,
+	IMG_ZACTUAL,
+	IMG_MOVE,
+
+	SEL_FAINT,
+	SEL_MIN,
+	SEL_MAX
+};
+
 class ImagePanel: public wxPanel
 {
 public:
@@ -86,6 +102,34 @@ public:
      */
 	bool ImgMove();
 
+    /** \brief select faint spot in image
+     *
+     * \return bool true:success false:failed
+     *
+     */
+	bool SelFaint();
+    /** \brief select min spot in image
+     *
+     * \return bool true:success false:failed
+     *
+     */
+	bool SelMin();
+    /** \brief select max spot in image
+     *
+     * \return bool true:success false:failed
+     *
+     */
+	bool SelMax();
+
+    /** \brief proc func btn ui update
+     *
+     * \param IMGPL_CMD cmd					[IN] cmd type
+     * \param event wxUpdateUIEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool UpdateUI(IMGPL_CMD cmd, wxUpdateUIEvent& event);
+
 protected:
 
 private:
@@ -117,6 +161,53 @@ private:
      *
      */
 	bool RegulaSelRect();
+
+
+    /** \brief Image Move Mouse event
+     *
+     * \param event wxMouseEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool MLDImgMove(wxMouseEvent& event);
+	bool MLUImgMove(wxMouseEvent& event);
+	bool MMVImgMove(wxMouseEvent& event);
+    /** \brief Image zoom rect mouse event
+     *
+     * \param event wxMouseEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool MLDImgZRect(wxMouseEvent& event);
+	bool MLUImgZRect(wxMouseEvent& event);
+	bool MMVImgZRect(wxMouseEvent& event);
+    /** \brief Select faint spot mouse event
+     *
+     * \param event wxMouseEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool MLDSelFaint(wxMouseEvent& event);
+	bool MLUSelFaint(wxMouseEvent& event);
+	bool MMVSelFaint(wxMouseEvent& event);
+    /** \brief Select min spot mouse event
+     *
+     * \param event wxMouseEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool MLDSelMin(wxMouseEvent& event);
+	bool MLUSelMin(wxMouseEvent& event);
+	bool MMVSelMin(wxMouseEvent& event);
+    /** \brief Select max spot mouse event
+     *
+     * \param event wxMouseEvent& [INOUT] event
+     * \return bool true:success false:failed
+     *
+     */
+	bool MLDSelMax(wxMouseEvent& event);
+	bool MLUSelMax(wxMouseEvent& event);
+	bool MMVSelMax(wxMouseEvent& event);
 
     /** \brief stop drag
      *
@@ -213,10 +304,10 @@ private:
          wxInt32 iState = 0;
         /** \brief mouse function flag
          *
-         *  0:none 1:image move 2:zoonrect
+         *  \see IMGPL_CMD
          *
          */
-        wxInt32 iFuc = 0;
+        IMGPL_CMD emFuc = IMGPL_CMD::NONE;
         /**< start point */
         wxPoint ptB;
         /**< end point */

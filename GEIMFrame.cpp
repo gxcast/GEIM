@@ -139,17 +139,26 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
     // menu or tool-button command
     Connect(wxID_OPEN, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileOpen);
     Connect(wxID_CLOSE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileClose);
+    Connect(wxID_CLOSE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnFileCloseUpdate);
     Connect(ID_CMD_DT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDt);
+    Connect(ID_CMD_DT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnDtUpdate);
     Connect(ID_CMD_MT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMt);
+    Connect(ID_CMD_MT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnMtUpdate);
     Connect(wxID_EXIT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
     Connect(wxID_ABOUT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnAbout);
     // image operate
     Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomIN);
+    Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
     Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomOut);
+    Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
     Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomRect);
+    Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
     Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomFit);
+    Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
     Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomActual);
+    Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
     Connect(ID_BMPBTN_IMG_MOVE, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnImgMove);
+    Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
 }
 
 GEIMFrame::~GEIMFrame()
@@ -227,6 +236,10 @@ void GEIMFrame::OnFileClose(wxCommandEvent& event)
     if (m_imgA.IsOk())
         m_imgA.Destroy();
 }
+void GEIMFrame::OnFileCloseUpdate(wxUpdateUIEvent& event)
+{
+    event.Enable(m_imgA.IsOk());
+}
 
 /**< detect spots */
 void GEIMFrame::OnDt(wxCommandEvent& event)
@@ -237,11 +250,19 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
     if (iRet != wxID_OK)
         return;
 }
+void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
+{
+    event.Enable(m_imgA.IsOk());
+}
 
 /**< match spots */
 void GEIMFrame::OnMt(wxCommandEvent& event)
 {
 
+}
+void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
+{
+    event.Enable(m_imgA.IsOk());
 }
 
 /**< command to exit the app */
@@ -257,32 +278,56 @@ void GEIMFrame::OnAbout(wxCommandEvent& event)
     about.ShowModal();
 }
 
+/**< zoom in image */
 void GEIMFrame::OnZoomIN(wxCommandEvent& event)
 {
     m_pImgPanel->ImgZoomIn();
 }
 
+/**< zoom out image */
 void GEIMFrame::OnZoomOut(wxCommandEvent& event)
 {
     m_pImgPanel->ImgZoomOut();
 }
 
+/**< zoom image depend sel rect */
 void GEIMFrame::OnZoomRect(wxCommandEvent& event)
 {
     m_pImgPanel->ImgZoomRect();
 }
 
+/**< zoom image fit the wnd */
 void GEIMFrame::OnZoomFit(wxCommandEvent& event)
 {
     m_pImgPanel->ImgZoomFit();
 }
 
+/**< display image in it's actual size */
 void GEIMFrame::OnZoomActual(wxCommandEvent& event)
 {
     m_pImgPanel->ImgZoomActual();
 }
 
+/**< move iamge to diaplay different region */
 void GEIMFrame::OnImgMove(wxCommandEvent& event)
 {
     m_pImgPanel->ImgMove();
+}
+
+/**< update tool btns' state */
+void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
+{
+    long id = event.GetId();
+    if (id == ID_BMPBTN_IMG_ZOOMIN)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZIN, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMOUT)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZOUT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMRECT)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZRECT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMFIT)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZFIT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMACTUAL)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZACTUAL, event);
+	else if (id == ID_BMPBTN_IMG_MOVE)
+		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_MOVE, event);
 }

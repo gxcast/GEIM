@@ -27,8 +27,11 @@ class GEIMFrame: public wxFrame
         // menu or tool-button command
         void OnFileOpen(wxCommandEvent& event);
         void OnFileClose(wxCommandEvent& event);
+        void OnFileCloseUpdate(wxUpdateUIEvent& event);
         void OnDt(wxCommandEvent& event);
+        void OnDtUpdate(wxUpdateUIEvent& event);
         void OnMt(wxCommandEvent& event);
+        void OnMtUpdate(wxUpdateUIEvent& event);
         void OnQuit(wxCommandEvent& event);
         void OnAbout(wxCommandEvent& event);
         // image operate
@@ -38,6 +41,7 @@ class GEIMFrame: public wxFrame
         void OnZoomFit(wxCommandEvent& event);
         void OnZoomActual(wxCommandEvent& event);
         void OnImgMove(wxCommandEvent& event);
+        void OnBtnsUpdate(wxUpdateUIEvent& event);
 
         //(*Identifiers(GEIMFrame)
         //*)
