@@ -64,13 +64,13 @@ class SpotDtDlg : public wxDialog
 					long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER,
 					const wxString& name = wxDialogNameStr);
 
-        /** \brief Initialize member
+        /** \brief Initialize member, include gel images
          *
-         * \param
+         * \param const wxArrayPtrVoid* pAryImgs [IN] the pointer of array fill images' pointer
          * \return bool true:success false:failed
          *
          */
-		bool Init();
+		bool Init(const wxArrayPtrVoid* pAryImgs);
 
 	protected:
 
@@ -138,6 +138,12 @@ class SpotDtDlg : public wxDialog
 
 		/**< image panel to dispaly iamge */
 		ImagePanel* m_pImgPanel = nullptr;
+
+		/**< images's pointer arrary for batch peocess */
+		const wxArrayPtrVoid* m_pAryImgs = nullptr;
+
+		/**< iamge to display */
+		wxImage m_imgDisp;
 
 		DECLARE_CLASS(SpotDtDlg)
 		DECLARE_EVENT_TABLE()

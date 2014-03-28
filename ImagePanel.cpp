@@ -57,14 +57,10 @@ bool ImagePanel::SetImg(wxImage& img)
 	// whether the new image can be used
 	if (!img.IsOk())
 		return false;
-	// use new image
-	if (m_imgOrigin.IsOk())		// if origin image is ok, destroy it
-		m_imgOrigin.Destroy();
-	m_imgOrigin = img;			// set origin image from img
-	// copy the image used to display et al.
+	// reference the image used to display.
 	if (m_img.IsOk())
 		m_img.Destroy();
-	m_img = m_imgOrigin.Copy();
+	m_img = img;
 
 	// calculate display params
 	m_szClient = GetClientSize();

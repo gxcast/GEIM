@@ -93,9 +93,48 @@ bool SpotDtDlg::Create(wxWindow* parent,
 	return bRet;
 }
 
-/**< Initialize member */
-bool SpotDtDlg::Init()
+/**< Initialize member, inlcude gel images */
+bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 {
+	// image choice control
+	wxChoice* pCI = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
+	wxASSERT_MSG(pCI != nullptr, _T("Get image choice control failed."));
+
+	// create the new iamge array
+	size_t nNum = pAryImgs->Count();
+	wxASSERT_MSG(nNum > 0, _T("There's no image in array."));
+	bool bFirst = true;
+	for(size_t i = 0; i < nNum; ++i)
+	{
+		wxImage* pImg = static_cast<wxImage*>(pAryImgs->Item(i));
+		if (pImg == nullptr)
+		{
+			wxASSERT_MSG(false, _T("Get a image from array failed."));
+			continue;
+		}
+
+		// fill the image choice control
+		if (!pImg->HasOption(wxIMAGE_OPTION_FILENAME))
+		{
+			wxASSERT_MSG(false, _T("The image has no option filename."));
+			continue;
+		}
+		const wxString& nm = pImg->GetOption(wxIMAGE_OPTION_FILENAME);
+		pCI->Append(nm, reinterpret_cast<void*>(i));
+
+		// default sel the first image
+		if (bFirst)
+		{
+			bFirst = false;
+			pCI->SetSelection(0);
+
+			// copy the first iamge to display
+			m_imgDisp = pImg->Copy();
+			m_pImgPanel->SetImg(m_imgDisp);
+		}
+	}
+	wxASSERT_MSG(!bFirst, _T("There's no valid image in array."));
+
 	return true;
 }
 

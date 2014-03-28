@@ -274,8 +274,6 @@ private:
 
 	//(*Declarations(ImagePanel)
 	//*)
-	/**< origin iamge, not alter. */
-	wxImage m_imgOrigin;
 	/**< image to display. */
 	wxImage m_img;
 	/**< note the old size of the panel, used in calculate locate when size changed */

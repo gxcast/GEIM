@@ -60,18 +60,25 @@ class GEIMFrame: public wxFrame
         //(*Declarations(GEIMFrame)
         //*)
         /**< the menu bar */
-        wxMenuBar* m_pMenuBarMain;
+        wxMenuBar* m_pMenuBarMain = nullptr;
         /**< the status bar */
-        wxStatusBar* m_pStatusBarMain;
+        wxStatusBar* m_pStatusBarMain = nullptr;
         /**< the main panel for contain other control */
-        wxPanel* m_pPanelMain;
+        wxPanel* m_pPanelMain = nullptr;
         /**< the main szier for locate other control */
-        wxBoxSizer* m_pBoxSizerMain;
+        wxBoxSizer* m_pBoxSizerMain = nullptr;
+        /**< sizer of image panel */
+        wxBoxSizer* m_pBoxSizerImg = nullptr;
 
-        /**< current image */
-        wxImage m_imgA;
+        /**< array contain origin images' pointer */
+        wxArrayPtrVoid m_aryImgs;
+        /**< array contain origin images' pointer for dispaly */
+        wxArrayPtrVoid m_aryImgsDisp;
+        /**< array contain images' pointer for detected*/
+        wxArrayPtrVoid m_aryImgsDt;
+
        /**< panel for image display */
-        ImagePanel* m_pImgPanel = nullptr;
+        wxArrayPtrVoid m_aryPanels;
 
         DECLARE_EVENT_TABLE()
 };

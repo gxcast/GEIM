@@ -9,6 +9,9 @@ Project address: <https://github.com/gxcast/GEIM.git>
 
 NOTE
 ----
+* 28.03.2014
+    1. add multiple image open, iner image data alloc and ui dynamic layout
+
 * 27.03.2014
     1. perfect "spot detect form", add some event map
     2. image panel add spot select function
