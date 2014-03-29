@@ -96,6 +96,13 @@ bool SpotDtDlg::Create(wxWindow* parent,
 /**< Initialize member, inlcude gel images */
 bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 {
+	// Calibration
+	if (pAryImgs == NULL)
+	{
+		wxASSERT_MSG(false, _T("The images' array is invalid."));
+		return false;
+	}
+
 	// image choice control
 	wxChoice* pCI = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
 	wxASSERT_MSG(pCI != nullptr, _T("Get image choice control failed."));
@@ -103,10 +110,11 @@ bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 	// create the new iamge array
 	size_t nNum = pAryImgs->Count();
 	wxASSERT_MSG(nNum > 0, _T("There's no image in array."));
+	m_pAryImgs = pAryImgs;
 	bool bFirst = true;
 	for(size_t i = 0; i < nNum; ++i)
 	{
-		wxImage* pImg = static_cast<wxImage*>(pAryImgs->Item(i));
+		wxImage* pImg = static_cast<wxImage*>(m_pAryImgs->Item(i));
 		if (pImg == nullptr)
 		{
 			wxASSERT_MSG(false, _T("Get a image from array failed."));
@@ -275,7 +283,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Faint Thre:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_FAINT_T, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-													0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 0.0, 0.5);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 3
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
@@ -291,7 +299,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Aspect:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_ASPECT, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-													0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 0.0, 0.5);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 6
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Spot Num:"));
@@ -309,7 +317,7 @@ bool SpotDtDlg::CreateControl()
 			{
 				pBtnLay->AddStretchSpacer(1);
 
-				wxButton* pBtn = new wxButton(this, wxID_APPLY, _("&Preview"));
+				wxButton* pBtn = new wxButton(this, wxID_APPLY, _("&Test Param"));
 				pBtnLay->Add(pBtn, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 3);
 
 				pBtn = new wxButton(this, wxID_OK, _("&Batch"));
@@ -332,68 +340,72 @@ bool SpotDtDlg::CreateControl()
 /**< dynamic event map */
 bool SpotDtDlg::DyEventMap()
 {
-    // image operate bottons
-    Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomIN);
-    Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomOut);
-    Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomRect);
-    Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomFit);
-    Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomActual);
-    Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_IMG_MOVE, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnImgMove);
-    Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_DT_FAINT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtFaint);
-    Connect(ID_BMPBTN_DT_FAINT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_DT_MIN, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtMin);
-    Connect(ID_BMPBTN_DT_MIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
-    Connect(ID_BMPBTN_DT_MAX, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtMax);
-    Connect(ID_BMPBTN_DT_MAX, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	// image operate bottons
+	Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomIN);
+	Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomOut);
+	Connect(ID_BMPBTN_IMG_ZOOMOUT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomRect);
+	Connect(ID_BMPBTN_IMG_ZOOMRECT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomFit);
+	Connect(ID_BMPBTN_IMG_ZOOMFIT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnZoomActual);
+	Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnImgMove);
+	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_DT_FAINT, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtFaint);
+	Connect(ID_BMPBTN_DT_FAINT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_DT_MIN, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtMin);
+	Connect(ID_BMPBTN_DT_MIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(ID_BMPBTN_DT_MAX, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtMax);
+	Connect(ID_BMPBTN_DT_MAX, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
 
-    // other controls
-    Connect(ID_RBX_MEDIAN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnRbxMedianUpdate);
-    Connect(ID_RBX_GAUSS, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnRbxGaussUpdate);
-    Connect(ID_SP_MAX, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnSpMaxUpdate);
+	// other controls
+	Connect(ID_RBX_MEDIAN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnRbxMedianUpdate);
+	Connect(ID_RBX_GAUSS, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnRbxGaussUpdate);
+	Connect(ID_SP_MAX, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnSpMaxUpdate);
+	Connect(ID_CI_IMAGE, wxEVT_CHOICE, (wxObjectEventFunction)&SpotDtDlg::OnCiImage);
+	Connect(wxID_APPLY, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnBtnTestParam);
+	Connect(wxID_APPLY, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnProcUpdate);
+	Connect(wxID_OK, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnProcUpdate);
 
-    return true;
+	return true;
 }
 
 /**< zoom in image */
 void SpotDtDlg::OnZoomIN(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgZoomIn();
+	m_pImgPanel->ImgZoomIn();
 }
 
 /**< zoom out image */
 void SpotDtDlg::OnZoomOut(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgZoomOut();
+	m_pImgPanel->ImgZoomOut();
 }
 
 /**< zoom image depend sel rect */
 void SpotDtDlg::OnZoomRect(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgZoomRect();
+	m_pImgPanel->ImgZoomRect();
 }
 
 /**< zoom image fit the wnd */
 void SpotDtDlg::OnZoomFit(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgZoomFit();
+	m_pImgPanel->ImgZoomFit();
 }
 
 /**< display image in it's actual size */
 void SpotDtDlg::OnZoomActual(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgZoomActual();
+	m_pImgPanel->ImgZoomActual();
 }
 
 /**< move iamge to diaplay different region */
 void SpotDtDlg::OnImgMove(wxCommandEvent& event)
 {
-    m_pImgPanel->ImgMove();
+	m_pImgPanel->ImgMove();
 }
 
 /**< select faint spot */
@@ -417,8 +429,14 @@ void SpotDtDlg::OnDtMax(wxCommandEvent& event)
 /**< update tool btns' state */
 void SpotDtDlg::OnBtnsUpdate(wxUpdateUIEvent& event)
 {
-    long id = event.GetId();
-    if (id == ID_BMPBTN_IMG_ZOOMIN)
+	if (m_pAryImgs == nullptr)
+	{
+		event.Enable(false);
+		return;
+	}
+
+	long id = event.GetId();
+	if (id == ID_BMPBTN_IMG_ZOOMIN)
 		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZIN, event);
 	else if (id == ID_BMPBTN_IMG_ZOOMOUT)
 		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZOUT, event);
@@ -444,7 +462,7 @@ void SpotDtDlg::OnRbxMedianUpdate(wxUpdateUIEvent& event)
 	wxCheckBox* pCB = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_MEDIAN));
 	wxRadioBox* pRbx = dynamic_cast<wxRadioBox*>(FindWindow(ID_RBX_MEDIAN));
 	if (pCB != nullptr && pRbx != nullptr)
-			pRbx->Enable(pCB->IsChecked());
+		pRbx->Enable(pCB->IsChecked());
 }
 
 /**< gauss template size can be modify only when it is checked  */
@@ -453,7 +471,7 @@ void SpotDtDlg::OnRbxGaussUpdate(wxUpdateUIEvent& event)
 	wxCheckBox* pCB = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_GAUSS));
 	wxRadioBox* pRbx = dynamic_cast<wxRadioBox*>(FindWindow(ID_RBX_GAUSS));
 	if (pCB != nullptr && pRbx != nullptr)
-			pRbx->Enable(pCB->IsChecked());
+		pRbx->Enable(pCB->IsChecked());
 }
 
 /**< max radius only needed when background correct */
@@ -462,5 +480,40 @@ void SpotDtDlg::OnSpMaxUpdate(wxUpdateUIEvent& event)
 	wxCheckBox* pCB = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_BKGCORRECT));
 	wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MAX));
 	if (pCB != nullptr && pSp != nullptr)
-			pSp->Enable(pCB->IsChecked());
+		pSp->Enable(pCB->IsChecked());
+}
+
+/**< change image selection */
+void SpotDtDlg::OnCiImage(wxCommandEvent& event)
+{
+	size_t nNum = m_pAryImgs->Count();
+	int iSel = event.GetSelection();
+	if (iSel < 0 || iSel >= (long)nNum)
+	{
+		wxASSERT_MSG(false, _T("Change image selection error."));
+		return;
+	}
+
+	wxImage* pImg = static_cast<wxImage*>(m_pAryImgs->Item(iSel));
+	if (m_imgDisp.IsOk())
+		m_imgDisp.Destroy();
+	m_imgDisp = pImg->Copy();
+	m_pImgPanel->SetImg(m_imgDisp);
+}
+
+/**< Test Param */
+void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
+{
+
+}
+/**< update "Test Param" and "Batch" button's state*/
+void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
+{
+	if (m_pAryImgs == nullptr)
+		event.Enable(false);
+	else
+	{
+		size_t nNum = m_pAryImgs->Count();
+		event.Enable(nNum > 0);
+	}
 }

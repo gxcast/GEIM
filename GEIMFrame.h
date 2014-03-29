@@ -42,6 +42,7 @@ class GEIMFrame: public wxFrame
         void OnZoomActual(wxCommandEvent& event);
         void OnImgMove(wxCommandEvent& event);
         void OnBtnsUpdate(wxUpdateUIEvent& event);
+        void OnImgplNtfy(wxImgplEvent& event);
 
         //(*Identifiers(GEIMFrame)
         //*)

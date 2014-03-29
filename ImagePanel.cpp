@@ -1,8 +1,9 @@
-﻿#include "ImagePanel.h"
+﻿#include <wx/wx.h>
+#include "ImagePanel.h"
 
-//(*InternalHeaders(ImagePanel)
-//*)
-#include <wx/wx.h>
+// define notify evet type
+IMPLEMENT_DYNAMIC_CLASS(wxImgplEvent, wxNotifyEvent)
+DEFINE_EVENT_TYPE(wxEVT_IMGPL)
 
 
 //(*IdInit(ImagePanel)
@@ -109,6 +110,81 @@ bool ImagePanel::ImgZoomOut()
 	return true;
 }
 
+/**< according to the specified zoom percentage */
+bool ImagePanel::ImgZoomScale(wxDouble dScale, wxPoint* pPt /*= nullptr*/)
+{
+	if (!m_img.IsOk())
+		return false;
+	if (dScale <= 0.0)
+		return false;
+	if (dScale > 20.0)
+		dScale = 20.0;
+
+	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
+	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// img rect
+	do
+	{
+		wxSize szWnd = GetClientSize();
+		wxSize szImg = m_img.GetSize();
+		rcWnd.m_width = szWnd.GetWidth();
+		rcWnd.m_height = szWnd.GetHeight();
+		rcImg.m_width = szImg.GetWidth();
+		rcImg.m_height = szImg.GetHeight();
+	}
+	while(false);
+
+	// default image pix in wnd center as the fixed point
+	wxPoint2DDouble ptV0, ptI0;
+	wxDouble dTmp = 0.0;
+	if (pPt == nullptr)
+	{
+		ptV0.m_x = rcWnd.m_width/2.0;
+		ptV0.m_y = rcWnd.m_height/2.0;
+	}
+	else
+	{
+		ptV0.m_x = pPt->x;
+		ptV0.m_y = pPt->y;
+	}
+	dTmp = (ptV0.m_x - m_rcDest.m_x)/m_dScale;	// V2I
+	ptI0.m_x = m_rcSrc.m_x + dTmp;
+	dTmp = (ptV0.m_y - m_rcDest.m_y)/m_dScale;
+	ptI0.m_y = m_rcSrc.m_y + dTmp;
+
+	// the image view rect in new scale
+	wxRect2DDouble rcNew;
+	rcNew.m_x = ptV0.m_x - ptI0.m_x*dScale;
+	rcNew.m_y = ptV0.m_y - ptI0.m_y*dScale;
+	rcNew.m_width = rcImg.m_width*dScale;
+	rcNew.m_height = rcImg.m_height*dScale;
+
+	// Dest rect is the intersection of new image view rect & wnd rect
+	wxRect2DDouble::Intersect(rcWnd, rcNew, &m_rcDest);
+
+	// the src rect in new scale
+	m_rcSrc.m_x = ptI0.m_x + (m_rcDest.m_x - ptV0.m_x)/dScale;
+	m_rcSrc.m_y = ptI0.m_y + (m_rcDest.m_y - ptV0.m_y)/dScale;
+	m_rcSrc.m_width = m_rcDest.m_width/dScale;
+	m_rcSrc.m_height = m_rcDest.m_height/dScale;
+	// ensure the src rect is valid
+	if (m_rcSrc.m_x < 0.0)
+		m_rcSrc.m_x = 0.0;
+	if (m_rcSrc.m_y < 0.0)
+		m_rcSrc.m_y = 0.0;
+	if (m_rcSrc.GetRight() > rcImg.m_width)
+		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
+	if (m_rcSrc.GetBottom() > rcImg.m_height)
+		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
+
+	// new zoom scale
+	m_dScale = dScale;
+
+	// update panel
+	Refresh(false);
+
+	return true;
+}
+
 /**< sel the display rect*/
 bool ImagePanel::ImgZoomRect()
 {
@@ -129,6 +205,84 @@ bool ImagePanel::ImgZoomRect()
 		// set mouse cur
 		SetCursor(wxCursor(wxCURSOR_ARROW));
 	}
+
+	return true;
+}
+
+/**< display image of sel rect full fit wnd */
+bool ImagePanel::ImgZoomRect(wxRect rcSel)
+{
+	if (!m_img.IsOk())
+		return false;
+	// the rect must be regular
+	if (rcSel.width <= 2 || rcSel.height < 2)
+		return false;
+
+	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
+	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// image rect
+	do
+	{
+		wxSize szWnd = GetClientSize();
+		wxSize szImg = m_img.GetSize();
+		rcWnd.m_width = szWnd.GetWidth();
+		rcWnd.m_height = szWnd.GetHeight();
+		rcImg.m_width = szImg.GetWidth();
+		rcImg.m_height = szImg.GetHeight();
+	}
+	while(false);
+
+	// calculate the new scale
+	wxDouble dScale = 1.0;
+	if (rcWnd.m_width/rcWnd.m_height > rcSel.width/(wxDouble)rcSel.height)
+		dScale = rcWnd.m_height/rcSel.height;
+	else
+		dScale = rcWnd.m_width/rcSel.width;
+	dScale *= m_dScale;
+	if (dScale > 20.0)
+		dScale = 20.0;
+
+	// sel rect center point
+	wxPoint2DDouble ptV0, ptI0;
+	ptV0.m_x = rcSel.x + rcSel.width/2.0;
+	ptV0.m_y = rcSel.y + rcSel.height/2.0;
+	ptI0.m_x = m_rcSrc.m_x + (ptV0.m_x - m_rcDest.m_x)/m_dScale;
+	ptI0.m_y = m_rcSrc.m_y + (ptV0.m_y - m_rcDest.m_y)/m_dScale;
+
+	// calculate the new image rect in wnd coordinate
+	wxRect2DDouble rcNew;
+	rcNew.m_x = ptV0.m_x - ptI0.m_x*dScale;
+	rcNew.m_y = ptV0.m_y - ptI0.m_y*dScale;
+	rcNew.m_width = rcImg.m_width*dScale;
+	rcNew.m_height = rcImg.m_height*dScale;
+	// move the sel rect center to the wnd center
+	rcNew.m_x -= ptV0.m_x - rcWnd.m_width/2.0;
+	rcNew.m_y -= ptV0.m_y - rcWnd.m_height/2.0;
+	ptV0.m_x = rcWnd.m_width/2.0;
+	ptV0.m_y = rcWnd.m_height/2.0;
+
+	// the dest rect is the intersection of the new image view rect & wnd rect
+	wxRect2DDouble::Intersect(rcWnd, rcNew, &m_rcDest);
+
+	// calculate the src rect
+	m_rcSrc.m_x = ptI0.m_x + (m_rcDest.m_x - ptV0.m_x)/dScale;
+	m_rcSrc.m_y = ptI0.m_y + (m_rcDest.m_y - ptV0.m_y)/dScale;
+	m_rcSrc.m_width = m_rcDest.m_width/dScale;
+	m_rcSrc.m_height = m_rcDest.m_height/dScale;
+	// ensure the src rect is valid
+	if (m_rcSrc.m_x < 0.0)
+		m_rcSrc.m_x = 0.0;
+	if (m_rcSrc.m_y < 0.0)
+		m_rcSrc.m_y = 0.0;
+	if (m_rcSrc.GetRight() > rcImg.m_width)
+		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
+	if (m_rcSrc.GetBottom() > rcImg.m_height)
+		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
+
+	// the new scale
+	m_dScale = dScale;
+
+	// update ui
+	Refresh(false);
 
 	return true;
 }
@@ -277,6 +431,72 @@ bool ImagePanel::ImgMove()
 	return true;
 }
 
+/**< move image */
+bool ImagePanel::ImgMove(wxSize szMove)
+{
+	if (!m_img.IsOk())
+		return false;
+	// the move size must be valid
+	if (szMove.x == 0 || szMove.y == 0)
+		return false;
+
+	wxPoint2DDouble ptMove(szMove.x, szMove.y);
+
+	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
+	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// img rect
+	do
+	{
+		wxSize szWnd = GetClientSize();
+		wxSize szImg = m_img.GetSize();
+		rcWnd.m_width = szWnd.GetWidth();
+		rcWnd.m_height = szWnd.GetHeight();
+		rcImg.m_width = szImg.GetWidth();
+		rcImg.m_height = szImg.GetHeight();
+	}
+	while(false);
+
+	// current image rect in wnd coordinate
+	wxRect2DDouble rcNew;
+	rcNew.m_x = m_rcDest.m_x - m_rcSrc.m_x*m_dScale;
+	rcNew.m_y = m_rcDest.m_y - m_rcSrc.m_y*m_dScale;
+	rcNew.m_width = rcImg.m_width*m_dScale;
+	rcNew.m_height = rcImg.m_height*m_dScale;
+	// then horizontal move the rect
+	if ((rcNew.m_x + ptMove.m_x) > rcWnd.m_width/2.0)
+		ptMove.m_x = (int)(rcWnd.m_width/2.0 - rcNew.m_x);
+	else if ((rcNew.GetRight() + ptMove.m_x) <= rcWnd.m_width/2.0)
+		ptMove.m_x = (int)(rcWnd.m_width/2.0 - rcNew.GetRight());
+	// and then vertical move the rect
+	if ((rcNew.m_y + ptMove.m_y) > rcWnd.m_height/2.0)
+		ptMove.m_y = (int)(rcWnd.m_height/2.0 - rcNew.m_y);
+	else if ((rcNew.GetBottom() + ptMove.m_y) <= rcWnd.m_height/2.0)
+		ptMove.m_y = (int)(rcWnd.m_height/2.0 - rcNew.GetBottom());
+	rcNew.Offset(ptMove);
+
+	// the dest rect is the intersection of new rect  and wnd rect
+	wxRect2DDouble::Intersect(rcNew, rcWnd, &m_rcDest);
+
+	// calculate the src rect
+	m_rcSrc.m_x = (m_rcDest.m_x - rcNew.m_x)/m_dScale;
+	m_rcSrc.m_y = (m_rcDest.m_y - rcNew.m_y)/m_dScale;
+	m_rcSrc.m_width = m_rcDest.m_width/m_dScale;
+	m_rcSrc.m_height = m_rcDest.m_height/m_dScale;
+	// ensure the src rect is valid
+	if (m_rcSrc.m_x < 0.0)
+		m_rcSrc.m_x = 0.0;
+	if (m_rcSrc.m_y < 0.0)
+		m_rcSrc.m_y = 0.0;
+	if (m_rcSrc.GetRight() > rcImg.m_width)
+		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
+	if (m_rcSrc.GetBottom() > rcImg.m_height)
+		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
+
+	// update panel
+	Refresh(false);
+
+	return true;
+}
+
 /**< select faint spot in image */
 bool ImagePanel::SelFaint()
 {
@@ -384,225 +604,6 @@ bool ImagePanel::UpdateUI(IMGPL_CMD cmd, wxUpdateUIEvent& event)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-/**< display image of sel rect full fit wnd */
-bool ImagePanel::ImgZoomRect(wxRect rcSel)
-{
-	if (!m_img.IsOk())
-		return false;
-	// the rect must be regular
-	if (rcSel.width <= 2 || rcSel.height < 2)
-		return false;
-
-	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
-	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// image rect
-	do
-	{
-		wxSize szWnd = GetClientSize();
-		wxSize szImg = m_img.GetSize();
-		rcWnd.m_width = szWnd.GetWidth();
-		rcWnd.m_height = szWnd.GetHeight();
-		rcImg.m_width = szImg.GetWidth();
-		rcImg.m_height = szImg.GetHeight();
-	}
-	while(false);
-
-	// calculate the new scale
-	wxDouble dScale = 1.0;
-	if (rcWnd.m_width/rcWnd.m_height > rcSel.width/(wxDouble)rcSel.height)
-		dScale = rcWnd.m_height/rcSel.height;
-	else
-		dScale = rcWnd.m_width/rcSel.width;
-	dScale *= m_dScale;
-	if (dScale > 20.0)
-		dScale = 20.0;
-
-	// sel rect center point
-	wxPoint2DDouble ptV0, ptI0;
-	ptV0.m_x = rcSel.x + rcSel.width/2.0;
-	ptV0.m_y = rcSel.y + rcSel.height/2.0;
-	ptI0.m_x = m_rcSrc.m_x + (ptV0.m_x - m_rcDest.m_x)/m_dScale;
-	ptI0.m_y = m_rcSrc.m_y + (ptV0.m_y - m_rcDest.m_y)/m_dScale;
-
-	// calculate the new image rect in wnd coordinate
-	wxRect2DDouble rcNew;
-	rcNew.m_x = ptV0.m_x - ptI0.m_x*dScale;
-	rcNew.m_y = ptV0.m_y - ptI0.m_y*dScale;
-	rcNew.m_width = rcImg.m_width*dScale;
-	rcNew.m_height = rcImg.m_height*dScale;
-	// move the sel rect center to the wnd center
-	rcNew.m_x -= ptV0.m_x - rcWnd.m_width/2.0;
-	rcNew.m_y -= ptV0.m_y - rcWnd.m_height/2.0;
-	ptV0.m_x = rcWnd.m_width/2.0;
-	ptV0.m_y = rcWnd.m_height/2.0;
-
-	// the dest rect is the intersection of the new image view rect & wnd rect
-	wxRect2DDouble::Intersect(rcWnd, rcNew, &m_rcDest);
-
-	// calculate the src rect
-	m_rcSrc.m_x = ptI0.m_x + (m_rcDest.m_x - ptV0.m_x)/dScale;
-	m_rcSrc.m_y = ptI0.m_y + (m_rcDest.m_y - ptV0.m_y)/dScale;
-	m_rcSrc.m_width = m_rcDest.m_width/dScale;
-	m_rcSrc.m_height = m_rcDest.m_height/dScale;
-	// ensure the src rect is valid
-	if (m_rcSrc.m_x < 0.0)
-		m_rcSrc.m_x = 0.0;
-	if (m_rcSrc.m_y < 0.0)
-		m_rcSrc.m_y = 0.0;
-	if (m_rcSrc.GetRight() > rcImg.m_width)
-		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
-	if (m_rcSrc.GetBottom() > rcImg.m_height)
-		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
-
-	// the new scale
-	m_dScale = dScale;
-
-	// update ui
-	Refresh(false);
-
-	return true;
-}
-
-/**< according to the specified zoom percentage */
-bool ImagePanel::ImgZoomScale(wxDouble dScale, wxPoint* pPt /*= nullptr*/)
-{
-	if (!m_img.IsOk())
-		return false;
-	if (dScale <= 0.0)
-		return false;
-	if (dScale > 20.0)
-		dScale = 20.0;
-
-	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
-	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// img rect
-	do
-	{
-		wxSize szWnd = GetClientSize();
-		wxSize szImg = m_img.GetSize();
-		rcWnd.m_width = szWnd.GetWidth();
-		rcWnd.m_height = szWnd.GetHeight();
-		rcImg.m_width = szImg.GetWidth();
-		rcImg.m_height = szImg.GetHeight();
-	}
-	while(false);
-
-	// default image pix in wnd center as the fixed point
-	wxPoint2DDouble ptV0, ptI0;
-	wxDouble dTmp = 0.0;
-	if (pPt == nullptr)
-	{
-		ptV0.m_x = rcWnd.m_width/2.0;
-		ptV0.m_y = rcWnd.m_height/2.0;
-	}
-	else
-	{
-		ptV0.m_x = pPt->x;
-		ptV0.m_y = pPt->y;
-	}
-	dTmp = (ptV0.m_x - m_rcDest.m_x)/m_dScale;	// V2I
-	ptI0.m_x = m_rcSrc.m_x + dTmp;
-	dTmp = (ptV0.m_y - m_rcDest.m_y)/m_dScale;
-	ptI0.m_y = m_rcSrc.m_y + dTmp;
-
-	// the image view rect in new scale
-	wxRect2DDouble rcNew;
-	rcNew.m_x = ptV0.m_x - ptI0.m_x*dScale;
-	rcNew.m_y = ptV0.m_y - ptI0.m_y*dScale;
-	rcNew.m_width = rcImg.m_width*dScale;
-	rcNew.m_height = rcImg.m_height*dScale;
-
-	// Dest rect is the intersection of new image view rect & wnd rect
-	wxRect2DDouble::Intersect(rcWnd, rcNew, &m_rcDest);
-
-	// the src rect in new scale
-	m_rcSrc.m_x = ptI0.m_x + (m_rcDest.m_x - ptV0.m_x)/dScale;
-	m_rcSrc.m_y = ptI0.m_y + (m_rcDest.m_y - ptV0.m_y)/dScale;
-	m_rcSrc.m_width = m_rcDest.m_width/dScale;
-	m_rcSrc.m_height = m_rcDest.m_height/dScale;
-	// ensure the src rect is valid
-	if (m_rcSrc.m_x < 0.0)
-		m_rcSrc.m_x = 0.0;
-	if (m_rcSrc.m_y < 0.0)
-		m_rcSrc.m_y = 0.0;
-	if (m_rcSrc.GetRight() > rcImg.m_width)
-		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
-	if (m_rcSrc.GetBottom() > rcImg.m_height)
-		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
-
-	// new zoom scale
-	m_dScale = dScale;
-
-	// update panel
-	Refresh(false);
-
-	return true;
-}
-
-/**< move image */
-bool ImagePanel::ImgMove(wxSize szMove)
-{
-	if (!m_img.IsOk())
-		return false;
-	// the move size must be valid
-	if (szMove.x == 0 || szMove.y == 0)
-		return false;
-
-	wxPoint2DDouble ptMove(szMove.x, szMove.y);
-
-	wxRect2DDouble rcWnd(0.0, 0.0, 0.0, 0.0);		// wnd rect
-	wxRect2DDouble rcImg(0.0, 0.0, 0.0, 0.0);		// img rect
-	do
-	{
-		wxSize szWnd = GetClientSize();
-		wxSize szImg = m_img.GetSize();
-		rcWnd.m_width = szWnd.GetWidth();
-		rcWnd.m_height = szWnd.GetHeight();
-		rcImg.m_width = szImg.GetWidth();
-		rcImg.m_height = szImg.GetHeight();
-	}
-	while(false);
-
-	// current image rect in wnd coordinate
-	wxRect2DDouble rcNew;
-	rcNew.m_x = m_rcDest.m_x - m_rcSrc.m_x*m_dScale;
-	rcNew.m_y = m_rcDest.m_y - m_rcSrc.m_y*m_dScale;
-	rcNew.m_width = rcImg.m_width*m_dScale;
-	rcNew.m_height = rcImg.m_height*m_dScale;
-	// then horizontal move the rect
-	if ((rcNew.m_x + ptMove.m_x) > rcWnd.m_width/2.0)
-		ptMove.m_x = (int)(rcWnd.m_width/2.0 - rcNew.m_x);
-	else if ((rcNew.GetRight() + ptMove.m_x) <= rcWnd.m_width/2.0)
-		ptMove.m_x = (int)(rcWnd.m_width/2.0 - rcNew.GetRight());
-	// and then vertical move the rect
-	if ((rcNew.m_y + ptMove.m_y) > rcWnd.m_height/2.0)
-		ptMove.m_y = (int)(rcWnd.m_height/2.0 - rcNew.m_y);
-	else if ((rcNew.GetBottom() + ptMove.m_y) <= rcWnd.m_height/2.0)
-		ptMove.m_y = (int)(rcWnd.m_height/2.0 - rcNew.GetBottom());
-	rcNew.Offset(ptMove);
-
-	// the dest rect is the intersection of new rect  and wnd rect
-	wxRect2DDouble::Intersect(rcNew, rcWnd, &m_rcDest);
-
-	// calculate the src rect
-	m_rcSrc.m_x = (m_rcDest.m_x - rcNew.m_x)/m_dScale;
-	m_rcSrc.m_y = (m_rcDest.m_y - rcNew.m_y)/m_dScale;
-	m_rcSrc.m_width = m_rcDest.m_width/m_dScale;
-	m_rcSrc.m_height = m_rcDest.m_height/m_dScale;
-	// ensure the src rect is valid
-	if (m_rcSrc.m_x < 0.0)
-		m_rcSrc.m_x = 0.0;
-	if (m_rcSrc.m_y < 0.0)
-		m_rcSrc.m_y = 0.0;
-	if (m_rcSrc.GetRight() > rcImg.m_width)
-		m_rcSrc.m_width = rcImg.m_width - m_rcSrc.m_x;
-	if (m_rcSrc.GetBottom() > rcImg.m_height)
-		m_rcSrc.m_height = rcImg.m_height - m_rcSrc.m_y;
-
-	// update panel
-	Refresh(false);
-
-	return true;
-}
-
 /**< calculate the rect of the mouse sel */
 bool ImagePanel::RegulaSelRect()
 {
@@ -664,6 +665,11 @@ bool ImagePanel::MLUImgMove(wxMouseEvent& event)
 		m_stMP.ptE.y = event.m_y;
 		m_stMP.szMv.x = m_stMP.ptE.x - m_stMP.ptB.x;
 		m_stMP.szMv.y = m_stMP.ptE.y - m_stMP.ptB.y;
+		// Notify Parent: IMG_MOVE
+		wxImgplEvent evt(wxEVT_IMGPL, GetId());
+		evt.SetCMD(IMGPL_CMD::IMG_MOVE);
+		evt.SetParam((void*)&m_stMP.szMv);
+		GetParent()->GetEventHandler()->ProcessEvent(evt);
 		// move the image
 		m_rcDest = m_stMP.rcDO;
 		m_rcSrc = m_stMP.rcSO;
@@ -729,6 +735,11 @@ bool ImagePanel::MLUImgZRect(wxMouseEvent& event)
 		m_stMP.ptE.y = event.m_y;
 		// calculate the sel rect
 		RegulaSelRect();
+		// Notify Parent: IMG_ZRECT
+		wxImgplEvent evt(wxEVT_IMGPL, GetId());
+		evt.SetCMD(IMGPL_CMD::IMG_ZRECT);
+		evt.SetParam((void*)&m_stMP.rcSel);
+		GetParent()->GetEventHandler()->ProcessEvent(evt);
 		// Zoom rect
 		ImgZoomRect(m_stMP.rcSel);
 	}
@@ -765,6 +776,11 @@ bool ImagePanel::MLDSelFaint(wxMouseEvent& event)
 }
 bool ImagePanel::MLUSelFaint(wxMouseEvent& event)
 {
+//	// Notify Parent: SEL_FAINT
+//	wxImgplEvent evt(wxEVT_IMGPL, GetId());
+//	evt.SetCMD(IMGPL_CMD::SEL_FAINT);
+//	evt.SetParam((void*)&m_stMP.rcSel);
+//	GetParent()->GetEventHandler()->ProcessEvent(evt);
 	return true;
 }
 bool ImagePanel::MMVSelFaint(wxMouseEvent& event)
@@ -779,6 +795,11 @@ bool ImagePanel::MLDSelMin(wxMouseEvent& event)
 }
 bool ImagePanel::MLUSelMin(wxMouseEvent& event)
 {
+//	// Notify Parent: SEL_MIN
+//	wxImgplEvent evt(wxEVT_IMGPL, GetId());
+//	evt.SetCMD(IMGPL_CMD::SEL_MIN);
+//	evt.SetParam((void*)&m_stMP.rcSel);
+//	GetParent()->GetEventHandler()->ProcessEvent(evt);
 	return true;
 }
 bool ImagePanel::MMVSelMin(wxMouseEvent& event)
@@ -793,6 +814,11 @@ bool ImagePanel::MLDSelMax(wxMouseEvent& event)
 }
 bool ImagePanel::MLUSelMax(wxMouseEvent& event)
 {
+//	// Notify Parent: SEL_MAX
+//	wxImgplEvent evt(wxEVT_IMGPL, GetId());
+//	evt.SetCMD(IMGPL_CMD::SEL_MAX);
+//	evt.SetParam((void*)&m_stMP.rcSel);
+//	GetParent()->GetEventHandler()->ProcessEvent(evt);
 	return true;
 }
 bool ImagePanel::MMVSelMax(wxMouseEvent& event)

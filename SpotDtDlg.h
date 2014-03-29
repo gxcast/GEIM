@@ -103,6 +103,9 @@ class SpotDtDlg : public wxDialog
         void OnRbxMedianUpdate(wxUpdateUIEvent& event);
         void OnRbxGaussUpdate(wxUpdateUIEvent& event);
         void OnSpMaxUpdate(wxUpdateUIEvent& event);
+        void OnCiImage(wxCommandEvent& event);
+        void OnBtnTestParam(wxCommandEvent& event);
+        void OnBtnProcUpdate(wxUpdateUIEvent& event);
 
 		/**< control id */
         // tools buttons

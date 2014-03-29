@@ -9,8 +9,12 @@ Project address: <https://github.com/gxcast/GEIM.git>
 
 NOTE
 ----
+* 29.03.2014
+    1. add image switch in detect form, "Test Param" and "Batch" valid check
+    2. add `wxImgplEvent` type used to notify image panel's parent to syn image display(move zoom et al)
+
 * 28.03.2014
-    1. add multiple image open, iner image data alloc and ui dynamic layout
+    1. add multiple image open, inner image data alloc and ui dynamic layout
 
 * 27.03.2014
     1. perfect "spot detect form", add some event map

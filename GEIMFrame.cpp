@@ -118,10 +118,11 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 			// create image display panel
 			m_pBoxSizerImg = new wxBoxSizer(wxHORIZONTAL);
 			{
-				ImagePanel* pImgPanel = new ImagePanel(m_pPanelMain);
+				ImagePanel* pImgPanel = new ImagePanel(m_pPanelMain, wxNewId());
 				pImgPanel->SetMinSize(wxSize(250, 200));
 				m_aryPanels.Add(pImgPanel);
 				m_pBoxSizerImg->Add(pImgPanel, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 1);
+				Connect(pImgPanel->GetId(), wxEVT_IMGPL, (wxObjectEventFunction)&GEIMFrame::OnImgplNtfy);
 			}
 			m_pBoxSizerMain->Add(m_pBoxSizerImg, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 0);
 		}
@@ -216,7 +217,7 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	// choose images file
 	wxFileDialog dlgFile(this, _("Choice Images"),
 	                     _T(""), _T(""),
-	                     _T("All File|*.*|Bitmap|*.bmp|JPEG|*.jpg;*.jpeg|PNG|*.png|TIFF|*.tif;*.tiff"),
+	                     _T("All Image File|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|Bitmap|*.bmp|JPEG|*.jpg;*.jpeg|PNG|*.png|TIFF|*.tif;*.tiff"),
 	                     wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_MULTIPLE);
 	if( dlgFile.ShowModal() != wxID_OK )
 		return;
@@ -228,7 +229,7 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	{
 		wxMessageBox(_("Files' number must be 2."),
 		             _("Error"),
-		             wxYES|wxICON_ERROR|wxCENTER,
+		             wxOK|wxICON_ERROR|wxCENTER,
 		             this);
 		return;
 	}
@@ -244,10 +245,11 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	{
 		for (size_t i = nPanels; i < nNum; ++i)
 		{
-			ImagePanel* pImgPanel = new ImagePanel(m_pPanelMain);
+			ImagePanel* pImgPanel = new ImagePanel(m_pPanelMain, wxNewId());
 			pImgPanel->SetMinSize(wxSize(250, 200));
 			m_aryPanels.Add(pImgPanel);
 			m_pBoxSizerImg->Add(pImgPanel, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 1);
+			Connect(pImgPanel->GetId(), wxEVT_IMGPL, (wxObjectEventFunction)&GEIMFrame::OnImgplNtfy);
 		}
 		nPanels = m_aryPanels.Count();
 	}
@@ -374,7 +376,7 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
 	if (iRet != wxID_OK)
 		return;
 
-    // update dispaly iamges
+	// update dispaly iamges
 	for (size_t i = 0; i < nNum; ++i)
 	{
 		wxImage* pImgDisp = static_cast<wxImage*>(m_aryImgsDisp.Item(i));
@@ -503,3 +505,40 @@ void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
 	}
 }
 
+/**< invoke when these iamge panels notify */
+void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
+{
+	int id = event.GetId();
+	IMGPL_CMD cmd = event.GetCMD();
+	void* pParam = event.GetParam();
+
+	size_t nNum = m_aryImgsDisp.Count();
+	for (size_t i = 0; i < nNum; ++i)
+	{
+		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+		// pass over itself
+		if (pPanel->GetId() == id)
+			continue;
+
+		// execu notify
+		switch(cmd)
+		{
+		case IMGPL_CMD::IMG_ZRECT:
+			{
+				wxRect* prcSel = static_cast<wxRect*>(pParam);
+				wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get event param failed."));
+				pPanel->ImgZoomRect(*prcSel);
+			}
+			break;
+		case IMGPL_CMD::IMG_MOVE:
+			{
+				wxSize* pszMv = static_cast<wxSize*>(pParam);
+				wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get event param failed."));
+				pPanel->ImgMove(*pszMv);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
