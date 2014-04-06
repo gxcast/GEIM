@@ -3678,7 +3678,7 @@
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1396104166 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1396104285 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
 	"SpotDtDlg.h"
 	<wx/wx.h>

@@ -106,6 +106,7 @@ bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 	// image choice control
 	wxChoice* pCI = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
 	wxASSERT_MSG(pCI != nullptr, _T("Get image choice control failed."));
+	pCI->Clear();
 
 	// create the new iamge array
 	size_t nNum = pAryImgs->Count();
@@ -137,6 +138,8 @@ bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 			pCI->SetSelection(0);
 
 			// copy the first iamge to display
+			if (m_imgDisp.IsOk())
+				m_imgDisp.Destroy();
 			m_imgDisp = pImg->Copy();
 			m_pImgPanel->SetImg(m_imgDisp);
 		}

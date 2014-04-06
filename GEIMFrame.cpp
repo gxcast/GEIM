@@ -371,7 +371,7 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
 
 	// show detect dialog
 	SpotDtDlg dlg(this, wxNewId());
-	dlg.Init(&m_aryImgsDt);     // set images
+	dlg.Init(&m_aryImgsDt);     // set dt images
 	iRet = dlg.ShowModal();
 	if (iRet != wxID_OK)
 		return;
