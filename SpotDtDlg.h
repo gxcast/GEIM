@@ -87,6 +87,12 @@ class SpotDtDlg : public wxDialog
          *
          */
         bool DyEventMap();
+        /** \brief obtain detect param
+         *
+         * \return bool	true:success false:failed
+         *
+         */
+        bool GetParam();
 
         // image operate buttons
         void OnZoomIN(wxCommandEvent& event);

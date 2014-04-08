@@ -3678,7 +3678,7 @@
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1396104285 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1396147256 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
 	"SpotDtDlg.h"
 	<wx/wx.h>
@@ -7151,18 +7151,21 @@
 	"wx/defs.h"
 	"wx/filesys.h"
 
-1396078227 /home/nicolas/dev/GEIM/SpotDtDlg.h
+1396875699 /home/nicolas/dev/GEIM/SpotDtDlg.h
 	<wx/dialog.h>
 	"GEIMDef.h"
 	"ImagePanel.h"
 
-1395841888 /home/nicolas/dev/GEIM/GEIMDef.h
+1396862105 /home/nicolas/dev/GEIM/GEIMDef.h
 
-1396078226 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+1396879216 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
 	<wx/wx.h>
 	<wx/spinctrl.h>
 	"ImagePanel.h"
+	"Graying.h"
+	"MedianFilter.h"
+	"GaussFilter.h"
 
 1386184753 /usr/include/wx-3.0/wx/spinctrl.h
 	"wx/defs.h"
@@ -7201,4 +7204,29 @@
 1386184752 /usr/include/wx-3.0/wx/compositewin.h
 	"wx/window.h"
 	"wx/containr.h"
+
+1396773913 source:/home/nicolas/dev/GEIM/Graying.cpp
+	"Graying.h"
+
+1396773838 /home/nicolas/dev/GEIM/Graying.h
+	<wx/wx.h>
+
+1396774051 source:/home/nicolas/dev/GEIM/NLM.cpp
+	"NLM.h"
+	<math.h>
+
+1396774002 /home/nicolas/dev/GEIM/NLM.h
+	<wx/wx.h>
+
+1396859815 source:/home/nicolas/dev/GEIM/MedianFilter.cpp
+	"MedianFilter.h"
+
+1396789626 /home/nicolas/dev/GEIM/MedianFilter.h
+	<wx/wx.h>
+
+1396861498 source:/home/nicolas/dev/GEIM/GaussFilter.cpp
+	"GaussFilter.h"
+
+1396861485 /home/nicolas/dev/GEIM/GaussFilter.h
+	<wx/wx.h>
 

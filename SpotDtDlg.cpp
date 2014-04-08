@@ -4,7 +4,9 @@
 #include <wx/spinctrl.h>
 
 #include "ImagePanel.h"
-
+#include "Graying.h"
+#include "MedianFilter.h"
+#include "GaussFilter.h"
 
 // tools buttons
 const long SpotDtDlg::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
@@ -375,6 +377,93 @@ bool SpotDtDlg::DyEventMap()
 	return true;
 }
 
+/**< obtain detect param */
+bool SpotDtDlg::GetParam()
+{
+	// get detect param
+	wxString strValue = wxEmptyString;
+	long lValue =  0l;
+	wxTextCtrl* pEdit = nullptr;
+	wxSpinCtrl* pSp = nullptr;
+	wxSpinCtrlDouble* pSpd = nullptr;
+	wxCheckBox* pCkb = nullptr;
+	wxRadioBox* pRdbx = nullptr;
+
+	// faint x
+	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_FAINT_X));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get Fain X control failed."));
+	if (pEdit != nullptr)
+	{
+		strValue = pEdit->GetValue();
+		strValue.ToLong(&lValue);
+		m_stDtParam.ptFaint.x = (int)lValue;
+	}
+	// faint y
+	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_FAINT_Y));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get Fain Y control failed."));
+	if (pEdit != nullptr)
+	{
+		strValue = pEdit->GetValue();
+		strValue.ToLong(&lValue);
+		m_stDtParam.ptFaint.y = (int)lValue;
+	}
+	// faint shreshold
+	pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_FAINT_T));
+	wxASSERT_MSG(pSpd != nullptr, _T("Get Faint Shreshold control failed."));
+	if (pSpd != nullptr)
+		m_stDtParam.dFaint = pSpd->GetValue();
+	// min spot radius
+	pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MIN));
+	wxASSERT_MSG(pSp != nullptr, _T("Get min spot radius control failed."));
+	if (pSp != nullptr)
+		m_stDtParam.iMinRad = pSp->GetValue();
+	// max spot radius
+	pCkb = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_BKGCORRECT));
+	wxASSERT_MSG(pCkb != nullptr, _T("Get background correct control failed."));
+	if (pCkb != nullptr && pCkb->IsChecked())
+	{
+		pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MIN));
+		wxASSERT_MSG(pSp != nullptr, _T("Get min spot radius control failed."));
+		if (pSp != nullptr)
+			m_stDtParam.iMaxRad = pSp->GetValue();
+	}
+	else
+		m_stDtParam.iMaxRad = -1;
+	// minimum aspect
+	pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_ASPECT));
+	wxASSERT_MSG(pSpd != nullptr, _T("Get aspect spin control failed."));
+	if (pSpd != nullptr)
+		m_stDtParam.dAspect = pSpd->GetValue();
+
+	// median filter
+	pCkb = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_MEDIAN));
+	wxASSERT_MSG(pCkb != nullptr, _T("Get median checkbox control failed."));
+	if (pCkb != nullptr && pCkb->IsChecked())
+	{
+		pRdbx = dynamic_cast<wxRadioBox*>(FindWindow(ID_RBX_MEDIAN));
+		wxASSERT_MSG(pRdbx != nullptr, _T("Get median radiobox control failed."));
+		if (pRdbx != nullptr)
+			m_stDtParam.iMedianFlt = pRdbx->GetSelection();
+	}
+	else
+		m_stDtParam.iMedianFlt = -1;
+
+	// gaussian filter
+	pCkb = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_GAUSS));
+	wxASSERT_MSG(pCkb != nullptr, _T("Get gaussian checkbox control failed."));
+	if (pCkb != nullptr && pCkb->IsChecked())
+	{
+		pRdbx = dynamic_cast<wxRadioBox*>(FindWindow(ID_RBX_GAUSS));
+		wxASSERT_MSG(pRdbx != nullptr, _T("Get gaussian radiobox control failed."));
+		if (pRdbx != nullptr)
+			m_stDtParam.iGaussFlt = pRdbx->GetSelection();
+	}
+	else
+		m_stDtParam.iGaussFlt = -1;
+
+	return true;
+}
+
 /**< zoom in image */
 void SpotDtDlg::OnZoomIN(wxCommandEvent& event)
 {
@@ -507,7 +596,71 @@ void SpotDtDlg::OnCiImage(wxCommandEvent& event)
 /**< Test Param */
 void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 {
+	// get param from ui
+	GetParam();
 
+	// get current image and cache image
+	wxImage* pImgCur = nullptr;
+	{
+		size_t nNum = m_pAryImgs->Count();
+		wxChoice* pCi = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
+		wxASSERT_MSG(pCi != nullptr, _T("Get Image Switch control failed."));
+		if (pCi == nullptr)
+			return;
+		int iSel = pCi->GetSelection();
+		if (iSel < 0 || iSel >= (long)nNum)
+		{
+			wxASSERT_MSG(false, _T("Get current image selection error."));
+			return;
+		}
+
+		pImgCur = static_cast<wxImage*>(m_pAryImgs->Item(iSel));
+		if (pImgCur == nullptr)
+			return;
+	}
+	bool bRet = true;		// imgA if is the resualt
+	wxImage imgA = pImgCur->Copy();
+	Graying::Do(imgA);
+	wxImage imgB = imgA.Copy();
+
+	// median filter
+	if (m_stDtParam.iMedianFlt >= 0)
+	{
+		//MedianFilter::Do(bRet?imgA:imgB, bRet?imgB:imgA, m_stDtParam.iMedianFlt);
+		if (bRet)
+			MedianFilter::Do(imgA, imgB, m_stDtParam.iMedianFlt);
+		else
+			MedianFilter::Do(imgB, imgA, m_stDtParam.iMedianFlt);
+		bRet = !bRet;
+	}
+	// Gaussian filter
+	if (m_stDtParam.iGaussFlt >= 0)
+	{
+		//GaussFilter::Do(bRet?imgA:imgB, bRet?imgB:imgA, m_stDtParam.iGaussFlt);
+		if (bRet)
+			GaussFilter::Do(imgA, imgB, m_stDtParam.iGaussFlt);
+		else
+			GaussFilter::Do(imgB, imgA, m_stDtParam.iGaussFlt);
+		bRet = !bRet;
+	}
+
+	// copy the resualt to the disp image
+	if (bRet)
+	{
+		int iSz = m_imgDisp.GetHeight() * m_imgDisp.GetWidth() * 3;
+		unsigned char* pDes = m_imgDisp.GetData();
+		unsigned char* pA = imgA.GetData();
+		memcpy(pDes, pA, iSz);
+	}
+	else
+	{
+		int iSz = m_imgDisp.GetHeight() * m_imgDisp.GetWidth() * 3;
+		unsigned char* pDes = m_imgDisp.GetData();
+		unsigned char* pB = imgB.GetData();
+		memcpy(pDes, pB, iSz);
+	}
+	// update ui
+	m_pImgPanel->Refresh();
 }
 /**< update "Test Param" and "Batch" button's state*/
 void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
