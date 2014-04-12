@@ -10,19 +10,19 @@
 #define GAUSSFILTER_H
 
 #include <wx/wx.h>
+#include "EffectPar.h"
 
 class GaussFilter
 {
 public:
 	/** \brief perform the gaussfilter
 	 *
-	 * \param imgSrc wxImage&	[IN] source image
-	 * \param imgDes wxImage&	[OUT] result
-	 * \param iType int					[IN] template size
+	 * \param EffectPar&		[INOUT] process data
+	 * \param iType int			[IN] template size
 	 * \return bool		true:success false:failed
 	 *
 	 */
-	static bool Do(wxImage& imgSrc, wxImage& imgDes, int iType);
+	static bool Do(EffectPar& parEft, int iType);
 
 protected:
 	// template and it's value sum

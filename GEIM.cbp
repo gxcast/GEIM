@@ -42,6 +42,8 @@
 		</Linker>
 		<Unit filename="AboutDlg.cpp" />
 		<Unit filename="AboutDlg.h" />
+		<Unit filename="EffectPar.cpp" />
+		<Unit filename="EffectPar.h" />
 		<Unit filename="GEIMApp.cpp" />
 		<Unit filename="GEIMApp.h" />
 		<Unit filename="GEIMDef.h" />
@@ -55,8 +57,12 @@
 		<Unit filename="ImagePanel.h" />
 		<Unit filename="MedianFilter.cpp" />
 		<Unit filename="MedianFilter.h" />
+		<Unit filename="Morphology.cpp" />
+		<Unit filename="Morphology.h" />
 		<Unit filename="NLM.cpp" />
 		<Unit filename="NLM.h" />
+		<Unit filename="SpotDt.cpp" />
+		<Unit filename="SpotDt.h" />
 		<Unit filename="SpotDtDlg.cpp" />
 		<Unit filename="SpotDtDlg.h" />
 		<Extensions>

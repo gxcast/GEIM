@@ -11,22 +11,22 @@
 #define MEDIANFILTER_H
 
 #include <wx/wx.h>
+#include "EffectPar.h"
 
 class MedianFilter
 {
-	public:
-        /** \brief perform filter
-         *
-         * \param img wxImage&	[IN] image
-         * \param img wxImage&	[OUT] image
-         * \param iType int			[IN] template type 0:3X3 1:5X5 2:7X7
-         * \return bool		true:success false:failed
-         *
-         */
-		static bool Do(wxImage& imgSrc, wxImage& imgDes,  int iType);
+public:
+	/** \brief perform filter
+	 *
+	 * \param EffectPar&		[INOUT] process data
+	 * \param iType int			[IN] template type 0:3X3 1:5X5 2:7X7
+	 * \return bool		true:success false:failed
+	 *
+	 */
+	static bool Do(EffectPar& parEft,  int iType);
 
-	protected:
-	private:
+protected:
+private:
 };
 
 #endif // MEDIANFILTER_H

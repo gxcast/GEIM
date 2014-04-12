@@ -2,11 +2,13 @@
 
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
+#include <math.h>
 
 #include "ImagePanel.h"
 #include "Graying.h"
 #include "MedianFilter.h"
 #include "GaussFilter.h"
+#include "EffectPar.h"
 
 // tools buttons
 const long SpotDtDlg::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
@@ -364,6 +366,7 @@ bool SpotDtDlg::DyEventMap()
 	Connect(ID_BMPBTN_DT_MIN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
 	Connect(ID_BMPBTN_DT_MAX, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnDtMax);
 	Connect(ID_BMPBTN_DT_MAX, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnsUpdate);
+	Connect(m_pImgPanel->GetId(), wxEVT_IMGPL, (wxObjectEventFunction)&SpotDtDlg::OnImgplNtfy);
 
 	// other controls
 	Connect(ID_RBX_MEDIAN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnRbxMedianUpdate);
@@ -377,7 +380,7 @@ bool SpotDtDlg::DyEventMap()
 	return true;
 }
 
-/**< obtain detect param */
+/**< obtain detect param from ui control*/
 bool SpotDtDlg::GetParam()
 {
 	// get detect param
@@ -464,6 +467,71 @@ bool SpotDtDlg::GetParam()
 	return true;
 }
 
+/**< obtain the faint spot in special circle */
+bool SpotDtDlg::GetFaintSpot(const wxRect& rc)
+{
+	if (!m_imgDisp.IsOk() || rc.width <= 0)
+		return false;
+
+	unsigned char* pSrc = m_imgDisp.GetData();
+	int iW = m_imgDisp.GetWidth();
+	int iH = m_imgDisp.GetHeight();
+	// the circle
+	int iBx = rc.x - rc.width, iEx = rc.x + rc.width;
+	int iBy = rc.y - rc.width, iEy = rc.y + rc.width;
+	if (iBx < 0)
+		iBx = 0;
+	if (iEx >= iW)
+		iEx = iW -1;
+	if (iBy < 0)
+		iBy = 0;
+	if (iEy <= iH)
+		iEy = iH -1;
+	// traverse the circle's pixel, find the min-intensity spot
+	wxPoint ptMin = {0, 0};
+	unsigned char pixMin = 255;
+	unsigned char* pLine = pSrc + iBy*iW*3;
+	for (int y = iBy; y <= iEy; ++y)
+	{
+		unsigned char* pPix = pLine + iBx*3;
+		for (int x = iBx; x <= iEx; ++x)
+		{
+			// if in the circle
+			if((y-rc.y)*(y - rc.y) + (x-rc.x)*(x-rc.x) <= rc.width*rc.width)
+			{
+				if (pPix[0] < pixMin)
+				{
+					pixMin = pPix[0];
+					ptMin.y = y;
+					ptMin.x = x;
+				}
+			}
+
+			pPix += 3;
+		}
+		pLine += iW*3;
+	}
+
+	// the faint spot, dispaly the coord
+	wxString str = wxEmptyString;
+	wxTextCtrl* pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_FAINT_X));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get the faint spot x control failed."));
+	if (pEdit != nullptr)
+	{
+		str.Printf(_T("%d"), ptMin.x);
+		pEdit->SetValue(str);
+	}
+	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_FAINT_Y));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get the faint spot x control failed."));
+	if (pEdit != nullptr)
+	{
+		str.Printf(_T("%d"), ptMin.y);
+		pEdit->SetValue(str);
+	}
+
+	return true;
+}
+
 /**< zoom in image */
 void SpotDtDlg::OnZoomIN(wxCommandEvent& event)
 {
@@ -545,7 +613,60 @@ void SpotDtDlg::OnBtnsUpdate(wxUpdateUIEvent& event)
 	else if (id == ID_BMPBTN_DT_MIN)
 		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_MIN, event);
 	else if (id == ID_BMPBTN_DT_MAX)
-		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_MAX, event);
+	{
+		wxCheckBox* pCbx = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_BKGCORRECT));
+		wxASSERT_MSG(pCbx != nullptr, _T("Get Background checkbox control failed."));
+		if (pCbx != nullptr && pCbx->IsChecked())
+			m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_MAX, event);
+		else
+			event.Enable(false);
+	}
+}
+
+/**< invoke when these iamge panels notify */
+void SpotDtDlg::OnImgplNtfy(wxImgplEvent& event)
+{
+	IMGPL_CMD cmd = event.GetCMD();
+	void* pParam = event.GetParam();
+
+	// execu notify
+	switch(cmd)
+	{
+	case IMGPL_CMD::IMG_ZRECT:
+		break;
+	case IMGPL_CMD::IMG_MOVE:
+		break;
+	case IMGPL_CMD::SEL_FAINT:
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_FAINT event param failed."));
+		if (prcSel != nullptr)
+			GetFaintSpot(*prcSel);
+	}
+	break;
+	case IMGPL_CMD::SEL_MIN:
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_MIN event param failed."));
+		wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MIN));
+		wxASSERT_MSG(pSp != nullptr, _T("Get min spot radius control failed."));
+		if (pSp != nullptr)
+			pSp->SetValue(prcSel->width);
+	}
+	break;
+	case IMGPL_CMD::SEL_MAX:
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_MAX event param failed."));
+		wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MAX));
+		wxASSERT_MSG(pSp != nullptr, _T("Get max spot radius control failed."));
+		if (pSp != nullptr)
+			pSp->SetValue(prcSel->width);
+	}
+	break;
+	default:
+		break;
+	}
 }
 
 /**< median template size can be modify only when it is checked  */
@@ -600,7 +721,8 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	GetParam();
 
 	// get current image and cache image
-	wxImage* pImgCur = nullptr;
+	EffectPar parEft;
+	unsigned char* pIn = nullptr;
 	{
 		size_t nNum = m_pAryImgs->Count();
 		wxChoice* pCi = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
@@ -614,51 +736,33 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 			return;
 		}
 
+		wxImage* pImgCur = nullptr;
 		pImgCur = static_cast<wxImage*>(m_pAryImgs->Item(iSel));
 		if (pImgCur == nullptr)
 			return;
+		// init effect data
+		parEft.SetImage(pImgCur);
+		// copy out the input image
+		pIn = parEft.GetCache();
+		memcpy(pIn, pImgCur->GetData(), (size_t)parEft.PixNum()*3);
+		parEft.Input(pIn, true);
 	}
-	bool bRet = true;		// imgA if is the resualt
-	wxImage imgA = pImgCur->Copy();
-	Graying::Do(imgA);
-	wxImage imgB = imgA.Copy();
+
+	// Step 1: Graying
+	Graying::Gray(parEft);
 
 	// median filter
 	if (m_stDtParam.iMedianFlt >= 0)
-	{
-		//MedianFilter::Do(bRet?imgA:imgB, bRet?imgB:imgA, m_stDtParam.iMedianFlt);
-		if (bRet)
-			MedianFilter::Do(imgA, imgB, m_stDtParam.iMedianFlt);
-		else
-			MedianFilter::Do(imgB, imgA, m_stDtParam.iMedianFlt);
-		bRet = !bRet;
-	}
+		MedianFilter::Do(parEft, m_stDtParam.iMedianFlt);
 	// Gaussian filter
 	if (m_stDtParam.iGaussFlt >= 0)
-	{
-		//GaussFilter::Do(bRet?imgA:imgB, bRet?imgB:imgA, m_stDtParam.iGaussFlt);
-		if (bRet)
-			GaussFilter::Do(imgA, imgB, m_stDtParam.iGaussFlt);
-		else
-			GaussFilter::Do(imgB, imgA, m_stDtParam.iGaussFlt);
-		bRet = !bRet;
-	}
+		GaussFilter::Do(parEft, m_stDtParam.iGaussFlt);
 
 	// copy the resualt to the disp image
-	if (bRet)
-	{
-		int iSz = m_imgDisp.GetHeight() * m_imgDisp.GetWidth() * 3;
-		unsigned char* pDes = m_imgDisp.GetData();
-		unsigned char* pA = imgA.GetData();
-		memcpy(pDes, pA, iSz);
-	}
-	else
-	{
-		int iSz = m_imgDisp.GetHeight() * m_imgDisp.GetWidth() * 3;
-		unsigned char* pDes = m_imgDisp.GetData();
-		unsigned char* pB = imgB.GetData();
-		memcpy(pDes, pB, iSz);
-	}
+	unsigned char* pDes = m_imgDisp.GetData();
+	unsigned char* pOut = parEft.Output();
+	memcpy(pDes, pOut, (size_t)parEft.PixNum()*3);
+	parEft.Recycle(pIn);
 	// update ui
 	m_pImgPanel->Refresh();
 }
@@ -673,3 +777,4 @@ void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
 		event.Enable(nNum > 0);
 	}
 }
+

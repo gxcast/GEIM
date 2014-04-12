@@ -224,6 +224,27 @@ public:
 	 */
 	bool UpdateUI(IMGPL_CMD cmd, wxUpdateUIEvent& event);
 
+	/** \brief view coord to image coord
+	 *
+	 * \param wxPoint& pt	[INOUT]
+	 * \param wxSize& sz		[INOUT]
+	 * \return wxRect& rc		[INOUT]
+	 *
+	 */
+	bool V2I(wxPoint& pt);
+	bool V2I(wxSize& sz);
+	bool V2I(wxRect& rc);
+	/** \brief image coord to view coord
+	 *
+	 * \param wxPoint& pt	[INOUT]
+	 * \param wxSize& sz		[INOUT]
+	 * \return wxRect& rc		[INOUT]
+	 *
+	 */
+	bool I2V(wxPoint& pt);
+	bool I2V(wxSize& sz);
+	bool I2V(wxRect& rc);
+
 protected:
 
 private:
@@ -233,6 +254,19 @@ private:
 	 *
 	 */
 	bool RegulaSelRect();
+	/** \brief calculate the sel max radus
+	 *
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool CalcuMaxRadius();
+	/** \brief calculate the sel radus
+	 *
+	 * \param bool		[IN] true:the result convert to image coord false: retain in view coord
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool CalcuSelRadius(bool bI = false);
 
 	/** \brief Image Move Mouse event
 	 *

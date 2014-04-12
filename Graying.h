@@ -10,6 +10,7 @@
 #define GRAYING_H
 
 #include <wx/wx.h>
+#include "EffectPar.h"
 
 class Graying
 {
@@ -17,11 +18,25 @@ public:
 
     /** \brief Abandon image's color
      *
-     * \param img wxImage& [INOUT] image be muaniputed
+     * \param EffectPar&		[INOUT] process data
      * \return bool true:success false:failed
      *
      */
-	static bool Do(wxImage& img);
+	static bool Gray(EffectPar& parEft);
+    /** \brief invert gray
+     *
+     * \param EffectPar&		[INOUT] process data
+     * \return bool true:success false:failed
+     *
+     */
+	static bool Invert(EffectPar& parEft);
+    /** \brief image1 - image2
+     *
+     * \param EffectPar&		[INOUT] process data
+     * \return bool true:success false:failed
+     *
+     */
+	static bool Subtract(EffectPar& parEft);
 
 protected:
 

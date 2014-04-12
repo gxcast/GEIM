@@ -526,14 +526,14 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 		case IMGPL_CMD::IMG_ZRECT:
 			{
 				wxRect* prcSel = static_cast<wxRect*>(pParam);
-				wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get event param failed."));
+				wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get IMG_ZRECT event param failed."));
 				pPanel->ImgZoomRect(*prcSel);
 			}
 			break;
 		case IMGPL_CMD::IMG_MOVE:
 			{
 				wxSize* pszMv = static_cast<wxSize*>(pParam);
-				wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get event param failed."));
+				wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get IMG_MOVE event param failed."));
 				pPanel->ImgMove(*pszMv);
 			}
 			break;

@@ -2,14 +2,15 @@
 
 /////////////////////////////////////////////////////////
 /**< perform filter */
-bool MedianFilter::Do(wxImage& imgSrc, wxImage& imgDes,  int iType)
+bool MedianFilter::Do(EffectPar& parEft,  int iType)
 {
-	// two image must be valid and has the same size
-	if (!imgSrc.IsOk() || !imgDes.IsOk() || imgSrc.GetSize() != imgDes.GetSize())
+	unsigned char* pSrc = parEft.Input();
+	// image valide
+	if (pSrc == nullptr)
 		return false;
 
-	int iW = imgSrc.GetWidth();
-	int iH = imgSrc.GetHeight();
+	int iW = parEft.Width();
+	int iH = parEft.Height();
 
 	// Create Template
 	int iWidth = 0;	// template width
@@ -72,8 +73,8 @@ bool MedianFilter::Do(wxImage& imgSrc, wxImage& imgDes,  int iType)
 	}
 
 	// filter
-	unsigned char* pSrc = imgSrc.GetData();
-	unsigned char* pDes = imgDes.GetData();
+	unsigned char* pDes = parEft.GetCache();
+	memcpy(pDes, pSrc, (size_t)parEft.PixNum()*3);	// image border wont be processed
 	int iPadding = iWidth/2;
 
 	unsigned char* pLine = pDes + iPadding*iW*3;
@@ -129,6 +130,18 @@ bool MedianFilter::Do(wxImage& imgSrc, wxImage& imgDes,  int iType)
 		// next line
 		pLine += iW*3;
 	}
+
+	// the result
+	if (parEft.Modify())
+	{
+		// copy result to src
+		memcpy(pSrc, pDes, (size_t)parEft.PixNum()*3);
+		parEft.Output(pSrc);
+		// recycle cache
+		parEft.Recycle(pDes);
+	}
+	else
+		parEft.Output(pDes);
 
 	// release mem
 	if (pTmpl != nullptr)

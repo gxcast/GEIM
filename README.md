@@ -7,8 +7,13 @@ This is my graduation subject, match the gel pots in eclectrophoresis, so it may
 
 Project address: <https://github.com/gxcast/GEIM.git>
 
-NOTE
+UPDATE NOTE
 ----
+* 12.04.2014
+    1. add median filter, gaussian filter, morpgological algorithm
+    2. uniform image processing interface
+    3. in detectspot dialog, finish select faint, min, max spot function
+
 * 29.03.2014
     1. add image switch in detect form, "Test Param" and "Batch" valid check
     2. add `wxImgplEvent` type used to notify image panel's parent to syn image display(move zoom et al)

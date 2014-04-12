@@ -3673,12 +3673,12 @@
 	<wx/statusbr.h>
 	"ImagePanel.h"
 
-1396103344 /home/nicolas/dev/GEIM/ImagePanel.h
+1397194284 /home/nicolas/dev/GEIM/ImagePanel.h
 	<wx/panel.h>
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1396147256 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1397136980 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	"AboutDlg.h"
 	"SpotDtDlg.h"
 	<wx/wx.h>
@@ -3687,7 +3687,8 @@
 	<wx/dialog.h>
 	<wx/html/htmlwin.h>
 
-1396103324 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
+1397194335 source:/home/nicolas/dev/GEIM/ImagePanel.cpp
+	<math.h>
 	"ImagePanel.h"
 
 1386313812 source:/home/nicolas/dev/GEIM/resource.rc
@@ -7151,21 +7152,23 @@
 	"wx/defs.h"
 	"wx/filesys.h"
 
-1396875699 /home/nicolas/dev/GEIM/SpotDtDlg.h
+1397201623 /home/nicolas/dev/GEIM/SpotDtDlg.h
 	<wx/dialog.h>
 	"GEIMDef.h"
 	"ImagePanel.h"
 
 1396862105 /home/nicolas/dev/GEIM/GEIMDef.h
 
-1396879216 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+1397292652 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
 	<wx/wx.h>
 	<wx/spinctrl.h>
+	<math.h>
 	"ImagePanel.h"
 	"Graying.h"
 	"MedianFilter.h"
 	"GaussFilter.h"
+	"EffectPar.h"
 
 1386184753 /usr/include/wx-3.0/wx/spinctrl.h
 	"wx/defs.h"
@@ -7205,11 +7208,12 @@
 	"wx/window.h"
 	"wx/containr.h"
 
-1396773913 source:/home/nicolas/dev/GEIM/Graying.cpp
+1397050820 source:/home/nicolas/dev/GEIM/Graying.cpp
 	"Graying.h"
 
-1396773838 /home/nicolas/dev/GEIM/Graying.h
+1397048347 /home/nicolas/dev/GEIM/Graying.h
 	<wx/wx.h>
+	"EffectPar.h"
 
 1396774051 source:/home/nicolas/dev/GEIM/NLM.cpp
 	"NLM.h"
@@ -7218,15 +7222,36 @@
 1396774002 /home/nicolas/dev/GEIM/NLM.h
 	<wx/wx.h>
 
-1396859815 source:/home/nicolas/dev/GEIM/MedianFilter.cpp
+1396965808 source:/home/nicolas/dev/GEIM/MedianFilter.cpp
 	"MedianFilter.h"
 
-1396789626 /home/nicolas/dev/GEIM/MedianFilter.h
+1396964616 /home/nicolas/dev/GEIM/MedianFilter.h
 	<wx/wx.h>
+	"EffectPar.h"
 
-1396861498 source:/home/nicolas/dev/GEIM/GaussFilter.cpp
+1396965790 source:/home/nicolas/dev/GEIM/GaussFilter.cpp
 	"GaussFilter.h"
 
-1396861485 /home/nicolas/dev/GEIM/GaussFilter.h
+1396964403 /home/nicolas/dev/GEIM/GaussFilter.h
 	<wx/wx.h>
+	"EffectPar.h"
+
+1397048305 source:/home/nicolas/dev/GEIM/EffectPar.cpp
+	"EffectPar.h"
+
+1397048292 /home/nicolas/dev/GEIM/EffectPar.h
+	<wx/wx.h>
+	<deque>
+
+1397052761 source:/home/nicolas/dev/GEIM/Morphology.cpp
+	"Morphology.h"
+	"Graying.h"
+
+1397047467 /home/nicolas/dev/GEIM/Morphology.h
+	"EffectPar.h"
+
+1397114502 source:/home/nicolas/dev/GEIM/SpotDt.cpp
+	"SpotDt.h"
+
+1397114606 /home/nicolas/dev/GEIM/SpotDt.h
 

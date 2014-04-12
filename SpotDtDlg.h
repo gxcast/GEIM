@@ -87,12 +87,19 @@ class SpotDtDlg : public wxDialog
          *
          */
         bool DyEventMap();
-        /** \brief obtain detect param
+        /** \brief obtain detect param from ui control
          *
          * \return bool	true:success false:failed
          *
          */
         bool GetParam();
+        /** \brief obtain the faint spot in special circle
+         *
+         * \param rc wxRect&	[IN] -x:circle center -y:circle center -width:radius
+         * \return bool	true:success false:failed
+         *
+         */
+        bool GetFaintSpot(const wxRect& rc);
 
         // image operate buttons
         void OnZoomIN(wxCommandEvent& event);
@@ -105,6 +112,7 @@ class SpotDtDlg : public wxDialog
         void OnDtMin(wxCommandEvent& event);
         void OnDtMax(wxCommandEvent& event);
         void OnBtnsUpdate(wxUpdateUIEvent& event);
+        void OnImgplNtfy(wxImgplEvent& event);
         // other controls
         void OnRbxMedianUpdate(wxUpdateUIEvent& event);
         void OnRbxGaussUpdate(wxUpdateUIEvent& event);
