@@ -21,14 +21,21 @@ AboutDlg::AboutDlg(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSiz
     //(*Initialize(AboutDlg)
     //*)
     Create(parent, id, _("About GEIM..."), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE, _T("About GEIM"));
-    SetClientSize(wxDLG_UNIT(parent, wxSize(200,138)));
+    wxBoxSizer* pSizer = new wxBoxSizer(wxVERTICAL);
+    {
+		m_pHtmWnd = new wxHtmlWindow( this,
+		ID_HTMWND,
+		wxDefaultPosition, wxSize(480,310),
+		wxHW_SCROLLBAR_NEVER|wxHW_NO_SELECTION,
+		_T("HtmWnd") );
+		m_pHtmWnd->LoadPage( _T("file:skin/about.htm") );
+		pSizer->Add(m_pHtmWnd, 1, wxALL|wxALIGN_CENTER, 0);
+	}
+	SetSizer(pSizer);
+	pSizer->Fit(this);
+	pSizer->SetSizeHints(this);
     Center();
-    m_pHtmWnd = new wxHtmlWindow( this,
-            ID_HTMWND,
-            wxDefaultPosition, wxDefaultSize,
-            wxHW_SCROLLBAR_NEVER|wxHW_NO_SELECTION,
-            _T("HtmWnd") );
-    m_pHtmWnd->LoadPage( _T("file:skin/about.htm") );
+
     Connect(ID_HTMWND, wxEVT_HTML_CELL_CLICKED, (wxObjectEventFunction)&AboutDlg::OnHtmlCellClicked);
 }
 
