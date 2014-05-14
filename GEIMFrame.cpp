@@ -483,26 +483,28 @@ void GEIMFrame::OnImgMove(wxCommandEvent& event)
 /**< update tool btns' state */
 void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
 {
+	long id = event.GetId();
 	size_t nNum = m_aryImgs.Count();
-	if (nNum > 0)
+	if (nNum <= 0)
 	{
-		ImagePanel* pImgPanel = static_cast<ImagePanel*>(m_aryPanels.Item(0));
-		wxASSERT_MSG(pImgPanel != nullptr, _T("Frame update ui, the first image is invalide."));
-
-		long id = event.GetId();
-		if (id == ID_BMPBTN_IMG_ZOOMIN)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZIN, event);
-		else if (id == ID_BMPBTN_IMG_ZOOMOUT)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZOUT, event);
-		else if (id == ID_BMPBTN_IMG_ZOOMRECT)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZRECT, event);
-		else if (id == ID_BMPBTN_IMG_ZOOMFIT)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZFIT, event);
-		else if (id == ID_BMPBTN_IMG_ZOOMACTUAL)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZACTUAL, event);
-		else if (id == ID_BMPBTN_IMG_MOVE)
-			pImgPanel->UpdateUI(IMGPL_CMD::IMG_MOVE, event);
+		event.Enable(false);
+		return;
 	}
+	ImagePanel* pImgPanel = static_cast<ImagePanel*>(m_aryPanels.Item(0));
+	wxASSERT_MSG(pImgPanel != nullptr, _T("Frame update ui, the first image is invalide."));
+
+	if (id == ID_BMPBTN_IMG_ZOOMIN)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZIN, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMOUT)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZOUT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMRECT)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZRECT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMFIT)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZFIT, event);
+	else if (id == ID_BMPBTN_IMG_ZOOMACTUAL)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZACTUAL, event);
+	else if (id == ID_BMPBTN_IMG_MOVE)
+		pImgPanel->UpdateUI(IMGPL_CMD::IMG_MOVE, event);
 }
 
 /**< invoke when these iamge panels notify */

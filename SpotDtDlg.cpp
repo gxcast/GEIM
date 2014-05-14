@@ -2,13 +2,12 @@
 
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
+#include <wx/busyinfo.h>
 #include <math.h>
 
 #include "ImagePanel.h"
-#include "Graying.h"
-#include "MedianFilter.h"
-#include "GaussFilter.h"
 #include "EffectPar.h"
+#include "SpotDt.h"
 
 // tools buttons
 const long SpotDtDlg::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
@@ -717,10 +716,11 @@ void SpotDtDlg::OnCiImage(wxCommandEvent& event)
 /**< Test Param */
 void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 {
+	wxBusyInfo wait(_("Please wait, working..."), this);
 	// get param from ui
 	GetParam();
 
-	// get current image and cache image
+	// get current image and cache
 	EffectPar parEft;
 	unsigned char* pIn = nullptr;
 	{
@@ -738,8 +738,10 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 
 		wxImage* pImgCur = nullptr;
 		pImgCur = static_cast<wxImage*>(m_pAryImgs->Item(iSel));
+		wxASSERT_MSG(pImgCur != nullptr, _T("Get current select image error."));
 		if (pImgCur == nullptr)
 			return;
+
 		// init effect data
 		parEft.SetImage(pImgCur);
 		// copy out the input image
@@ -748,15 +750,9 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 		parEft.Input(pIn, true);
 	}
 
-	// Step 1: Graying
-	Graying::Gray(parEft);
-
-	// median filter
-	if (m_stDtParam.iMedianFlt >= 0)
-		MedianFilter::Do(parEft, m_stDtParam.iMedianFlt);
-	// Gaussian filter
-	if (m_stDtParam.iGaussFlt >= 0)
-		GaussFilter::Do(parEft, m_stDtParam.iGaussFlt);
+	// detect
+	SpotDt dt;
+	dt.DtMain(&m_stDtParam, &parEft);
 
 	// copy the resualt to the disp image
 	unsigned char* pDes = m_imgDisp.GetData();

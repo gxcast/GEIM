@@ -37,6 +37,14 @@ public:
      *
      */
 	static bool Subtract(EffectPar& parEft);
+    /** \brief image1 + iChange
+     *
+     * \param parEft EffectPar&		[INOUT] process data
+     * \param iCg int							[IN] alter degree
+     * \return bool true:success false:failed
+     *
+     */
+	static bool Subtract(EffectPar& parEft, int iCg);
 
 protected:
 

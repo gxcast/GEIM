@@ -45,7 +45,7 @@ class Morphology
          * \param iType int					[IN] template radius
          * \return bool	true:success false:failed
          * \see bool _Dilate(EffectPar& parEft, int iType)
-		*
+		   *
          */
 		static bool Dilate(EffectPar& parEft, int iType);
         /** \brief erode operation, invoke _Erode to perform
@@ -53,7 +53,7 @@ class Morphology
          * \param parEft EffectPar&	[INOUT] process data
          * \param iType int					[IN] template radius
          * \return bool	true:success false:failed
-		 * \see bool _Erode(EffectPar& parEft, int iType)
+		   * \see bool _Erode(EffectPar& parEft, int iType)
          */
 		static bool Erode(EffectPar& parEft, int iType);
 

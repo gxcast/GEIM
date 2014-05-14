@@ -11,6 +11,14 @@
 #ifndef GEIMDEF_H_INCLUDED
 #define GEIMDEF_H_INCLUDED
 
+/**< 3x3 neighborhood pixels */
+typedef struct _ST_NEIBOR3
+{
+    int va[9] = { 0 };	//	pix value
+    int dx[9] = { 0 };	//	pix index base 0 in full image
+    int num = 0;			//	pix in the 3x3 neighborhood rect
+} ST_NEIBOR3, *PST_NEIBOR3;
+
 /**< spot detect param */
 typedef struct _ST_DTPARAM_
 {
