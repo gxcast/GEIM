@@ -90,7 +90,7 @@ bool SpotDt::MinDistWS(unsigned char* pImg,
 	int iBWType = 8;	// connected-domain type: 8 or 4
 
 	unsigned int* pRegin = nullptr;
-	float* pDist = nullptr;
+	int* pDist = nullptr;
 
 	if (pImg == nullptr || pLabel == nullptr || pShed == nullptr)
 	{
@@ -112,8 +112,15 @@ bool SpotDt::MinDistWS(unsigned char* pImg,
 	}
 
 	// inner-label distance
-	pDist = (float*)pRegin;
+	pDist = (int*)pRegin;
 	if (!Bwdist(pLabel, pDist))
+	{
+		bRet = false;
+		goto _MinDistWS_end;
+	}
+
+	// distance water shed
+	if (!Bwshed(pDist, pShed))
 	{
 		bRet = false;
 		goto _MinDistWS_end;
@@ -470,7 +477,7 @@ bool SpotDt::BwlabeNeibor(unsigned char* pMinLab, int iMode, int dx, unsigned in
 	return true;
 }
 
-bool SpotDt::Bwdist(unsigned char* pMinLab, float* pDist)
+bool SpotDt::Bwdist(unsigned char* pMinLab, int* pDist)
 {
 	if (pMinLab == nullptr || pDist == nullptr)
 	{
@@ -484,7 +491,58 @@ bool SpotDt::Bwdist(unsigned char* pMinLab, float* pDist)
 
 	// initial the dist
 	for (int i = 0; i < iN; ++i)
-		pDist[i] = 4.2950e+009;
+		pDist[i] = wxINT32_MAX;
 
-	//
+	// assign distance
+	unsigned char* pS = pMinLab;
+	int* pT = pDist;
+	int* pLab = new int[iW] (-1);
+	for (int y = 0; y < iH; ++y)
+	{
+		// scan min-value in this line
+		int iCount = 0;
+		for (int x = 0; x < iW; ++x)
+		{
+			if (pS[0] == 1)
+				pLab[iCount++] = x;
+			pS += 3;
+		}
+		if (iCount == 0)
+			continue;
+
+		// calculate distance
+		int iDx = 0;
+		int iDistMin = 0;
+		for (int x = 0; x < iW; ++x)
+		{
+			iDistMin = abs(x - pLab[iDx]);
+			for (int i = iDx + 1; i < iCount; ++i)
+			{
+				int iDistCur = abs(x - pLab[i]);
+				if (iDistMin <= iDistCur)
+					break;
+				iDistMin = iDistCur;
+				iDx = i;
+			}
+			if (pT[0] > iDistMin)
+				pT[0] = iDistMin;
+			++pT;
+		}
+	}
+
+	if (pLab != nullptr)
+		delete [] pLab;
+
+	return true;
+}
+
+bool SpotDt::Bwshed(int* pDist, unsigned char* pShed)
+{
+	if (pDist == nullptr || pShed == nullptr)
+	{
+		wxASSERT_MSG(false, _T("SpotDt::Bwshed parameter is nullptr."));
+		return false;
+	}
+
+
 }

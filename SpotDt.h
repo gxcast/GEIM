@@ -75,7 +75,9 @@ class SpotDt
 		bool BwlabeNeibor(unsigned char* pMinLab, int iMode, int dx, unsigned int nID,
 					unsigned int* pRegion);
 
-		bool Bwdist(unsigned char* pMinLab, float* pDist);
+		bool Bwdist(unsigned char* pMinLab, int* pDist);
+
+		bool Bwshed(int* pDist, unsigned char* pShed);
 
 		/**< detection param */
 		PST_DTPARAM m_pDtParam;
