@@ -65,6 +65,8 @@
 		<Unit filename="SpotDt.h" />
 		<Unit filename="SpotDtDlg.cpp" />
 		<Unit filename="SpotDtDlg.h" />
+		<Unit filename="WaterShed.cpp" />
+		<Unit filename="WaterShed.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

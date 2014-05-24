@@ -51,7 +51,7 @@ bool SpotDt::DtMain(PST_DTPARAM pDtParam, EffectPar* pParEft)
 	if (m_pDtParam->iGaussFlt >= 0)
 		GaussFilter::Do(*m_pParEft, m_pDtParam->iGaussFlt);
 
-	// --------------------background remove--------------------\
+	// --------------------background remove--------------------
 	// none
 
 	// --------------------Water Shed--------------------
@@ -103,7 +103,9 @@ bool SpotDt::MinDistWS(unsigned char* pImg,
 		return false;
 
 	// inner label number, i.e., connected-domain number, ensure the inner-label is valid
-	pRegin = new unsigned int[m_pParEft->PixNum()] (0);
+	int iN = m_pParEft->PixNum();
+	pRegin = new unsigned int[iN];
+	memset(pRegin, 0, sizeof(unsigned int)*iN);
 	unsigned int nBWNum = 0;
 	if (!Bwlabel(pLabel, iBWType, pRegin, &nBWNum) || nBWNum == 0)
 	{
@@ -185,7 +187,7 @@ bool SpotDt::ReConstruct(unsigned char* pImg,
 	ST_NEIBOR3 stNeibor3;
 
 	// forward
-	for (y = 0; y < iH; ++y)
+	for (int y = 0; y < iH; ++y)
 	{
 		for (int x = 0; x < iW; ++x)
 		{
@@ -345,6 +347,8 @@ bool SpotDt::LocalMax(unsigned char* pImg,
 	bool bFound = false;
 	ST_NEIBOR3 stNeibor3;
 	// iterater
+	int iW = m_pParEft->Width();
+	int iH = m_pParEft->Height();
 	for (int y = 0; y < iH; ++y)
 	{
 		for (int x = 0; x < iW; ++x)
@@ -377,7 +381,7 @@ bool SpotDt::LocalMax(unsigned char* pImg,
 					int iS = stkIter.top();
 					stkIter.pop();
 					int tx = iS%iW;
-					int tY = iS/iW;
+					int ty = iS/iW;
 					if (!GetNeibor3(pImg, tx, ty, &stNeibor3))
 						return false;
 					for(int i = 1; i < stNeibor3.num; ++i)
@@ -402,7 +406,7 @@ bool SpotDt::Bwlabel(unsigned char* pMinLab, int iMode,
 {
 	if (pMinLab == nullptr || pRegion == nullptr)
 	{
-		wxASEERT_MSG(false, _T("SpotDt::Bwlabel parameter is nullptr"));
+		wxASSERT_MSG(false, _T("SpotDt::Bwlabel parameter is nullptr"));
 		return false;
 	}
 	if (iMode != 4 && iMode != 8)
@@ -447,7 +451,7 @@ bool SpotDt::BwlabeNeibor(unsigned char* pMinLab, int iMode, int dx, unsigned in
 	// iterater
 	while (!stkIter.empty())
 	{
-		int iS = stkIter.top(), iT = 0;
+		int iS = stkIter.top();
 		stkIter.pop();
 		int xm = iS%iW;
 		int ym = iS/iW;
@@ -496,7 +500,9 @@ bool SpotDt::Bwdist(unsigned char* pMinLab, int* pDist)
 	// assign distance
 	unsigned char* pS = pMinLab;
 	int* pT = pDist;
-	int* pLab = new int[iW] (-1);
+	int* pLab = new int[iW];
+	for (int i = 0; i < iW; ++i)
+		pLab[i] = -1;
 	for (int y = 0; y < iH; ++y)
 	{
 		// scan min-value in this line
@@ -544,5 +550,5 @@ bool SpotDt::Bwshed(int* pDist, unsigned char* pShed)
 		return false;
 	}
 
-
+	return true;
 }

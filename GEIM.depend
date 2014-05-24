@@ -7157,9 +7157,9 @@
 	"GEIMDef.h"
 	"ImagePanel.h"
 
-1399899184 /home/nicolas/dev/GEIM/GEIMDef.h
+1400936061 /home/nicolas/dev/GEIM/GEIMDef.h
 
-1399798450 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+1400943217 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
 	<wx/wx.h>
 	<wx/spinctrl.h>
@@ -7167,7 +7167,8 @@
 	<math.h>
 	"ImagePanel.h"
 	"EffectPar.h"
-	"SpotDt.h"
+	"Graying.h"
+	"WaterShed.h"
 
 1397843862 /usr/include/wx-3.0/wx/spinctrl.h
 	"wx/defs.h"
@@ -7207,7 +7208,7 @@
 	"wx/window.h"
 	"wx/containr.h"
 
-1397050820 source:/home/nicolas/dev/GEIM/Graying.cpp
+1400933990 source:/home/nicolas/dev/GEIM/Graying.cpp
 	"Graying.h"
 
 1399884209 /home/nicolas/dev/GEIM/Graying.h
@@ -7249,11 +7250,14 @@
 1399798935 /home/nicolas/dev/GEIM/Morphology.h
 	"EffectPar.h"
 
-1399796954 source:/home/nicolas/dev/GEIM/SpotDt.cpp
+1400934698 source:/home/nicolas/dev/GEIM/SpotDt.cpp
 	"SpotDt.h"
 	"Graying.h"
 	"MedianFilter.h"
 	"GaussFilter.h"
+	"Morphology.h"
+	<deque>
+	<stack>
 
 1400074289 /home/nicolas/dev/GEIM/SpotDt.h
 	<wx/wx.h>
@@ -7267,4 +7271,17 @@
 1397843862 /usr/include/wx-3.0/wx/generic/busyinfo.h
 	"wx/defs.h"
 	"wx/object.h"
+
+1400941698 /home/nicolas/dev/GEIM/WaterShed.h
+	<wx/wx.h>
+	"GEIMDef.h"
+	"EffectPar.h"
+
+1400941488 source:/home/nicolas/dev/GEIM/WaterShed.cpp
+	"WaterShed.h"
+	<math.h>
+	<queue>
+	<stack>
+	<vector>
+	<algorithm>
 

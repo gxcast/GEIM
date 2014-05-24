@@ -7,7 +7,9 @@
 
 #include "ImagePanel.h"
 #include "EffectPar.h"
-#include "SpotDt.h"
+#include "Graying.h"
+//#include "SpotDt.h"
+#include "WaterShed.h"
 
 // tools buttons
 const long SpotDtDlg::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
@@ -749,19 +751,81 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 		memcpy(pIn, pImgCur->GetData(), (size_t)parEft.PixNum()*3);
 		parEft.Input(pIn, true);
 	}
+	int iW = parEft.Width();						// image width
+	int iWb = iW*3;										// bytes per line
+	int iH = parEft.Height();						// image height
+	int iSpotN = 0;										// the result spot num
+	SpotNode *listNode = nullptr;		// the result spot list heat
+	unsigned char* pDes = nullptr;	// dest iamge
+	unsigned char* pOut = nullptr;	// the result image
 
 	// detect
-	SpotDt dt;
-	dt.DtMain(&m_stDtParam, &parEft);
+	//SpotDt dt;
+	//dt.DtMain(&m_stDtParam, &parEft);
+
+	// Graying switch
+	Graying::Gray(parEft);
+
+	// clp detect
+	WaterShed* pws = new WaterShed(&parEft);
+	// set parameter
+	if (!pws->setDefaultPar(&m_stDtParam))
+		goto OnBtnTestParam_end;
+	// do
+    if (!pws->WSTmain())
+		goto OnBtnTestParam_end;
+	// get result
+    if (pws->ws_spotList == nullptr)
+	{
+		wxMessageBox(_("Detect failed!"), _("Information"), wxNO_DEFAULT|wxOK|wxICON_INFORMATION);
+		goto OnBtnTestParam_end;
+	}
+	listNode = pws->ws_spotList->first;
+	while (listNode != NULL)
+	{
+		// 绘制蛋白点+
+		int x = listNode->centerX;
+		int y = listNode->centerY;
+		unsigned char* pPix = pIn + (y*iW + x)*3;
+		// -
+		for (int i = -3; i <= 3; ++i)
+		{
+			if (x+i < 0 || x+i >= iW)
+				continue;
+			unsigned char* pT = pPix + i*3;
+			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+		}
+		// |
+		for (int i = -3; i <= 3; ++i)
+		{
+			if (y+i < 0 || y+i >= iH)
+				continue;
+			unsigned char* pT = pPix + i*iWb;
+			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+		}
+
+		// 下一个蛋白点
+		listNode = listNode->next;
+		iSpotN++;
+	}
 
 	// copy the resualt to the disp image
-	unsigned char* pDes = m_imgDisp.GetData();
-	unsigned char* pOut = parEft.Output();
+	pDes = m_imgDisp.GetData();
+	pOut = parEft.Output();
 	memcpy(pDes, pOut, (size_t)parEft.PixNum()*3);
+
+OnBtnTestParam_end:
+	if (pws != nullptr)
+	{
+		pws->FreeMain();
+		delete pws;
+		pws = nullptr;
+	}
 	parEft.Recycle(pIn);
 	// update ui
 	m_pImgPanel->Refresh();
 }
+
 /**< update "Test Param" and "Batch" button's state*/
 void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
 {
