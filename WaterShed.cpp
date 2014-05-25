@@ -5,6 +5,7 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
+using namespace std;
 
 #define max(a, b)  (((a) > (b)) ? (a) : (b))
 #define min(a, b)  (((a) < (b)) ? (a) : (b))
@@ -17,7 +18,7 @@
 #define MWSIZE_MAX 10000
 //---------------------------------------------------------------------------
 
-using namespace std;
+
 /********************************************************************
     函数：WaterShed  -  构造函数
     参数：EffectPar* pParEft：输入图像32bpp；
@@ -71,8 +72,6 @@ WaterShed::WaterShed(EffectPar* pParEft)
 	/********蛋白点链表信息**************/
 	ws_spotList = nullptr; //蛋白点链表
 	spot_ID = 0;        //蛋白点编号
-
-	/**********************/
 }
 /********************************************************************
     函数：~WaterShed  - 析构函数
@@ -109,8 +108,8 @@ bool WaterShed::WSTmain()
 	unsigned char *Ptr = m_pImgIn;
 	for (int n = 0; n < nPixels; n++)
 	{
-			pre_pixdat[n]  =  (unsigned char)Ptr[0]; 	//并将像素值保存在pixdat中
-			Ptr += 3;
+		pre_pixdat[n] = Ptr[0]; 	//并将像素值保存在pixdat中
+		Ptr += 3;
 	}
 
 	/********************** 1 对输入图像滤波处理*****************************/
@@ -138,13 +137,11 @@ bool WaterShed::WSTmain()
 	memset(adjustedBG_pixdat, 0, sizeof(short)*nPixels);
 	memcpy(adjustedBG_pixdat, filted_pixdat, nPixels * sizeof(short)); //默认数据为滤波后的图像
 
-
 	// 背景消减
 	if (!AdjustBackgroud(filted_pixdat, adjustedBG_pixdat, isBackgroud, maxSpotRadius))
 		return false;
 
 	/************************* 3 计算形态学梯度*****************************/
-
 	if (grad_pixdat)
 	{
 		delete[] grad_pixdat ;
@@ -158,7 +155,6 @@ bool WaterShed::WSTmain()
 		return false;
 
 	/******* 4 第一次分水岭  内标记（扩展极小值）、外标记**********************/
-
 	//内标图 二值图像
 	if (internal_label)
 	{
@@ -184,12 +180,10 @@ bool WaterShed::WSTmain()
 	exPix_ws = new short [nPixels];
 	memset(exPix_ws, 0, sizeof(short)*nPixels);
 
-
-	//极小值扩展（内标）、内标标注、内标记距离变换图像、基于距离图像控制标记分水岭（外标记）
+	// 极小值扩展（内标）、分水岭（外标记）、涨水标注
 	if (!ExtendMinAndDistanceWatershed(adjustedBG_pixdat, internal_label, external_label,
 	                                   exPix_ws, h , labelModeType) )
 		return false;
-
 
 	/********************* 5 极小值强加修改梯度图像*****************************/
 	short *regradPix;     //watershedlabel   gradPix_ws
@@ -200,7 +194,21 @@ bool WaterShed::WSTmain()
 	//极小值强加
 	if (!Imimposemin(grad_pixdat, internal_label, external_label, regradPix))
 		return false;
-
+	// 显示图像short 像素
+	unsigned char* pDest = m_pParEft->Input();
+	for (int i = 0; i < nPixels; ++i)
+	{
+		short t = regradPix[i];
+		if (t > 255)
+			t = 255;
+		else if (t < 0)
+			t = 0;
+		pDest[0] = (unsigned char)t;
+		pDest[1] = (unsigned char)t;
+		pDest[2] = (unsigned char)t;
+		pDest += 3;
+	}
+	return true;
 
 	/*********** 6 第二次分水岭  对修改后的梯度图像进行分水岭******************/
 	short *gradPix_ws;     //watershedlabel   gradPix_ws
@@ -215,11 +223,9 @@ bool WaterShed::WSTmain()
 	watershed_label = new bool [nPixels];
 	memset(watershed_label, 0, sizeof(bool)*nPixels);
 
-
 	//meyer分水岭
 	if (!watershed(regradPix, gradPix_ws))
 		return false;
-
 
 	for (int k = 0; k < nPixels; k++)
 	{
@@ -340,7 +346,7 @@ bool WaterShed::ImageFilter(short *fin, short *fout, bool isMedianFilter,
                             int medianModeType, bool isGaussFilter, int gaussModeType)
 {
 	//图像滤波执行函数
-	if (!fin || !fout || gaussModeType < 1)
+	if (fin == nullptr || fout == nullptr || (isMedianFilter && medianModeType < 0) || (isGaussFilter && gaussModeType < 0))
 		return false;
 	/********************** 1 先开运算图像 HF ******************************/
 	short *temp_erodepixdat;  //临时数据
@@ -425,14 +431,13 @@ bool WaterShed::ImageFilter(short *fin, short *fout, bool isMedianFilter,
 		temp_pixdat = nullptr;
 	}
 
-
 	return true;
 }
 
 
 bool WaterShed::AdjustBackgroud(short *fin, short *fout, bool isBackgroud, int ModeType)
 {
-	if (!fin || !fout || ModeType < 0)
+	if (fin == nullptr || fout == nullptr || (isBackgroud && ModeType < 0))
 		return false;
 
 	if (isBackgroud)
@@ -560,9 +565,7 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 	if (fin1 == nullptr || h < 0 || (labelMode != 4 && labelMode != 8)) //如果没有输入图像，则返回false
 		return false;
 
-
 	/********************** step1 内标记 极小值扩展**************************/
-
 	// 极小值扩展求内标记，去除一些不符合要求的极小值区域
 	short *ilpix;  // 内标记输入的灰度图像
 	ilpix = nullptr;
@@ -579,24 +582,20 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 		return false;
 
 	/***************** step2 对内标记二值图像进行标注**************************/
-
 	int *labelpix;
 	labelpix = new int [nPixels]; //输出的内标记的标注图像
 	memset(labelpix, 0, sizeof(int)*nPixels);
 
 	int label_num = 0; //连通域数
-
 	//对内标记图像的连通阈进行标注labelpix，并返回连通域数
 	label_num = Bwlabel(imlabel , labelpix, labelMode);
 	if (label_num == 0)
 		return false;
 
 	/***** step3 外标记（计算内部标记（二值）图像的距离变换的分水岭变换）****/
-
 	//3.1 计算内标记间的距离图
 	float *fbwdist = new float[nPixels];
 	memset(fbwdist, 0.0, sizeof(float)*nPixels);
-
 	//求内标记间的距离  fbwdist
 	if (!Bwdist(imlabel, fbwdist))
 		return false;
@@ -615,7 +614,6 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 	if (!watershed(fbwdist, exLabel_ws))
 		return false;  //meyer分水岭
 
-
 	//外标记数组emlabel，分水岭边界图 1
 	bool *emlabel;
 	emlabel = new bool [nPixels];
@@ -623,8 +621,8 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 
 	for (int k = 0; k < nPixels; k++)
 	{
-		if (exLabel_ws[k] == 0)
-			emlabel[k] = 1; //分水岭边界置1
+		if (exLabel_ws[k] < 1)
+			emlabel[k] = true; 		//分水岭边界置1
 	}
 
 	if (fout1)  //如果需要输出内标记
@@ -1942,7 +1940,7 @@ bool WaterShed::Imdilate(short *fin, short *fout, int setype)
 bool WaterShed::Imadd(short *fin, int h, short *fout)
 {
 	//图像像素值加上常h
-	if (!fin || !fout)
+	if (fin == nullptr || fout == nullptr)
 		return false;
 	for (int y = 0; y < pixHeight; y++)
 	{
@@ -1965,7 +1963,7 @@ bool WaterShed::Imadd(short *fin, int h, short *fout)
 bool WaterShed::Imsubtract(short *fin, int h, short *fout)
 {
 	//图像像素值减去常h
-	if (!fin || !fout)
+	if (fin == nullptr || fout == nullptr)
 		return false;
 
 	for (int y = 0; y < pixHeight; y++)
@@ -2061,7 +2059,7 @@ bool WaterShed::Immin(short *fin1 , short *fin2, short *fout)
 bool WaterShed::Imcomplement(short *fin , short *fout)
 {
 	//图像求补
-	if (!fin || !fout)
+	if (fin == nullptr || fout == nullptr)
 		return false;
 	for (int y = 0; y < pixHeight; y++)
 	{
@@ -2082,7 +2080,7 @@ bool WaterShed::Imcomplement(short *fin , short *fout)
 bool WaterShed::Imextendedmin (short *fin, int h, bool *bw)
 {
 	//扩散极小值
-	if (!fin || !bw)
+	if (fin == nullptr || bw == nullptr)
 		return false;
 
 	short *I, *J;
@@ -2101,19 +2099,18 @@ bool WaterShed::Imextendedmin (short *fin, int h, bool *bw)
 	//重构
 	if (!Imreconstruct(J, I))
 		return false;
-
 	//区域极大值
 	if (!Imregionalmax(J, bw))
 		return false;
 
-	if (I)
+	if (I != nullptr)
 	{
-		delete[] I;
+		delete [] I;
 		I = nullptr;
 	}
-	if (J)
+	if (J != nullptr)
 	{
-		delete[] J;
+		delete [] J;
 		J = nullptr;
 	}
 
@@ -2123,7 +2120,7 @@ bool WaterShed::Imextendedmin (short *fin, int h, bool *bw)
 bool WaterShed::Imreconstruct (short *marker,  short *mask)
 {
 	//重构
-	if (!marker || !mask)
+	if (marker == nullptr || mask == nullptr)
 		return false;
 	// PixnWrite(J,"J.txt");
 	int maxp;
@@ -2821,7 +2818,7 @@ bool WaterShed::Labelset(bool *image_in, int *image_out, int xx , int yy
 template<typename _T>
 bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 {
-	if (!fin || !fmask || !fout)
+	if (fin == nullptr || fmask == nullptr || fout == nullptr)
 		return false;
 
 	node mnode;
@@ -2909,7 +2906,7 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 		}
 	}
 
-	if (S)
+	if (S != nullptr)
 		delete[] S;
 
 	return true;
@@ -2924,7 +2921,7 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 template<typename _T>
 bool WaterShed::watershed(_T *fin, short *fout)
 {
-	if (!fin || !fout)
+	if (fin == nullptr || fout == nullptr)
 		return false;
 
 	short *ImcomplementInpix;
@@ -2981,21 +2978,19 @@ bool WaterShed::watershed(_T *fin, short *fout)
 ********************************************************************/
 bool WaterShed::Imimposemin(short *inPix, bool *inLabel, bool *exLabel, short *outPix)
 {
-	if (!inPix || !inLabel || !exLabel || !outPix)
+	if (inPix == nullptr || inLabel == nullptr || exLabel == nullptr || outPix ==nullptr)
 		return false;
 
-	short *fm;
+	short *fm;	// 内标+外标 黑色
 	fm = new short[nPixels];
 	memset(fm, 0, sizeof(short)*nPixels);
-
 	for (int i = 0; i < nPixels; i++)
 	{
-		if (inLabel[i] == 1 || exLabel[i] == 1)
+		if (inLabel[i] || exLabel[i])
 			fm[i] = 0;
 		else
 			fm[i] = 255;
 	}
-
 
 	short *fp1 ;
 	fp1 = new short[nPixels];
@@ -3004,7 +2999,6 @@ bool WaterShed::Imimposemin(short *inPix, bool *inLabel, bool *exLabel, short *o
 	short *g ;
 	g = new short[nPixels];
 	memcpy(g, fm, sizeof(short)*nPixels);
-
 
 	if (!Imadd(inPix , 1, fp1))
 		return false;
@@ -3038,7 +3032,6 @@ bool WaterShed::Imimposemin(short *inPix, bool *inLabel, bool *exLabel, short *o
 	if (fp1)
 		delete[] fp1;
 
-
 	return true;
 }
 
@@ -3052,7 +3045,7 @@ bool WaterShed::Imimposemin(short *inPix, bool *inLabel, bool *exLabel, short *o
 ********************************************************************/
 bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *ws_Img)
 {
-	if (!inImg || !exImg || !wsImg)
+	if (inImg == nullptr || exImg == nullptr || wsImg == nullptr)
 		return false;
 
 

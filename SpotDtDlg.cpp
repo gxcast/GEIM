@@ -248,6 +248,7 @@ bool SpotDtDlg::CreateControl()
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pCB = new wxCheckBox(this, ID_CB_MEDIAN, _("Median Filter"));
+				pCB->SetValue(true);
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				wxArrayString strs;
@@ -259,6 +260,7 @@ bool SpotDtDlg::CreateControl()
 				pStep->Add(pTmpl, 0, wxLEFT|wxBOTTOM|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pCB = new wxCheckBox(this, ID_CB_GAUSS, _("Gauss Filter"));
+				pCB->SetValue(true);
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pTmpl = new wxRadioBox(this, ID_RBX_GAUSS, _("Size"), wxDefaultPosition, wxDefaultSize,
@@ -291,12 +293,13 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Faint Thre:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_FAINT_T, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                             0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 20.05, 0.05);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 3
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
-					pCtrl = new wxSpinCtrl(this, ID_SP_MIN);
+					pCtrl = new wxSpinCtrl(this, ID_SP_MIN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
+					                       1, 9999, 4);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 4
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Max Rad:"));
@@ -307,7 +310,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Aspect:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_ASPECT, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                             0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 0.34, 0.01);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 6
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Spot Num:"));
@@ -772,12 +775,13 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	if (!pws->setDefaultPar(&m_stDtParam))
 		goto OnBtnTestParam_end;
 	// do
-    if (!pws->WSTmain())
+	if (!pws->WSTmain())
 		goto OnBtnTestParam_end;
 	// get result
-    if (pws->ws_spotList == nullptr)
+	/*
+	if (pws->ws_spotList == nullptr)
 	{
-		wxMessageBox(_("Detect failed!"), _("Information"), wxNO_DEFAULT|wxOK|wxICON_INFORMATION);
+		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 		goto OnBtnTestParam_end;
 	}
 	listNode = pws->ws_spotList->first;
@@ -808,10 +812,11 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 		listNode = listNode->next;
 		iSpotN++;
 	}
+	*/
 
 	// copy the resualt to the disp image
 	pDes = m_imgDisp.GetData();
-	pOut = parEft.Output();
+	pOut = pIn;
 	memcpy(pDes, pOut, (size_t)parEft.PixNum()*3);
 
 OnBtnTestParam_end:
@@ -837,4 +842,3 @@ void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
 		event.Enable(nNum > 0);
 	}
 }
-
