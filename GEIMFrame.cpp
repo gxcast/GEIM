@@ -54,9 +54,9 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	pMenu->Append(pMenuItem);
 	m_pMenuBarMain->Append(pMenu, _("&File"));
 	pMenu = new wxMenu();
-	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT, _("&Detect"), _("Detect Spots"), wxITEM_NORMAL);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT, _("&Detect\tCtrl-D"), _("Detect Spots"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
-	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT, _("&Match"), _("Match Spots"), wxITEM_NORMAL);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT, _("&Match\tCtrl-M"), _("Match Spots"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
 	m_pMenuBarMain->Append(pMenu, _("&Proc"));
 	pMenu = new wxMenu();

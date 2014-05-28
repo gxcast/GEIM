@@ -7,7 +7,9 @@
 
 #include "ImagePanel.h"
 #include "EffectPar.h"
-#include "SpotDt.h"
+#include "Graying.h"
+//#include "SpotDt.h"
+#include "WaterShed.h"
 
 // tools buttons
 const long SpotDtDlg::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
@@ -246,6 +248,7 @@ bool SpotDtDlg::CreateControl()
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pCB = new wxCheckBox(this, ID_CB_MEDIAN, _("Median Filter"));
+				pCB->SetValue(true);
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				wxArrayString strs;
@@ -257,6 +260,7 @@ bool SpotDtDlg::CreateControl()
 				pStep->Add(pTmpl, 0, wxLEFT|wxBOTTOM|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pCB = new wxCheckBox(this, ID_CB_GAUSS, _("Gauss Filter"));
+				pCB->SetValue(true);
 				pStep->Add(pCB, 0, wxLEFT|wxTOP|wxALIGN_LEFT|wxALIGN_TOP, 2);
 
 				pTmpl = new wxRadioBox(this, ID_RBX_GAUSS, _("Size"), wxDefaultPosition, wxDefaultSize,
@@ -289,12 +293,13 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Faint Thre:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_FAINT_T, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                             0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 0.00, 0.05);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 3
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
-					pCtrl = new wxSpinCtrl(this, ID_SP_MIN);
+					pCtrl = new wxSpinCtrl(this, ID_SP_MIN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
+					                       1, 9999, 4);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 4
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Max Rad:"));
@@ -305,7 +310,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Aspect:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_ASPECT, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                             0.0, 100.0, 0.0, 0.5);
+					                             0.0, 100.0, 0.34, 0.01);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 6
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Spot Num:"));
@@ -721,6 +726,10 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	GetParam();
 
 	// get current image and cache
+	int iW = 0;		// image width
+	int iWb = 0;	// bytes per line
+	int iH = 0;		// image height
+	int iN = 0;		// image pisel number
 	EffectPar parEft;
 	unsigned char* pIn = nullptr;
 	{
@@ -744,24 +753,119 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 
 		// init effect data
 		parEft.SetImage(pImgCur);
+		iW = parEft.Width();		// image width
+		iWb = iW*3;					// bytes per line
+		iH = parEft.Height();		// image height
+		iN = parEft.PixNum();		// image pisel number
 		// copy out the input image
 		pIn = parEft.GetCache();
-		memcpy(pIn, pImgCur->GetData(), (size_t)parEft.PixNum()*3);
+		memcpy(pIn, pImgCur->GetData(), iN*3);
 		parEft.Input(pIn, true);
 	}
+	int iSpotN = 0;					// the result spot num
+	SpotNode *listNode = nullptr;	// the result spot list heat
+	unsigned char* pDes = nullptr;	// dest iamge
+	unsigned char* pOut = nullptr;	// the result image
+	bool* pWS = nullptr;			// the spot edge
+	wxSpinCtrlDouble* pSpd = nullptr;	// the faint Shreshold Control
+	wxTextCtrl* pEdit = nullptr;		// the Spot Number Control
 
 	// detect
-	SpotDt dt;
-	dt.DtMain(&m_stDtParam, &parEft);
+	//SpotDt dt;
+	//dt.DtMain(&m_stDtParam, &parEft);
+
+	// Graying switch
+	Graying::Gray(parEft);
+
+	// clp detect
+	WaterShed* pws = new WaterShed(&parEft);
+	// set parameter
+	if (!pws->setDefaultPar(&m_stDtParam))
+		goto OnBtnTestParam_end;
+	// do
+	if (!pws->WSTmain())
+		goto OnBtnTestParam_end;
+
+	// get result
+	if (pws->ws_spotList == nullptr)
+	{
+		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+		goto OnBtnTestParam_end;
+	}
+	// draw the spot center
+	listNode = pws->ws_spotList->first;
+	while (listNode != NULL)
+	{
+		// 绘制蛋白点+
+		int x = listNode->centerX;
+		int y = listNode->centerY;
+		unsigned char* pPix = pIn + (y*iW + x)*3;
+		// -
+		for (int i = -3; i <= 3; ++i)
+		{
+			if (x+i < 0 || x+i >= iW)
+				continue;
+			unsigned char* pT = pPix + i*3;
+			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+		}
+		// |
+		for (int i = -3; i <= 3; ++i)
+		{
+			if (y+i < 0 || y+i >= iH)
+				continue;
+			unsigned char* pT = pPix + i*iWb;
+			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+		}
+
+		// 下一个蛋白点
+		listNode = listNode->next;
+		iSpotN++;
+	}
+	// draw the spot edge
+	pDes = pIn;
+	pWS = pws->watershed_label;
+	for (int i = 0; i < iN; ++i)
+	{
+		if(*pWS)
+		{
+			pDes[0] = 0u;
+			pDes[1] = 255u;
+			pDes[2] = 0u;
+		}
+		pDes += 3;
+		pWS += 1;
+	}
+	// alter the detect parameter
+    pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_FAINT_T));
+	wxASSERT_MSG(pSpd != nullptr, _T("Get Faint Shreshold control failed."));
+	if (pSpd != nullptr)
+		pSpd->SetValue(pws->faintThreshold);
+	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_SPOTNUM));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get Spot Number control failed."));
+	if (pEdit != nullptr)
+	{
+		wxString str;
+		str.Printf(_T("%d"), iSpotN);
+		pEdit->SetValue(str);
+	}
 
 	// copy the resualt to the disp image
-	unsigned char* pDes = m_imgDisp.GetData();
-	unsigned char* pOut = parEft.Output();
-	memcpy(pDes, pOut, (size_t)parEft.PixNum()*3);
+	pDes = m_imgDisp.GetData();
+	pOut = pIn;
+	memcpy(pDes, pOut, iN*3);
+
+OnBtnTestParam_end:
+	if (pws != nullptr)
+	{
+		pws->FreeMain();
+		delete pws;
+		pws = nullptr;
+	}
 	parEft.Recycle(pIn);
 	// update ui
 	m_pImgPanel->Refresh();
 }
+
 /**< update "Test Param" and "Batch" button's state*/
 void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
 {
@@ -773,4 +877,3 @@ void SpotDtDlg::OnBtnProcUpdate(wxUpdateUIEvent& event)
 		event.Enable(nNum > 0);
 	}
 }
-

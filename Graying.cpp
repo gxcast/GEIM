@@ -134,9 +134,11 @@ bool Graying::Subtract(EffectPar& parEft)
 }
 
 /**< image1 + iChange */
-static bool SpotDt::Subtract(EffectPar& parEft, int iCg)
+bool Graying::Subtract(EffectPar& parEft, int iCg)
 {
 	unsigned char* pImgSrc1 = parEft.Input();
+	// image pixel num
+	int iN = parEft.PixNum();
 	// image valide
 	if (pImgSrc1 == nullptr)
 		return false;
@@ -164,4 +166,5 @@ static bool SpotDt::Subtract(EffectPar& parEft, int iCg)
 	}
 
 	parEft.Output(pDes);
+	return true;
 }
