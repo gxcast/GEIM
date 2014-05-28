@@ -5,7 +5,6 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
-using namespace std;
 
 #define max(a, b)  (((a) > (b)) ? (a) : (b))
 #define min(a, b)  (((a) < (b)) ? (a) : (b))
@@ -194,21 +193,6 @@ bool WaterShed::WSTmain()
 	//极小值强加
 	if (!Imimposemin(grad_pixdat, internal_label, external_label, regradPix))
 		return false;
-	// 显示图像short 像素
-	unsigned char* pDest = m_pParEft->Input();
-	for (int i = 0; i < nPixels; ++i)
-	{
-		short t = regradPix[i];
-		if (t > 255)
-			t = 255;
-		else if (t < 0)
-			t = 0;
-		pDest[0] = (unsigned char)t;
-		pDest[1] = (unsigned char)t;
-		pDest[2] = (unsigned char)t;
-		pDest += 3;
-	}
-	return true;
 
 	/*********** 6 第二次分水岭  对修改后的梯度图像进行分水岭******************/
 	short *gradPix_ws;     //watershedlabel   gradPix_ws
@@ -229,18 +213,14 @@ bool WaterShed::WSTmain()
 
 	for (int k = 0; k < nPixels; k++)
 	{
-		//分水岭边界置1
-		if (gradPix_ws[k] == 0)
-			watershed_label[k] = 1;
+		// 分水岭边界置1
+		if (gradPix_ws[k] < 1)
+			watershed_label[k] = true;
 	}
 
 	/**************************后处理 *****************************/
-	bool isPostprocess = true;
-	if (isPostprocess)
-	{
-		if (!CalculateLabel(internal_label , external_label , watershed_label, gradPix_ws ) )
-			return false;
-	}
+	if (!CalculateLabel(internal_label, external_label, watershed_label, gradPix_ws) )
+		return false;
 
 	/************************释放分配的指针空间*****************************/
 	if (gradPix_ws)
@@ -289,6 +269,10 @@ bool WaterShed::setDefaultPar(PST_DTPARAM pDtParam)
 
 	//   faintThreshold=faintTh; //最弱点内外阈值
 	spotRxRyRatio = pDtParam->dAspect; //蛋白点的长宽比
+	if (spotRxRyRatio < 0)
+		spotRxRyRatio = -spotRxRyRatio;
+	if (spotRxRyRatio < 1 && spotRxRyRatio > 0)
+		spotRxRyRatio = 1/spotRxRyRatio;
 
 	minSpotRadius = pDtParam->iMinRad;
 
@@ -298,7 +282,7 @@ bool WaterShed::setDefaultPar(PST_DTPARAM pDtParam)
 
 bool WaterShed::FreeMain()
 {
-	//释放蛋白点链表空间
+	// 释放蛋白点链表空间
 	if (!DestroyList(ws_spotList))
 		return false ;
 	//释放图像指针空间
@@ -601,8 +585,9 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 		return false;
 
 	//优化距离图像，8领域的距离相等
+	short* pbwdist = (short*)fbwdist;
 	for (int i = 0; i < nPixels; i++)
-		fbwdist[i] = (int)(fbwdist[i] + 0.5);
+		pbwdist[i] = (short)(fbwdist[i] + 0.5);
 
 	//3.2对内标记的距离变换图进行分水岭变换
 	//分水岭 求外标记
@@ -611,7 +596,7 @@ bool WaterShed::ExtendMinAndDistanceWatershed(short *fin1, bool *fout1, bool *fo
 	exLabel_ws = new short [nPixels];
 	memset(exLabel_ws, 0, sizeof(short)*nPixels);
 
-	if (!watershed(fbwdist, exLabel_ws))
+	if (!watershed(pbwdist, exLabel_ws))
 		return false;  //meyer分水岭
 
 	//外标记数组emlabel，分水岭边界图 1
@@ -2135,7 +2120,7 @@ bool WaterShed::Imreconstruct (short *marker,  short *mask)
 		}
 	}
 
-	queue<int> Fifo;  //队列
+	std::queue<int> Fifo;  //队列
 
 	int edge = 0;
 
@@ -2328,7 +2313,7 @@ bool WaterShed::Imregionalmax (short *fin , bool *BW)
 	int val;
 	int Ypp, Xpp;
 
-	stack<int> mstack;
+	std::stack<int> mstack;
 
 	for (p = 0; p < nPixels; p++)
 		BW[p] = 1;
@@ -2726,7 +2711,7 @@ bool WaterShed::Labelset(bool *image_in, int *image_out, int xx , int yy
 	*(image_out + yy * pixWidth + xx) = label; //符合条件，则在输出标记图像中标记当前点
 	int xs, ys; //当前点的坐标
 
-	stack<int> labelStack; //空堆栈  存储为标记点的标号
+	std::stack<int> labelStack; //空堆栈  存储为标记点的标号
 
 	int id = yy * pixWidth + xx; //当前像素点的编号
 	labelStack.push(id);  //将当前点压入堆栈
@@ -2815,14 +2800,13 @@ bool WaterShed::Labelset(bool *image_in, int *image_out, int xx , int yy
           fout：输出分水岭数据指针
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-template<typename _T>
-bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
+bool WaterShed::watershed_meyer(short *fin, int *fmask, short *fout)
 {
 	if (fin == nullptr || fmask == nullptr || fout == nullptr)
 		return false;
 
 	node mnode;
-	priority_queue < node, vector<node>, node_LowestPriorityFirst_cmp > mqueue;
+	std::priority_queue < node, std::vector<node>, node_LowestPriorityFirst_cmp > mqueue;
 
 	int N = nPixels;
 	bool *S = new bool[N];
@@ -2848,9 +2832,9 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 				if ( (! S[q]) && (fmask[q] == WSHED) )	// 查找边缘，可能是岭
 				{
 					S[q] = true;
-					mnode.fData = q;
-					mnode.fPriority = fin[q];
-					mnode.fOrder = order++;
+					mnode.iData = q;
+					mnode.iPriority = fin[q];
+					mnode.iOrder = order++;
 					mqueue.push(mnode);
 				}
 			}
@@ -2860,8 +2844,8 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 	while ( !mqueue.empty())
 	{
 		int q;
-		int p = mqueue.top().fData;
-		int v = mqueue.top().fPriority;
+		int p = mqueue.top().iData;
+		int v = mqueue.top().iPriority;
 		mqueue.pop();
 
 		double label = WSHED;
@@ -2897,9 +2881,9 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
 				if (!S[q])
 				{
 					S[q] = true;
-					mnode.fData = q;
-					mnode.fPriority = max(fin[q], v);
-					mnode.fOrder = order++;
+					mnode.iData = q;
+					mnode.iPriority = max(fin[q], v);
+					mnode.iOrder = order++;
 					mqueue.push(mnode);
 				}
 			}
@@ -2918,8 +2902,7 @@ bool WaterShed::watershed_meyer(_T *fin, int *fmask, short *fout)
           fout：输出分水岭数据指针
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-template<typename _T>
-bool WaterShed::watershed(_T *fin, short *fout)
+bool WaterShed::watershed(short *fin, short *fout)
 {
 	if (fin == nullptr || fout == nullptr)
 		return false;
@@ -2927,12 +2910,11 @@ bool WaterShed::watershed(_T *fin, short *fout)
 	short *ImcomplementInpix;
 	ImcomplementInpix = new short [nPixels];
 	for (int i = 0; i < nPixels; i++)
-		ImcomplementInpix[i] = (int)(fin[i] + 0.5);
+		ImcomplementInpix[i] = fin[i];
 
 	short *Imcomplementpix;
 	Imcomplementpix = new short [nPixels];
-
-	Imcomplement(ImcomplementInpix, Imcomplementpix); //输入的反色图像
+	Imcomplement(ImcomplementInpix, Imcomplementpix); // 输入的反色图像
 
 	bool *areaExmaxPix;
 	areaExmaxPix = new bool [nPixels];
@@ -3045,9 +3027,11 @@ bool WaterShed::Imimposemin(short *inPix, bool *inLabel, bool *exLabel, short *o
 ********************************************************************/
 bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *ws_Img)
 {
-	if (inImg == nullptr || exImg == nullptr || wsImg == nullptr)
+	if (inImg == nullptr || exImg == nullptr || wsImg == nullptr || ws_Img == nullptr)
 		return false;
 
+	// 蛋白点标号初始, 从1开始
+	spot_ID = 0;
 
 	int *tempout;  //标记图像，判断是否标记
 	tempout = new int[nPixels];
@@ -3056,45 +3040,47 @@ bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *
 	bool *wsout;  //修改后的分水岭脊线
 	wsout = new bool[nPixels];
 	memset(wsout, 0, sizeof(bool)*nPixels);
-	//    memcpy(wsout,watershed_label,sizeof(bool)*nPixels);
 
 	int label;
-
 	label = LABEL;
-
-	if (faintThreshold < 0)
+	if (faintThreshold <= 0)
 	{
-		//如果最弱点阈值为负，则需要根据最弱点坐标重新计算阈值
+		// 如果最弱点阈值为负，则需要根据最弱点坐标重新计算阈值
 		int *tempFaint;  //
 		tempFaint = new int[nPixels];
 		memset(tempFaint, 0, sizeof(int)*nPixels);
 
-		//计算最弱点阈值
-		faintThreshold = CalculateFaintRatio(inImg, exImg, wsImg, ws_Img, tempFaint, faintX, faintY, LABEL) ;
+		// 计算最弱点阈值
+		faintThreshold = CalculateFaintRatio(inImg, exImg, wsImg, ws_Img, tempFaint, faintX, faintY, LABEL);
 
 		if (tempFaint)
 			delete [] tempFaint;
 	}
 
-
+	bool* pTIn = inImg;
+	int* pTOut = tempout;
 	for (int j = 0; j < pixHeight; j++)
 	{
 		for (int i = 0; i < pixWidth; i++)
 		{
 			//判断输入图像中的当前点是否为内标记点,并且在输出标记图像中是否没有标记
-			if (*(inImg + j * pixWidth + i) == 1 && *(tempout + j * pixWidth + i) == 0)
+			if (*pTIn && *pTOut == 0)
 			{
-				//如果当前点为50,并且没有在输出标记图像中标记数字 (除0外)
-				//则从当前点开始向其邻阈寻找未标记的蛋白点区域，并对其标记
-
-				if (!CalculateLabel(inImg, exImg, wsImg, ws_Img, tempout, wsout, i , j , label ))
+				// 如果当前点为50,并且没有在输出标记图像中标记数字 (除0外)
+				//  则从当前点开始向其邻阈寻找未标记的蛋白点区域，并对其标记
+				if (!CalculateLabel(inImg, exImg, wsImg, ws_Img, tempout, wsout, i, j, label))
 					return false;
-				label++;  //标记序号加1
+
+				// 标记序号加1
+				label++;
 			}
+			++pTIn;
+			++pTOut;
 		}
 	}
 
-	memcpy(watershed_label, wsout, sizeof(bool)*nPixels);
+	for (int i = 0; i < nPixels; ++i)
+		wsImg[i] = wsout[i];
 
 	if (ws_spotList)
 	{
@@ -3151,9 +3137,9 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 	inLabelSum++;  //内标记数自增
 	inLabelValue += (255 - adjustedBG_pixdat[yy * pixWidth + xx]); //内标记总灰度值自增  255-value
 
-	stack<int> exStack; //空堆栈  存储为外标记点的标号
+	std::stack<int> exStack; //空堆栈  存储为外标记点的标号
 
-	stack<int> ws_stack; //空堆栈  存储为分水岭标记点的标号
+	std::stack<int> ws_stack; //空堆栈  存储为分水岭标记点的标号
 
 	int id = yy * pixWidth + xx; //当前像素点的编号
 
@@ -3355,9 +3341,6 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 				wsLineSum++; //分水岭脊线像素数
 				wsLineLabelValue += adjustedBG_pixdat[id];
-
-
-
 			}
 			if (*(exImg + id) != 1)
 			{
@@ -3385,10 +3368,8 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 					isStack = true;
 				}
 
-
 				inLabelSum++;
 				inLabelValue += adjustedBG_pixdat[id];
-
 			}
 
 			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
@@ -3403,7 +3384,6 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 				wsLabelSum++;
 				wsLabelValue += adjustedBG_pixdat[id];
-
 			}
 
 			if (*(wsImg + id) == 1)
@@ -3418,8 +3398,6 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 				wsLineSum++; //分水岭脊线像素数
 				wsLineLabelValue += adjustedBG_pixdat[id];
-
-
 			}
 			if (*(exImg + id) != 1)
 			{
@@ -3457,467 +3435,243 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
           label：当前区域的标记
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img, int *image_out, bool *ws_out,
+bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
+                               int *image_out, bool *ws_out,
                                int xx , int yy , int label)
 {
-	//计算有内标记的区域
-	if (!ws_out || !image_out)
+	// 计算有内标记的区域
+	if (ws_out == nullptr || image_out == nullptr)
 		return false;
 
-	int inLabelSum = 0; //  内标记区域数
-	int wsLabelSum = 0; //  分水岭区域数（不包含内标记）
-	int exLabelSum = 0; //  外标记区域数(不包含分水岭区域和内标记区域)
+	int inLabelSum = 0;	// 内标记区域数
+	int wsLabelSum = 0;	// 分水岭区域数（不包含内标记）
+	int wsLineSum = 0;	// 分水岭脊线所包含像素个数
+	int exLabelSum = 0;	// 外标记区域数(不包含分水岭区域和内标记区域)
 
-	int wsLineSum = 0; //分水岭脊线所包含像素个数
-	//int spotID;
+	int inLabelValue = 0; // 内标记区域像素总和
+	int wsLabelValue = 0; // 分水岭区域像素总和（不包含内标记）
+	int wsLineLabelValue = 0; // 分水岭线的灰度值总和
+	int exLabelValue = 0; // 外标记区域像素总和(不包含分水岭区域和内标记区域)
 
-	int inLabelValue = 0; //  内标记区域像素总和
-	int wsLabelValue = 0; //  分水岭区域像素总和（不包含内标记）
-	int exLabelValue = 0; //  外标记区域像素总和(不包含分水岭区域和内标记区域)
-
-	int wsLineLabelValue = 0; //分水岭线的灰度值总和
-	//内标记的最大最小X、Y
+	// 内标记的最大最小X、Y
 	int minX = pixWidth - 1;
 	int minY = pixHeight - 1;
 	int maxX = 0;
 	int maxY = 0;
 
-	//分水岭区域的最大最小X、Y
+	// 分水岭区域的最大最小X、Y
 	int minrX = pixWidth - 1;
 	int minrY = pixHeight - 1;
 	int maxrX = 0;
 	int maxrY = 0;
-
-	int im, ip, jm, jp; //邻域坐标
-	*(image_out + yy * pixWidth + xx) = label; //符合条件，则在输出标记图像中标记当前点
-	int xs, ys; //当前点的坐标
 
 	minX = min(minX, xx);
 	minY = min(minY, yy);
 	maxX = max(maxX, xx);
 	maxY = max(maxY, yy);
 
-	inLabelSum++;  //内标记数自增
-	inLabelValue += (255 - adjustedBG_pixdat[yy * pixWidth + xx]); //内标记总灰度值自增  255-value
+	inLabelSum++;  // 内标记数+1（当前点）
+	inLabelValue += (255 - adjustedBG_pixdat[yy*pixWidth + xx]); // 内标记总灰度值+ （当前点）
+	*(image_out + yy * pixWidth + xx) = label;	// 符合条件，则在输出标记图像中标记当前点
 
-	stack<int> exStack; //空堆栈  存储为外标记点的标号
+	std::stack<int> exStack;	// 空堆栈 存储为外标记点的标号
+	std::stack<int> ws_stack;	// 空堆栈 存储为分水岭标记点的标号
 
-	stack<int> ws_stack; //空堆栈  存储为分水岭标记点的标号
+	int id = yy*pixWidth + xx;	// 当前像素点的编号
+	exStack.push(id);  			// 将当前点压入堆栈
 
-	int id = yy * pixWidth + xx; //当前像素点的编号
-
-	exStack.push(id);  //将当前点压入堆栈
-
-	//  int minArea=minSpotRadius*minSpotRadius;
-
+	// 统计该蛋白点的信息：内标、内部、边缘、外标
 	while (!exStack.empty())
 	{
-		//先统计外标记内部信息，同时将分水岭脊线、分水岭内部和内标信息保存到相应堆栈中
+		// 迭代
+		id = exStack.top();
+		exStack.pop();
+		int xs = id % pixWidth;
+		int ys = id / pixWidth;
 
-		id = exStack.top(); //获取栈顶值
-		exStack.pop();  //删除栈顶元素
-		xs = id % pixWidth; //获取当前点的X坐标
-		ys = id / pixWidth; //获取当前点的Y坐标
-		im = xs - 1;
-		ip = xs + 1; //当前点的邻域坐标
-		jm = ys - 1;
-		jp = ys + 1;
-		//保护边界
-		if (im < 0) im = 0;
-		if (ip >= pixWidth) ip = pixWidth - 1;
-		if (jm < 0) jm = 0;
-		if (jp >= pixHeight) jp = pixHeight - 1;
-
-
-
-		if (*(exImg + jm * pixWidth + xs) != 1 && *(image_out + jm * pixWidth + xs) == 0)
+		// 上下左右四邻域扩散 从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
+		int iNB_x[4] = {-1, -1, -1, -1};
+		int iNB_y[4] = {-1, -1, -1, -1};
+		if (ys - 1 >= 0)
 		{
-			//上   从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
-			id = jm * pixWidth + xs; //当前像素点的编号
-			bool isStack = false;
-			if (*(inImg + id) == 1)
-			{
-				//内标区域
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				//求内标记区域的最大最小坐标
-				minX = min(minX, xs);
-				minY = min(minY, jm);
-				maxX = max(maxX, xs);
-				maxY = max(maxY, jm);
-
-				inLabelSum++;
-				inLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
-			{
-				//分水岭盆地  蛋白点区域
-
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				wsLabelSum++;
-				wsLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) == 1)
-			{
-				//分水岭脊线  蛋白点边缘
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-				ws_stack.push(id);  //将编号压入堆栈
-
-				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += (255 - adjustedBG_pixdat[id]);
-
-				//    exLabelSum++;
-				//    exLabelValue+= (255-adjustedBG_pixdat[id]);
-				//求分水岭区域的最大最小坐标
-				minrX = min(minrX, xs);
-				minrY = min(minrY, jm);
-				maxrX = max(maxrX, xs);
-				maxrY = max(maxrY, jm);
-
-			}
-			if (*(exImg + id) != 1)
-			{
-				//外标区域
-				exStack.push(id);  //将编号压入堆栈
-
-				exLabelSum++;
-				exLabelValue += (255 - adjustedBG_pixdat[id]);
-			}
-
-			*(image_out + id) = label;
+			iNB_x[0] = xs;
+			iNB_y[0] = ys - 1;
 		}
-
-
-		if (*(exImg + ys * pixWidth + im) != 1 && *(image_out + ys * pixWidth + im) == 0)
+		if (xs - 1 >= 0)
 		{
-			//左   从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
-			id = ys * pixWidth + im; //当前像素点的编号
-			bool isStack = false;
-			if (*(inImg + id) == 1)
-			{
-				//内标区域
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				//求内标记区域的最大最小坐标
-				minX = min(minX, im);
-				minY = min(minY, ys);
-				maxX = max(maxX, im);
-				maxY = max(maxY, ys);
-
-				inLabelSum++;
-				inLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
-			{
-				//分水岭盆地  蛋白点区域
-
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				wsLabelSum++;
-				wsLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) == 1)
-			{
-				//分水岭脊线  蛋白点边缘
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-				ws_stack.push(id);  //将编号压入堆栈
-
-				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += (255 - adjustedBG_pixdat[id]);
-
-				//   exLabelSum++;
-				//    exLabelValue+= (255-adjustedBG_pixdat[id]);
-				//求分水岭区域的最大最小坐标
-				minrX = min(minrX, im);
-				minrY = min(minrY, ys);
-				maxrX = max(maxrX, im);
-				maxrY = max(maxrY, ys);
-
-			}
-			if (*(exImg + id) != 1)
-			{
-				//外标区域
-				exStack.push(id);  //将编号压入堆栈
-
-				exLabelSum++;
-				exLabelValue += (255 - adjustedBG_pixdat[id]);
-			}
-
-			*(image_out + id) = label;
+			iNB_x[1] = xs - 1;
+			iNB_y[1] = ys;
 		}
-
-		if (*(exImg + ys * pixWidth + ip) != 1 && *(image_out + ys * pixWidth + ip) == 0)
+		if (xs + 1 < pixWidth)
 		{
-			//右   从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
-			id = ys * pixWidth + ip; //当前像素点的编号
-			bool isStack = false;
-			if (*(inImg + id) == 1)
-			{
-				//内标区域
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				//求内标记区域的最大最小坐标
-				minX = min(minX, ip);
-				minY = min(minY, ys);
-				maxX = max(maxX, ip);
-				maxY = max(maxY, ys);
-
-				inLabelSum++;
-				inLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
-			{
-				//分水岭盆地  蛋白点区域
-
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-
-				wsLabelSum++;
-				wsLabelValue += (255 - adjustedBG_pixdat[id]);
-
-			}
-
-			if (*(wsImg + id) == 1)
-			{
-				//分水岭脊线  蛋白点边缘
-				if (isStack == false)
-				{
-					exStack.push(id);  //将编号压入堆栈
-					isStack = true;
-				}
-				ws_stack.push(id);  //将编号压入堆栈
-
-				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += (255 - adjustedBG_pixdat[id]);
-
-				//      exLabelSum++;
-				//      exLabelValue+= (255-adjustedBG_pixdat[id]);
-				//求分水岭区域的最大最小坐标
-				minrX = min(minrX, ip);
-				minrY = min(minrY, ys);
-				maxrX = max(maxrX, ip);
-				maxrY = max(maxrY, ys);
-
-			}
-			if (*(exImg + id) != 1)
-			{
-				//外标区域
-				exStack.push(id);  //将编号压入堆栈
-
-				exLabelSum++;
-				exLabelValue += (255 - adjustedBG_pixdat[id]);
-			}
-
-			*(image_out + id) = label;
+			iNB_x[2] = xs + 1;
+			iNB_y[2] = ys;
 		}
-
-		if (*(exImg + jp * pixWidth + xs) != 1 && *(image_out + jp * pixWidth + xs) == 0)
+		if (ys + 1 < pixHeight)
 		{
-			//下   从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
-			id = jp * pixWidth + xs; //当前像素点的编号
+			iNB_x[3] = xs;
+			iNB_y[3] = ys + 1;
+		}
+		for (int i = 0; i < 4; ++i)
+		{
+			if (iNB_x[i] < 0)
+				continue;
+			int xm = iNB_x[i];
+			int ym = iNB_y[i];
+			id = ym*pixWidth + xm;
+
+			if (exImg[id] || image_out[id] != 0)
+				continue;
+
 			bool isStack = false;
-			if (*(inImg + id) == 1)
+			image_out[id] = label;
+
+			// 内标区域
+			if (inImg[id])
 			{
-				//内标区域
-				if (isStack == false)
+				if (!isStack)
 				{
-					exStack.push(id);  //将编号压入堆栈
+					exStack.push(id);
 					isStack = true;
 				}
 
-				//求内标记区域的最大最小坐标
-				minX = min(minX, xs);
-				minY = min(minY, jp);
-				maxX = max(maxX, xs);
-				maxY = max(maxY, jp);
+				// 求内标记区域的最大最小坐标
+				minX = min(minX, xm);
+				minY = min(minY, ym);
+				maxX = max(maxX, xm);
+				maxY = max(maxY, ym);
 
 				inLabelSum++;
 				inLabelValue += (255 - adjustedBG_pixdat[id]);
 			}
 
-			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
+			// 蛋白点区域 内部
+			if (!wsImg[id] && ws_Img[id] > 2)
 			{
-				//分水岭盆地  蛋白点区域
-
-				if (isStack == false)
+				if (!isStack)
 				{
-					exStack.push(id);  //将编号压入堆栈
+					exStack.push(id);
 					isStack = true;
 				}
-
 				wsLabelSum++;
 				wsLabelValue += (255 - adjustedBG_pixdat[id]);
 			}
 
-			if (*(wsImg + id) == 1)
+			// 分水岭脊线  蛋白点边缘
+			if (wsImg[id])
 			{
-				//分水岭脊线  蛋白点边缘
-				if (isStack == false)
+				if (!isStack)
 				{
-					exStack.push(id);  //将编号压入堆栈
+					exStack.push(id);
 					isStack = true;
 				}
-				ws_stack.push(id);  //将编号压入堆栈
 
-				wsLineSum++; //分水岭脊线像素数
+				ws_stack.push(id);
+
+				wsLineSum++;
 				wsLineLabelValue += (255 - adjustedBG_pixdat[id]);
 
-				//exLabelSum++;
-				//exLabelValue+= (255-adjustedBG_pixdat[id]);
-				//求分水岭区域的最大最小坐标
-				minrX = min(minrX, xs);
-				minrY = min(minrY, jp);
-				maxrX = max(maxrX, xs);
-				maxrY = max(maxrY, jp);
+				// 求分水岭区域的最大最小坐标
+				minrX = min(minrX, xm);
+				minrY = min(minrY, ym);
+				maxrX = max(maxrX, xm);
+				maxrY = max(maxrY, ym);
 			}
-			if (*(exImg + id) != 1)
+
+			// 外标区域
+			if (!exImg[id])
 			{
-				//外标区域
-				exStack.push(id);  //将编号压入堆栈
+				exStack.push(id);
 
 				exLabelSum++;
 				exLabelValue += (255 - adjustedBG_pixdat[id]);
 			}
-			*(image_out + id) = label;
-		}
+		}	// for (int i = 0; i < 4; ++i)
 	}
 
-	//输出符合要求的点
+	// 输出符合要求的点
 	if (wsLabelSum && exLabelSum && !ws_stack.empty())
 	{
-		//蛋白点信息  内标记中心  质心
+		// 蛋白点信息 内标记中心 质心
 		int centroid_X = int((minX + maxX) / 2.0 + 0.5);
 		int centroid_Y = int((minY + maxY) / 2.0 + 0.5);
 
-		//几何中心
+		// 蛋白点几何中心
 		int center_X = int((maxrX + minrX) / 2.0 + 0.5);
 		int center_Y = int((maxrY + minrY) / 2.0 + 0.5);
-		//蛋白点区域半径
+		// 蛋白点区域半径
 		int rx = int((maxrX - minrX) / 2.0 + 0.5);
 		int ry = int((maxrY - minrY) / 2.0 + 0.5);
 
-		int area = wsLabelSum; //蛋白点面积
-		int volume = wsLabelValue; //蛋白点体积
-
+		int area = wsLabelSum;		// 蛋白点面积
+		int volume = wsLabelValue;	// 蛋白点体积
+		// 蛋白点平均灰度
 		float aveGray = 0;
 		if (area > 0)
-			aveGray = 255 - (float)(volume / area); //蛋白点平均灰度
-
+			aveGray = 255 - (float)(volume / area);
+		// 蛋白点内标记平均灰度
 		float  imGray = 0;
 		if (inLabelSum > 0)
-			imGray = 255 - (float)(inLabelValue / inLabelSum); //蛋白点内标记平均灰度
-		//       float  wsGray=0;
-		//        if(wsLabelSum>0)
-		//          wsGray=(float)wsLabelValue/wsLabelSum;  //蛋白点分水岭盆地（除内标记）平均灰度
+			imGray = 255 - (float)(inLabelValue / inLabelSum);
+		// 蛋白点外标记分水岭盆地（除蛋白点区域）平均灰度
 		float  exGray = 0;
 		if (exLabelSum > 0)
-			exGray = 255 - (float)((exLabelValue - wsLabelValue) / (exLabelSum - wsLabelSum)); //蛋白点外标记分水岭盆地（除蛋白点区域）平均灰度
-		//        float  wsLineGray=0;
-		//        if(wsLineSum>0)
-		//        wsLineGray= (float)wsLineLabelValue/wsLineSum;  //蛋白点分水岭线平均灰度
+			exGray = 255 - (float)((exLabelValue - wsLabelValue) / (exLabelSum - wsLabelSum));
 
-		//去除不合格点
-		//      if((imGray/exGray)>0.85)  //||(exGray-wsGray)<10    area<10||
-		if (fabs(exGray - imGray) <= faintThreshold || min(rx, ry) < minSpotRadius
-		        || area < minSpotRadius * minSpotRadius
-		        || rx / float(ry + 0.5) >= spotRxRyRatio || ry / float(rx + 0.5) >= spotRxRyRatio)
+		// 去除不合格点
+		if (fabs(exGray - imGray) <= faintThreshold ||	// 内外标记平均灰度差 小于 阈值
+		        min(rx, ry) < minSpotRadius ||				// 小半径 小于 最小半径
+		        area < minSpotRadius * minSpotRadius ||		// 面积 小于 最小面积
+		        rx / float(ry + 0.5) >= spotRxRyRatio ||	// 宽高比
+		        ry / float(rx + 0.5) >= spotRxRyRatio)
 		{
-			//去除弱点
+			// 剔除
 			while (!ws_stack.empty())
 			{
-				//分水岭脊线
-				id = ws_stack.top(); //获取栈顶值
-				ws_stack.pop();  //删除栈顶元素
-				ws_out[id] = 0;
+				id = ws_stack.top();	// 获取栈顶值
+				ws_stack.pop();			// 删除栈顶元素
+				ws_out[id] = 0;			// 不是分水岭脊线
 			}
 		}
 		else
 		{
-			int *pWatershedLineA;
-			pWatershedLineA = new int[wsLineSum];
-			int kk = 0;
 			//1 调整分水岭脊线标记数据
+			int* pWatershedLineA = new int[wsLineSum];
+			int kk = 0;
 			while (!ws_stack.empty())
 			{
 				//分水岭脊线
-				id = ws_stack.top(); //获取栈顶值
-				ws_stack.pop();  //删除栈顶元素
+				id = ws_stack.top();		// 获取栈顶值
+				ws_stack.pop();				// 删除栈顶元素
 				pWatershedLineA[kk++] = id;
 				ws_out[id] = 1;
 			}
 
-			bool isSaveSpot = true;
-			if (isSaveSpot)
+			//2 新建蛋白点节点，并保存蛋白点信息
+			spot_ID++; // 蛋白点编号
+			if (ws_spotList == nullptr)
 			{
-				//2 新建蛋白点节点，并保存蛋白点信息
-				spot_ID++; //蛋白点编号
-				if (ws_spotList == nullptr)
-				{
-					//给蛋白点链表分配空间
-					ws_spotList = new SpotList[1] ;
-					if (!InitSpotList(ws_spotList, nPixels))
-						return false;
-				}
-				//添加蛋白点到链表尾
-				if (!TailSpotToList(ws_spotList, spot_ID, center_X, center_Y, centroid_X,
-				                    centroid_Y, area, volume, rx, ry, wsLineSum, aveGray, exGray, imGray, pWatershedLineA))
+				// 给蛋白点链表分配空间
+				ws_spotList = new SpotList;
+				if (!InitSpotList(ws_spotList, nPixels))
 					return false;
 			}
+			// 添加蛋白点到链表尾
+			if (!TailSpotToList(ws_spotList, spot_ID,
+								center_X, center_Y, centroid_X, centroid_Y,
+								area, volume, rx, ry, wsLineSum, aveGray, exGray, imGray, pWatershedLineA))
+				return false;
 
-			if (pWatershedLineA)
-				delete[] pWatershedLineA;
-
+			if (pWatershedLineA != nullptr)
+				delete [] pWatershedLineA;
 		}
 	}
 	else
 	{
-		while (ws_stack.empty() == false)
+		while (!ws_stack.empty())
 		{
-			//分水岭脊线
-			id = ws_stack.top(); //获取栈顶值
-			ws_stack.pop();  //删除栈顶元素
+			id = ws_stack.top();	// 获取栈顶值
+			ws_stack.pop();			// 删除栈顶元素
 		}
 	}
 
@@ -3931,21 +3685,21 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 /********************************************************************
     函数：InitSpotList  -  初始化相同游程链表头节点
     参数：list：蛋白点链表
-        total：当前蛋白点编号
+        total：图像像素数
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-bool WaterShed::InitSpotList(SpotList *list, int total)
+bool WaterShed::InitSpotList(SpotList* lsSpot, int total)
 {
-	list->first = nullptr;
-	list->last = nullptr;
+	lsSpot->first = nullptr;
+	lsSpot->last = nullptr;
 
-	list->watershed_Label = new bool[total];
-	memset(list->watershed_Label, 0, sizeof(bool)*total);
+	lsSpot->watershed_Label = new bool[total];
+	memset(lsSpot->watershed_Label, 0, sizeof(bool)*total);
 
-	list->adjustedBG_pixdat = new short[total];
-	memset(list->adjustedBG_pixdat, 0, sizeof(short)*total);
+	lsSpot->adjustedBG_pixdat = new short[total];
+	memset(lsSpot->adjustedBG_pixdat, 0, sizeof(short)*total);
 
-	list->spotTotal = 0;
+	lsSpot->spotTotal = 0;
 
 	return true;
 }
@@ -4086,5 +3840,6 @@ bool WaterShed::DestroyList(SpotList *list)
 	}
 	return true;
 }
+
 
 

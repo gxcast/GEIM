@@ -293,7 +293,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Faint Thre:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_FAINT_T, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                             0.0, 100.0, 20.05, 0.05);
+					                             0.0, 100.0, 0.00, 0.05);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 3
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
@@ -726,6 +726,10 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	GetParam();
 
 	// get current image and cache
+	int iW = 0;		// image width
+	int iWb = 0;	// bytes per line
+	int iH = 0;		// image height
+	int iN = 0;		// image pisel number
 	EffectPar parEft;
 	unsigned char* pIn = nullptr;
 	{
@@ -749,18 +753,22 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 
 		// init effect data
 		parEft.SetImage(pImgCur);
+		iW = parEft.Width();		// image width
+		iWb = iW*3;					// bytes per line
+		iH = parEft.Height();		// image height
+		iN = parEft.PixNum();		// image pisel number
 		// copy out the input image
 		pIn = parEft.GetCache();
-		memcpy(pIn, pImgCur->GetData(), (size_t)parEft.PixNum()*3);
+		memcpy(pIn, pImgCur->GetData(), iN*3);
 		parEft.Input(pIn, true);
 	}
-	int iW = parEft.Width();						// image width
-	int iWb = iW*3;										// bytes per line
-	int iH = parEft.Height();						// image height
-	int iSpotN = 0;										// the result spot num
-	SpotNode *listNode = nullptr;		// the result spot list heat
+	int iSpotN = 0;					// the result spot num
+	SpotNode *listNode = nullptr;	// the result spot list heat
 	unsigned char* pDes = nullptr;	// dest iamge
 	unsigned char* pOut = nullptr;	// the result image
+	bool* pWS = nullptr;			// the spot edge
+	wxSpinCtrlDouble* pSpd = nullptr;	// the faint Shreshold Control
+	wxTextCtrl* pEdit = nullptr;		// the Spot Number Control
 
 	// detect
 	//SpotDt dt;
@@ -777,13 +785,14 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	// do
 	if (!pws->WSTmain())
 		goto OnBtnTestParam_end;
+
 	// get result
-	/*
 	if (pws->ws_spotList == nullptr)
 	{
 		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 		goto OnBtnTestParam_end;
 	}
+	// draw the spot center
 	listNode = pws->ws_spotList->first;
 	while (listNode != NULL)
 	{
@@ -812,12 +821,38 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 		listNode = listNode->next;
 		iSpotN++;
 	}
-	*/
+	// draw the spot edge
+	pDes = pIn;
+	pWS = pws->watershed_label;
+	for (int i = 0; i < iN; ++i)
+	{
+		if(*pWS)
+		{
+			pDes[0] = 0u;
+			pDes[1] = 255u;
+			pDes[2] = 0u;
+		}
+		pDes += 3;
+		pWS += 1;
+	}
+	// alter the detect parameter
+    pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_FAINT_T));
+	wxASSERT_MSG(pSpd != nullptr, _T("Get Faint Shreshold control failed."));
+	if (pSpd != nullptr)
+		pSpd->SetValue(pws->faintThreshold);
+	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_SPOTNUM));
+	wxASSERT_MSG(pEdit != nullptr, _T("Get Spot Number control failed."));
+	if (pEdit != nullptr)
+	{
+		wxString str;
+		str.Printf(_T("%d"), iSpotN);
+		pEdit->SetValue(str);
+	}
 
 	// copy the resualt to the disp image
 	pDes = m_imgDisp.GetData();
 	pOut = pIn;
-	memcpy(pDes, pOut, (size_t)parEft.PixNum()*3);
+	memcpy(pDes, pOut, iN*3);
 
 OnBtnTestParam_end:
 	if (pws != nullptr)

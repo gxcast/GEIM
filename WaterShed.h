@@ -27,9 +27,9 @@ typedef struct _pixel_T
 /*****************优先级队列的数据节点*********************/
 struct node
 {
-	int fData;     //数据
-	int fPriority;   //优先级
-	int fOrder;    //顺序
+	int iData;		// 数据
+	int iPriority;	// 优先级
+	int iOrder;		// 顺序
 };
 
 /************优先级队列的数据节点优先条件：大值优先**************/
@@ -38,14 +38,14 @@ struct node_LowestPriorityFirst_cmp
 	bool operator()(const node &a, const node &b)
 	{
 		//如果a的优先级大于b的优先级，则返回true;
-		if (a.fPriority > b.fPriority)
+		if (a.iPriority > b.iPriority)
 			return true;
 		//否则，如果a的优先级小于b的优先级，则返回false
-		else if (a.fPriority < b.fPriority)
+		else if (a.iPriority < b.iPriority)
 			return false;
 		//如果a的优先级等于b的优先级，且a的顺序大于b的顺序，返回true
 		else
-			return  a.fOrder > b.fOrder;
+			return  a.iOrder > b.iOrder;
 	}
 };
 
@@ -55,14 +55,14 @@ struct node_HighestPriorityFirst_cmp
 	bool operator()(const node &a, const node &b)
 	{
 		//如果a的优先级小于b的优先级，则返回true;
-		if (a.fPriority < b.fPriority)
+		if (a.iPriority < b.iPriority)
 			return true;
 		//否则，如果a的优先级大于b的优先级，则返回false
-		else if (a.fPriority > b.fPriority)
+		else if (a.iPriority > b.iPriority)
 			return false;
 		//如果a的优先级等于b的优先级，且a的顺序大于b的顺序，返回true
 		else
-			return  a.fOrder > b.fOrder;
+			return  a.iOrder > b.iOrder;
 	}
 };
 
@@ -200,10 +200,8 @@ public:
 	bool Labelset(bool *image_in, int *image_out, int xx , int yy , int label , int mode);
 
 	/*---------------------------基于距离分水岭*----------------------------------*/
-	template<typename _T>
-	bool watershed_meyer(_T *fin, int *fmask, short *fout);
-	template<typename _T>
-	bool watershed(_T *fin, short *fout);
+	bool watershed_meyer(short *fin, int *fmask, short *fout);
+	bool watershed(short *fin, short *fout);
 	bool Imimposemin(short *inPix, bool *inLabel, bool *exLabel , short *outPix);
 
 	/*-----------------------------后处理-------------------------------------*/
@@ -212,7 +210,8 @@ public:
 	//    bool CalculateLabel(short *image_in,int *image_out,bool *ws_out, int xx ,
 	//                        int yy ,int label);
 	bool CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
-	                    int *image_out, bool *ws_out, int xx , int yy , int label);
+	                    int *image_out, bool *ws_out,
+	                    int xx , int yy , int label);
 	/********************************************************************
 	    函数：CalculateFaintRatio  -  计算最弱点阈值
 	    参数：image_in：输入标记图像
@@ -222,8 +221,11 @@ public:
 	          label：当前区域的标记
 	    返回：返回最弱点阈值
 	********************************************************************/
-	float CalculateFaintRatio(short *image_in, int *image_out, int xx, int yy, int label);
-	float CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img, int *image_out, int xx, int yy, int label);
+	float CalculateFaintRatio(short *image_in, int *image_out,
+							int xx, int yy, int label);
+	float CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
+							int *image_out,
+							int xx, int yy, int label);
 	/*-----------------------保存数据到蛋白点链表---------------------------------*/
 
 	/********************************************************************
