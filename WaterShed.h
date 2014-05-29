@@ -71,82 +71,59 @@ struct node_HighestPriorityFirst_cmp
 *****************************************************************************/
 class WaterShed
 {
-private:
+	// 图像信息
+	int nPixels = 0;		// 图像像素个数
+	int pixHeight = 0;		// 图像高度
+	int pixWidth = 0;		// 图像宽度
 
-	/*****************************原图像的信息****************************/
-	/**< cache management */
-	EffectPar* m_pParEft;
-	/**< the inpute image */
-	unsigned char* m_pImgIn;
-	/**< is modify the in image */
-	bool m_bMdfyIn;
+	// 检测参数
+	int faintX = 0;					// 最弱点中心坐标
+	int faintY = 0;
+	float faintThreshold = 0.0f;	// 最弱点内外阈值
+	float spotRxRyRatio = 3.0f;		// 蛋白点的长宽比
+	bool isMedianFilter = true;		// 是否中值滤波
+	int medianModeType = 1;			// 中值滤波类型 1 ：3X3
+	bool isGaussFilter = true;		// 是否高斯滤波
+	int gaussModeType = 1;			// 高斯滤波类型 1 ：3X3
+	bool isBackgroud = false;		// 是否进行背景削减
+	int maxSpotRadius = 30;			// 最大点半径
+	int minSpotRadius = 2;			// 最小点半径
+	bool isMorphological = false;	// 是否在预处理时先进行形态学闭运算
+	int gradModeType = 1;			// 形态学梯度类型 半径大小
+	int labelModeType = 8;			// 标记类型  4：4领域   8：8领域
 
-	int nPixels;			// 图像像素个数
-	int pixHeight;	// 图像高度
-	int pixWidth; 		// 图像宽度
-
-	/***************************图像指针*********************************/
-	//    short * pre_pixdat;	// 原始灰度图像数据。
-	short *filted_pixdat;		// 滤波后图像数据。
-	short *adjustedBG_pixdat;  //去背景后图像数据。
-	short *grad_pixdat;  //梯度图像数据。
-
-	/****************************标记指针*******************************/
-	bool *internal_label;  //内部标记标签矩阵。
-	bool *external_label;  //外部标记标签矩阵。
-	//    bool * watershed_label; //分水岭标签矩阵。
-
-	/*************************输入的参数变量***************************/
-	int faintX, faintY; //最弱点中心坐标
-	//float  faintThreshold;    // 最弱点内外阈值
-	float  spotRxRyRatio;       // 蛋白点的长宽比
-	bool isMedianFilter;        // 是否中值滤波
-	bool isGaussFilter;         // 是否高斯滤波
-	int medianModeType;         // 中值滤波类型 1 ：3X3
-	int gaussModeType;          // 高斯滤波类型 1 ：3X3
-	int gradModeType;           // 形态学梯度类型 半径大小
-	bool isBackgroud;           // 是否进行背景削减
-	int maxSpotRadius;          // 最大点半径
-	int minSpotRadius;          // 最小点半径
-	int labelModeType;          // 标记类型  4：4领域   8：8领域
-	bool isMorphological;       // 是否在预处理时先进行形态学闭运算
-	/*****************************邻阈信息****************************/
+	// 用于获取像素的领域
 	CNeighborhoodpixels nghpixs;
-
-	/**************************蛋白点链表信息****************************/
-	//SpotList * ws_spotList;   // 蛋白点链表
-	int spot_ID;                // 蛋白点编号
-public:
-	short *pre_pixdat;      // 原始灰度图像数据。
-	bool *watershed_label;  // 分水岭标签矩阵
-	SpotList *ws_spotList;  // 蛋白点链表
-	float  faintThreshold;  // 最弱点内外阈值
+	// 用于计数蛋白点编号
+	int spot_ID = 0;
+	// 预处理后的图像
+	short* m_psImgAdjust = nullptr;
+	// 蛋白点链表
+	LS_SPOTS* m_plsSpots = nullptr;
 
 public:
-	/********************************************************************
-	    函数：WaterShed  -  构造函数
-	    参数：EffectPar* pParEft：输入图像32bpp；
-	*******************************************************************/
-	WaterShed(EffectPar* pParEft);
-	/********************************************************************
-	    函数：~WaterShed  - 析构函数
-	    参数：无
-	********************************************************************/
+	WaterShed();
 	~WaterShed();
-	/********************************************************************
-	    函数：WSTmain  -  分水岭检测蛋白点程序的主函数
-	    参数：无
-	    返回：如正确执行，则返回true，否则返回false
-	********************************************************************/
-	bool WSTmain();
-	/********************************************************************
-	    函数：FreeMain  -  释放主函数中分配的空间
-	    参数：无
-	    返回：如正确执行，则返回true，否则返回false
-	********************************************************************/
-	bool FreeMain();
-	bool setDefaultPar(PST_DTPARAM pDtParam);
 
+    /** \brief 标记控制分水岭蛋白点检测算法
+     *
+     * \param pParEft EffectPar*	[INOUT] 图像信息
+     * \param pDtParam PST_DTPARAM	[INOUT] 输入检测参数，输出自动弱点阈值
+     * \param pList LS_SPOTS*		[INOUT] 蛋白点链表
+     * \return bool true:成功 false:失败
+     *
+     */
+	bool WSTmain(EffectPar* pParEft, PST_DTPARAM pDtParam, LS_SPOTS* pList);
+
+    /** \brief 释放蛋白点链表
+     *
+     * \param pList LS_SPOTS*	[IN] 待释放的蛋白点链表
+     * \return bool	true
+     *
+     */
+	static bool ClearSpots(LS_SPOTS* pList);
+
+private:
 	/*-------------------------灰度图像预处理--------------------------------*/
 	bool ImageFilter(short *fin, short *fout, bool isMedian, int medianModeType,
 	                 bool isGaussFilter, int gaussModeType);
@@ -156,7 +133,6 @@ public:
 	                                   short *fout3, int h , int labelMode);
 	bool MedianFilter(short *fin, short *fout, int modeType);
 	bool GaussFilter(short *fin, short *fout, int modeType);
-	//    bool GenerateSE(int seType,int radius) ;//自动产生结构元素  type：类型  radius：半径
 	/*-------------------------灰度图像形态学变换--------------------------------*/
 	bool Imdilate(short *fin, short *fout, int setype);
 	bool DoImdilate(short *fin, short *fout, int radius);
@@ -205,10 +181,7 @@ public:
 	bool Imimposemin(short *inPix, bool *inLabel, bool *exLabel , short *outPix);
 
 	/*-----------------------------后处理-------------------------------------*/
-	//   bool CalculateLabel(bool *inImg,short *exImg ,short *wsImg );
 	bool CalculateLabel(bool *inImg, bool *exImg , bool *wsImg , short *ws_Img);
-	//    bool CalculateLabel(short *image_in,int *image_out,bool *ws_out, int xx ,
-	//                        int yy ,int label);
 	bool CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
 	                    int *image_out, bool *ws_out,
 	                    int xx , int yy , int label);
@@ -226,33 +199,12 @@ public:
 	float CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
 							int *image_out,
 							int xx, int yy, int label);
+
 	/*-----------------------保存数据到蛋白点链表---------------------------------*/
-
-	/********************************************************************
-	    函数：InitSpotList  -  初始化相同游程链表头节点
-	    参数：list：蛋白点链表
-	      total：当前蛋白点编号
-	    返回：如正确执行，则返回true，否则返回false
-	********************************************************************/
-	bool InitSpotList(SpotList *list, int total);
-	bool TailSpotToList(SpotList *list, int spotID, int centerX, int centerY,
-	                    int centroidX, int centroidY, int spotArea, int spotVolume,
-	                    int spotRx, int SpotRy , int spotPerimeter, float spotAveGray,
-	                    float spotBgAveGray, float spotInAveGray, int *pWatershedLine );
-
-	/********************************************************************
-	    函数：DeleteHeadNode  -  删除链表头节点
-	    参数：list：蛋白点链表
-	    返回：如正确执行，则返回true，否则返回false
-	********************************************************************/
-	bool DeleteHeadNode(SpotList *list) ;
-
-	/********************************************************************
-	    函数：DestroyList -  删除链表
-	    参数：list：蛋白点链表
-	    返回：如正确执行，则返回true，否则返回false
-	********************************************************************/
-	bool DestroyList(SpotList *list);
+	bool AddSpot(int spotID,
+				int centerX, int centerY, int centroidX, int centroidY,
+				int spotArea, int spotVolume, int spotRx, int SpotRy, int spotPerimeter,
+				float spotAveGray, float spotBgAveGray, float spotInAveGray, int *pWatershedLine );
 };
 
 #endif	// #ifdef WATERSHED_H

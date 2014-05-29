@@ -732,6 +732,7 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	int iN = 0;		// image pisel number
 	EffectPar parEft;
 	unsigned char* pIn = nullptr;
+	unsigned char* pOut = nullptr;
 	{
 		size_t nNum = m_pAryImgs->Count();
 		wxChoice* pCi = dynamic_cast<wxChoice*>(FindWindow(ID_CI_IMAGE));
@@ -762,43 +763,33 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 		memcpy(pIn, pImgCur->GetData(), iN*3);
 		parEft.Input(pIn, true);
 	}
+	LS_SPOTS lsSpots;				// spots list
 	int iSpotN = 0;					// the result spot num
-	SpotNode *listNode = nullptr;	// the result spot list heat
 	unsigned char* pDes = nullptr;	// dest iamge
-	unsigned char* pOut = nullptr;	// the result image
-	bool* pWS = nullptr;			// the spot edge
-	wxSpinCtrlDouble* pSpd = nullptr;	// the faint Shreshold Control
-	wxTextCtrl* pEdit = nullptr;		// the Spot Number Control
-
-	// detect
-	//SpotDt dt;
-	//dt.DtMain(&m_stDtParam, &parEft);
+	unsigned char* pWS = nullptr;	// the spot edge
 
 	// Graying switch
 	Graying::Gray(parEft);
 
 	// clp detect
-	WaterShed* pws = new WaterShed(&parEft);
-	// set parameter
-	if (!pws->setDefaultPar(&m_stDtParam))
+	WaterShed* pws = new WaterShed;
+	parEft.Modify(false);
+	if (!pws->WSTmain(&parEft, &m_stDtParam, &lsSpots))
 		goto OnBtnTestParam_end;
-	// do
-	if (!pws->WSTmain())
-		goto OnBtnTestParam_end;
-
-	// get result
-	if (pws->ws_spotList == nullptr)
+	if (lsSpots.empty())
 	{
 		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 		goto OnBtnTestParam_end;
 	}
+	pOut = parEft.Output();
+	iSpotN = (int)lsSpots.size();
 	// draw the spot center
-	listNode = pws->ws_spotList->first;
-	while (listNode != NULL)
+	for (auto i = lsSpots.begin(); i != lsSpots.end(); ++i)
 	{
+		ST_SPOT_NODE& spot = *i;
 		// 绘制蛋白点+
-		int x = listNode->centerX;
-		int y = listNode->centerY;
+		int x = spot.x;
+		int y = spot.y;
 		unsigned char* pPix = pIn + (y*iW + x)*3;
 		// -
 		for (int i = -3; i <= 3; ++i)
@@ -816,52 +807,53 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 			unsigned char* pT = pPix + i*iWb;
 			pT[0] = 255; pT[1] = 0; pT[2] = 0;
 		}
-
-		// 下一个蛋白点
-		listNode = listNode->next;
-		iSpotN++;
 	}
 	// draw the spot edge
 	pDes = pIn;
-	pWS = pws->watershed_label;
+	pWS = pOut;
 	for (int i = 0; i < iN; ++i)
 	{
-		if(*pWS)
+		if(pWS[1] > 0)
 		{
 			pDes[0] = 0u;
 			pDes[1] = 255u;
 			pDes[2] = 0u;
 		}
 		pDes += 3;
-		pWS += 1;
+		pWS += 3;
 	}
 	// alter the detect parameter
-    pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_FAINT_T));
-	wxASSERT_MSG(pSpd != nullptr, _T("Get Faint Shreshold control failed."));
-	if (pSpd != nullptr)
-		pSpd->SetValue(pws->faintThreshold);
-	pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_SPOTNUM));
-	wxASSERT_MSG(pEdit != nullptr, _T("Get Spot Number control failed."));
-	if (pEdit != nullptr)
 	{
-		wxString str;
-		str.Printf(_T("%d"), iSpotN);
-		pEdit->SetValue(str);
+		wxSpinCtrlDouble* pSpd = nullptr;	// the faint Shreshold Control
+		wxTextCtrl* pEdit = nullptr;		// the Spot Number Control
+		pSpd = dynamic_cast<wxSpinCtrlDouble*>(FindWindow(ID_SPD_FAINT_T));
+		wxASSERT_MSG(pSpd != nullptr, _T("Get Faint Shreshold control failed."));
+		if (pSpd != nullptr)
+			pSpd->SetValue(m_stDtParam.dFaint);
+		pEdit = dynamic_cast<wxTextCtrl*>(FindWindow(ID_ED_SPOTNUM));
+		wxASSERT_MSG(pEdit != nullptr, _T("Get Spot Number control failed."));
+		if (pEdit != nullptr)
+		{
+			wxString str;
+			str.Printf(_T("%d"), iSpotN);
+			pEdit->SetValue(str);
+		}
 	}
 
 	// copy the resualt to the disp image
 	pDes = m_imgDisp.GetData();
-	pOut = pIn;
-	memcpy(pDes, pOut, iN*3);
+	memcpy(pDes, pIn, iN*3);
 
 OnBtnTestParam_end:
 	if (pws != nullptr)
 	{
-		pws->FreeMain();
 		delete pws;
 		pws = nullptr;
 	}
+	WaterShed::ClearSpots(&lsSpots);
 	parEft.Recycle(pIn);
+	parEft.Recycle(pOut);
+
 	// update ui
 	m_pImgPanel->Refresh();
 }

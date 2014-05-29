@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+
 #include "WaterShed.h"
 #include <math.h>
 #include <queue>
@@ -15,74 +15,12 @@
 #define INIT -1     // initial value of im0
 #define FICTITIOUS -1
 #define MWSIZE_MAX 10000
-//---------------------------------------------------------------------------
 
-
-/********************************************************************
-    函数：WaterShed  -  构造函数
-    参数：EffectPar* pParEft：输入图像32bpp；
-*******************************************************************/
-WaterShed::WaterShed(EffectPar* pParEft)
+WaterShed::WaterShed()
 {
-	/*********图像信息*************/
-	m_pParEft = pParEft;
-	m_pImgIn = m_pParEft->Input();
-	m_bMdfyIn = m_pParEft->Modify();
-	// if can't  modify in image, create a copy, and, can modify the copy
-	if (!m_bMdfyIn)
-	{
-		unsigned char* pImgCah = m_pParEft->GetCache();
-		memcpy(pImgCah, m_pImgIn, (size_t)m_pParEft->PixNum()*3);
-		m_pImgIn = pImgCah;
-	}
-
-	pixWidth = m_pParEft->Width(); 		// 获取图像宽
-	pixHeight = m_pParEft->Height(); 	// 获取图像高
-	nPixels = pixWidth * pixHeight; 			// 获取图像总像素数
-	/*********图像指针*************/
-	pre_pixdat = nullptr; 	//原始灰度图像数据。
-	filted_pixdat = nullptr; //滤波后图像数据。
-	adjustedBG_pixdat = nullptr; //去背景后图像数据。
-	grad_pixdat = nullptr; //梯度图像数据。
-	internal_label = nullptr; //内部标记标签矩阵。
-	external_label = nullptr; //外部标记标签矩阵。
-	watershed_label = nullptr; //分水岭标签矩阵。
-
-	/*********输入参数*************/
-	isMedianFilter = true; //是否中值滤波
-	isGaussFilter = true; //是否高斯滤波
-	medianModeType = 1;   //中值滤波类型 1 ：3X3
-	gaussModeType = 1;   //高斯滤波类型 1 ：3X3
-
-	isBackgroud = false; //是否进行背景削减
-	maxSpotRadius = 30; //  最大点半径
-
-	gradModeType = 1; //形态学梯度类型 半径大小
-	labelModeType = 8; //标记类型  4：4领域   8：8领域
-
-	faintThreshold = -1 ; //最弱点内外阈值
-	spotRxRyRatio = 3.0 ; //蛋白点的长宽比
-
-	minSpotRadius = 2; //最小点半径
-	faintX = 0;
-	faintY = 0;
-
-	isMorphological = true; //是否在预处理时先进行形态学闭运算
-	/********蛋白点链表信息**************/
-	ws_spotList = nullptr; //蛋白点链表
-	spot_ID = 0;        //蛋白点编号
 }
-/********************************************************************
-    函数：~WaterShed  - 析构函数
-    参数：无
-********************************************************************/
 WaterShed::~WaterShed()
 {
-	if (!m_bMdfyIn)
-	{
-		m_pParEft->Recycle(m_pImgIn);
-		m_pImgIn = nullptr;
-	}
 }
 
 /********************************************************************
@@ -90,241 +28,187 @@ WaterShed::~WaterShed()
     参数：无
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-bool WaterShed::WSTmain()
+bool WaterShed::WSTmain(EffectPar* pParEft, PST_DTPARAM pDtParam, LS_SPOTS* pList)
 {
-	/*********************导入实验参数***********************************/
-	gradModeType = 1; //形态学梯度类型 半径大小
-	labelModeType = 8; //标记类型  4：4领域   8：8领域
-	/*********************导入图像数据***********************************/
-
-	if (pre_pixdat)
-	{
-		delete[] pre_pixdat ;
-		pre_pixdat = nullptr ;
-	}
-	pre_pixdat = new short[nPixels]; //原图像
-	memset(pre_pixdat, 0, sizeof(short)*nPixels);
-	unsigned char *Ptr = m_pImgIn;
-	for (int n = 0; n < nPixels; n++)
-	{
-		pre_pixdat[n] = Ptr[0]; 	//并将像素值保存在pixdat中
-		Ptr += 3;
-	}
-
-	/********************** 1 对输入图像滤波处理*****************************/
-	if (filted_pixdat)
-	{
-		delete[] filted_pixdat ;
-		filted_pixdat = nullptr ;
-	}
-	filted_pixdat = new short[nPixels]; //滤波后图像数据
-	memset(filted_pixdat, 0, sizeof(short)*nPixels);
-	memcpy(filted_pixdat, pre_pixdat, nPixels * sizeof(short)); //默认数据为原图
-
-	//滤波处理
-	if (!ImageFilter(pre_pixdat , filted_pixdat , isMedianFilter , medianModeType,
-	                 isGaussFilter, gaussModeType) )
-		return false;
-
-	/********************** 2 去除背景后的图像*******************************/
-	if (adjustedBG_pixdat)
-	{
-		delete[] adjustedBG_pixdat ;
-		adjustedBG_pixdat = nullptr ;
-	}
-	adjustedBG_pixdat = new short[nPixels]; //去背景后图像数据
-	memset(adjustedBG_pixdat, 0, sizeof(short)*nPixels);
-	memcpy(adjustedBG_pixdat, filted_pixdat, nPixels * sizeof(short)); //默认数据为滤波后的图像
-
-	// 背景消减
-	if (!AdjustBackgroud(filted_pixdat, adjustedBG_pixdat, isBackgroud, maxSpotRadius))
-		return false;
-
-	/************************* 3 计算形态学梯度*****************************/
-	if (grad_pixdat)
-	{
-		delete[] grad_pixdat ;
-		grad_pixdat = nullptr ;
-	}
-	grad_pixdat = new short[nPixels]; //去背景后图像数据
-	memset(grad_pixdat, 0, sizeof(short)*nPixels);
-
-	//计算形态学梯度
-	if (!GradImage(adjustedBG_pixdat, grad_pixdat, gradModeType))
-		return false;
-
-	/******* 4 第一次分水岭  内标记（扩展极小值）、外标记**********************/
-	//内标图 二值图像
-	if (internal_label)
-	{
-		delete[] internal_label ;
-		internal_label = nullptr ;
-	}
-	internal_label = new bool[nPixels];
-	memset(internal_label, 0, sizeof(bool)*nPixels);
-
-	//外标记数组emlabel，分水岭边界图 1
-	if (external_label)
-	{
-		delete[] external_label ;
-		external_label = nullptr ;
-	}
-	external_label = new bool [nPixels];
-	memset(external_label, 0, sizeof(bool)*nPixels);
-
-	//    int labelModeType=8; //标记类型  4：4领域   8：8领域
-	int h = 2; //扩展极小值深度
-
-	short *exPix_ws;     //watershedlabel   gradPix_ws
-	exPix_ws = new short [nPixels];
-	memset(exPix_ws, 0, sizeof(short)*nPixels);
-
-	// 极小值扩展（内标）、分水岭（外标记）、涨水标注
-	if (!ExtendMinAndDistanceWatershed(adjustedBG_pixdat, internal_label, external_label,
-	                                   exPix_ws, h , labelModeType) )
-		return false;
-
-	/********************* 5 极小值强加修改梯度图像*****************************/
-	short *regradPix;     //watershedlabel   gradPix_ws
-	regradPix = new short [nPixels];
-	memset(regradPix, 0, sizeof(short)*nPixels);
-	memcpy(regradPix, grad_pixdat, sizeof(short)*nPixels);
-
-	//极小值强加
-	if (!Imimposemin(grad_pixdat, internal_label, external_label, regradPix))
-		return false;
-
-	/*********** 6 第二次分水岭  对修改后的梯度图像进行分水岭******************/
-	short *gradPix_ws;     //watershedlabel   gradPix_ws
-	gradPix_ws = new short [nPixels];
-	memset(gradPix_ws, 0, sizeof(short)*nPixels);
-	//梯度图像分水岭后的脊线标记数组watershedlabel，分水岭边界图 1
-	if (watershed_label)
-	{
-		delete[] watershed_label ;
-		watershed_label = nullptr ;
-	}
-	watershed_label = new bool [nPixels];
-	memset(watershed_label, 0, sizeof(bool)*nPixels);
-
-	//meyer分水岭
-	if (!watershed(regradPix, gradPix_ws))
-		return false;
-
-	for (int k = 0; k < nPixels; k++)
-	{
-		// 分水岭边界置1
-		if (gradPix_ws[k] < 1)
-			watershed_label[k] = true;
-	}
-
-	/**************************后处理 *****************************/
-	if (!CalculateLabel(internal_label, external_label, watershed_label, gradPix_ws) )
-		return false;
-
-	/************************释放分配的指针空间*****************************/
-	if (gradPix_ws)
-	{
-		//释放修改后的梯度图像的分水岭指针空间
-		delete[] gradPix_ws;
-		gradPix_ws = nullptr ;
-	}
-	if (regradPix)
-	{
-		//释放修改后的梯度图像指针空间
-		delete[] regradPix;
-		regradPix = nullptr ;
-	}
-	if (exPix_ws)
-	{
-		//释放内标记图像极小值扩展的指针空间
-		delete[] exPix_ws;
-		exPix_ws = nullptr ;
-	}
-
-	return true;
-}
-
-bool WaterShed::setDefaultPar(PST_DTPARAM pDtParam)
-{
+	bool bRet = true;
 	// check the parameter
-	if (pDtParam == nullptr)
+	if (pParEft == nullptr || pDtParam == nullptr || pList == nullptr)
 	{
-		wxASSERT_MSG(false, _T("setDefaultPar param is null"));
+		wxASSERT_MSG(false, _T("WSTmain parameter is nullptr."));
 		return false;
 	}
-
-	//获得参数值
+	// 设定图像信息
+	unsigned char* pImgIn = pParEft->Input();
+	pixWidth = pParEft->Width(); 	// 获取图像宽
+	pixHeight = pParEft->Height(); 	// 获取图像高
+	nPixels = pParEft->PixNum(); 	// 获取图像总像素数
+	// 设定检测参数
 	faintX = pDtParam->ptFaint.x;
 	faintY = pDtParam->ptFaint.y;
 	faintThreshold = (float)(pDtParam->dFaint);
-	isMedianFilter = (pDtParam->iMedianFlt >= 0); //是否中值滤波
-	medianModeType = pDtParam->iMedianFlt + 1;   //中值滤波类型 1 ：3X3
-
-	isGaussFilter = (pDtParam->iGaussFlt >= 0);  //是否高斯滤波
-	gaussModeType = pDtParam->iGaussFlt + 1;   //高斯滤波类型 1 ：3X3
-
-	isBackgroud = false; 										// 是否进行背景削减
-	maxSpotRadius = pDtParam->iMaxRad; //  最大点半径
-
-	//   faintThreshold=faintTh; //最弱点内外阈值
-	spotRxRyRatio = pDtParam->dAspect; //蛋白点的长宽比
+	spotRxRyRatio = pDtParam->dAspect;				//蛋白点的长宽比
 	if (spotRxRyRatio < 0)
 		spotRxRyRatio = -spotRxRyRatio;
 	if (spotRxRyRatio < 1 && spotRxRyRatio > 0)
 		spotRxRyRatio = 1/spotRxRyRatio;
-
+	isMedianFilter = (pDtParam->iMedianFlt >= 0);	// 是否中值滤波
+	medianModeType = pDtParam->iMedianFlt + 1;		// 中值滤波类型 1 ：3X3
+	isGaussFilter = (pDtParam->iGaussFlt >= 0);		// 是否高斯滤波
+	gaussModeType = pDtParam->iGaussFlt + 1;		// 高斯滤波类型 1 ：3X3
+	isBackgroud = false;							// 是否进行背景削减
+	maxSpotRadius = pDtParam->iMaxRad;				// 最大点半径
 	minSpotRadius = pDtParam->iMinRad;
-
 	isMorphological = false;
-	return true;
-}
+	gradModeType = 1;								// 形态学梯度类型 半径大小
+	labelModeType = 8;								// 标记类型  4：4领域   8：8领域
+	int h = 2; //扩展极小值深度
+	// 蛋白点链表
+	spot_ID = 0;	// 蛋白点编号初始化
+	m_plsSpots = pList;
+	ClearSpots(m_plsSpots);
 
-bool WaterShed::FreeMain()
-{
-	// 释放蛋白点链表空间
-	if (!DestroyList(ws_spotList))
-		return false ;
-	//释放图像指针空间
-	if (watershed_label)
+	// 原始图像数据
+	m_psImgAdjust = new short[nPixels];
+	for (int i = 0; i < nPixels; ++i)
 	{
-		delete[] watershed_label;
-		watershed_label = nullptr;
+		m_psImgAdjust[i] = pImgIn[0];
+		pImgIn += 3;
 	}
-	if (external_label)
+	// 临时图像数据
+	short* pImgTmp = new short[nPixels];
+	memset(pImgTmp, 0, sizeof(short)*nPixels);
+	// 梯度图像数据
+	short *grad_pixdat = new short[nPixels];
+	memset(grad_pixdat, 0, sizeof(short)*nPixels);
+	// 内部标记标签矩阵
+	bool *internal_label = new bool[nPixels];
+	memset(internal_label, 0, sizeof(bool)*nPixels);
+	// 外部标记标签矩阵
+	bool *external_label = new bool[nPixels];
+	memset(external_label, 0, sizeof(bool)*nPixels);
+	//分水岭标签矩阵
+	bool * watershed_label = new bool[nPixels];
+	memset(watershed_label, 0, sizeof(bool)*nPixels);
+
+	/********************** 1 对输入图像滤波处理*****************************/
+	memcpy(pImgTmp, m_psImgAdjust, sizeof(short)*nPixels);
+	if (!ImageFilter(m_psImgAdjust, pImgTmp, isMedianFilter, medianModeType, isGaussFilter, gaussModeType))
 	{
-		delete[] external_label;
-		external_label = nullptr;
+		bRet = false;
+		goto WSTmain_end;
 	}
-	if (internal_label)
+
+	/********************** 2 去除背景后的图像*******************************/
+	memcpy(m_psImgAdjust, pImgTmp, nPixels * sizeof(short));
+	if (!AdjustBackgroud(pImgTmp, m_psImgAdjust, isBackgroud, maxSpotRadius))
 	{
-		delete[] internal_label;
-		internal_label = nullptr;
+		bRet = false;
+		goto WSTmain_end;
 	}
-	if (grad_pixdat)
+
+	/************************* 3 计算形态学梯度*****************************/
+	if (!GradImage(m_psImgAdjust, grad_pixdat, gradModeType))
+	{
+		bRet = false;
+		goto WSTmain_end;
+	}
+
+	/******* 4 第一次分水岭  内标记（扩展极小值）、外标记**********************/
+	// 极小值扩展（内标）、分水岭（外标记）、涨水标注
+	memset(pImgTmp, 0, sizeof(short)*nPixels);
+	if (!ExtendMinAndDistanceWatershed(m_psImgAdjust,
+					internal_label, external_label, pImgTmp, h, labelModeType))
+	{
+		bRet = false;
+		goto WSTmain_end;
+	}
+
+	/********************* 5 极小值强加修改梯度图像*****************************/
+	memcpy(pImgTmp, grad_pixdat, sizeof(short)*nPixels);
+	//极小值强加
+	if (!Imimposemin(grad_pixdat, internal_label, external_label, pImgTmp))
+	{
+		bRet = false;
+		goto WSTmain_end;
+	}
+
+	/*********** 6 第二次分水岭  对修改后的梯度图像进行分水岭******************/
+	//meyer分水岭
+	memset(grad_pixdat, 0, sizeof(short)*nPixels);
+	if (!watershed(pImgTmp, grad_pixdat))
+	{
+		bRet = false;
+		goto WSTmain_end;
+	}
+	for (int k = 0; k < nPixels; k++)
+	{
+		// 分水岭边界置1
+		if (grad_pixdat[k] < 1)
+			watershed_label[k] = true;
+	}
+
+	/************************后处理 ************************/
+	if (!CalculateLabel(internal_label, external_label, watershed_label, grad_pixdat))
+	{
+		bRet = false;
+		goto WSTmain_end;
+	}
+	else
+	{
+		// 自动阈值
+		pDtParam->dFaint = faintThreshold;
+		// 预处理图像 及 蛋白点边缘标记
+		unsigned char* pOut = nullptr;
+		if (pParEft->Modify())
+			pOut = pParEft->Input();
+		else
+			pOut = pParEft->GetCache();
+		memset(pOut, 0, 3*nPixels);
+		unsigned char* pDest = pOut;
+		for (int i = 0; i < nPixels; ++i)
+		{
+			pDest[0] = (unsigned char)m_psImgAdjust[i];
+			pDest[1] = watershed_label[i] ? 0xff : 0x00;
+			pDest[2] = external_label[i] ? 0xff : 0x00;
+			pDest += 3;
+		}
+		pParEft->Output(pOut);
+	}
+
+	/*******************释放分配的指针空间*******************/
+WSTmain_end:
+	if (m_psImgAdjust != nullptr)
+	{
+		delete [] m_psImgAdjust;
+		m_psImgAdjust = nullptr;
+	}
+	if (pImgTmp != nullptr)
+	{
+		delete[] pImgTmp;
+		pImgTmp = nullptr;
+	}
+	if (grad_pixdat != nullptr)
 	{
 		delete[] grad_pixdat;
 		grad_pixdat = nullptr;
 	}
-	if (adjustedBG_pixdat)
+	if (internal_label != nullptr)
 	{
-		delete[] adjustedBG_pixdat;
-		adjustedBG_pixdat = nullptr;
+		delete[] internal_label;
+		internal_label = nullptr;
 	}
-	if (filted_pixdat)
+	if (external_label != nullptr)
 	{
-		delete[] filted_pixdat;
-		filted_pixdat = nullptr;
+		delete[] external_label;
+		external_label = nullptr;
 	}
-	if (pre_pixdat)
+	if (watershed_label != nullptr)
 	{
-		delete[] pre_pixdat;
-		pre_pixdat = nullptr;
+		delete[] watershed_label;
+		watershed_label = nullptr;
 	}
-
-	return true;
+	return bRet;
 }
-
 
 bool WaterShed::ImageFilter(short *fin, short *fout, bool isMedianFilter,
                             int medianModeType, bool isGaussFilter, int gaussModeType)
@@ -3030,9 +2914,6 @@ bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *
 	if (inImg == nullptr || exImg == nullptr || wsImg == nullptr || ws_Img == nullptr)
 		return false;
 
-	// 蛋白点标号初始, 从1开始
-	spot_ID = 0;
-
 	int *tempout;  //标记图像，判断是否标记
 	tempout = new int[nPixels];
 	memset(tempout, 0, sizeof(int)*nPixels);
@@ -3079,23 +2960,14 @@ bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *
 		}
 	}
 
+	// 蛋白点边缘
 	for (int i = 0; i < nPixels; ++i)
 		wsImg[i] = wsout[i];
 
-	if (ws_spotList)
-	{
-		if (wsout)
-			memcpy(ws_spotList->watershed_Label, wsout, sizeof(bool)*nPixels);
-		if (adjustedBG_pixdat)
-			memcpy(ws_spotList->adjustedBG_pixdat, adjustedBG_pixdat, sizeof(short)*nPixels);
-	}
-
-	if (wsout)
+	if (wsout != nullptr)
 		delete [] wsout;
-	if (tempout)
+	if (tempout != nullptr)
 		delete [] tempout;
-	//  if(img)
-	//      delete [] img;
 
 	return true;
 }
@@ -3135,7 +3007,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 
 	inLabelSum++;  //内标记数自增
-	inLabelValue += (255 - adjustedBG_pixdat[yy * pixWidth + xx]); //内标记总灰度值自增  255-value
+	inLabelValue += (255 - m_psImgAdjust[yy * pixWidth + xx]); //内标记总灰度值自增  255-value
 
 	std::stack<int> exStack; //空堆栈  存储为外标记点的标号
 
@@ -3183,7 +3055,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 
 				inLabelSum++;
-				inLabelValue += adjustedBG_pixdat[id];
+				inLabelValue += m_psImgAdjust[id];
 
 			}
 
@@ -3198,7 +3070,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				}
 
 				wsLabelSum++;
-				wsLabelValue += adjustedBG_pixdat[id];
+				wsLabelValue += m_psImgAdjust[id];
 
 			}
 
@@ -3213,9 +3085,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				ws_stack.push(id);  //将编号压入堆栈
 
 				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += adjustedBG_pixdat[id];
-
-
+				wsLineLabelValue += m_psImgAdjust[id];
 			}
 			if (*(exImg + id) != 1)
 			{
@@ -3223,7 +3093,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				exStack.push(id);  //将编号压入堆栈
 
 				exLabelSum++;
-				exLabelValue += adjustedBG_pixdat[id];
+				exLabelValue += m_psImgAdjust[id];
 			}
 
 			*(image_out + id) = label;
@@ -3246,8 +3116,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 
 
 				inLabelSum++;
-				inLabelValue += adjustedBG_pixdat[id];
-
+				inLabelValue += m_psImgAdjust[id];
 			}
 
 			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
@@ -3261,7 +3130,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				}
 
 				wsLabelSum++;
-				wsLabelValue += adjustedBG_pixdat[id];
+				wsLabelValue += m_psImgAdjust[id];
 
 			}
 
@@ -3276,7 +3145,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				ws_stack.push(id);  //将编号压入堆栈
 
 				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += adjustedBG_pixdat[id];
+				wsLineLabelValue += m_psImgAdjust[id];
 
 
 
@@ -3287,7 +3156,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				exStack.push(id);  //将编号压入堆栈
 
 				exLabelSum++;
-				exLabelValue += adjustedBG_pixdat[id];
+				exLabelValue += m_psImgAdjust[id];
 			}
 
 			*(image_out + id) = label;
@@ -3307,11 +3176,8 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 					isStack = true;
 				}
 
-
-
 				inLabelSum++;
-				inLabelValue += adjustedBG_pixdat[id];
-
+				inLabelValue += m_psImgAdjust[id];
 			}
 
 			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
@@ -3325,8 +3191,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				}
 
 				wsLabelSum++;
-				wsLabelValue += adjustedBG_pixdat[id];
-
+				wsLabelValue += m_psImgAdjust[id];
 			}
 
 			if (*(wsImg + id) == 1)
@@ -3340,7 +3205,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				ws_stack.push(id);  //将编号压入堆栈
 
 				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += adjustedBG_pixdat[id];
+				wsLineLabelValue += m_psImgAdjust[id];
 			}
 			if (*(exImg + id) != 1)
 			{
@@ -3348,7 +3213,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				exStack.push(id);  //将编号压入堆栈
 
 				exLabelSum++;
-				exLabelValue += adjustedBG_pixdat[id];
+				exLabelValue += m_psImgAdjust[id];
 			}
 
 			*(image_out + id) = label;
@@ -3369,7 +3234,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				}
 
 				inLabelSum++;
-				inLabelValue += adjustedBG_pixdat[id];
+				inLabelValue += m_psImgAdjust[id];
 			}
 
 			if (*(wsImg + id) != 1 && *(ws_Img + id) > 2)
@@ -3383,7 +3248,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				}
 
 				wsLabelSum++;
-				wsLabelValue += adjustedBG_pixdat[id];
+				wsLabelValue += m_psImgAdjust[id];
 			}
 
 			if (*(wsImg + id) == 1)
@@ -3397,7 +3262,7 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				ws_stack.push(id);  //将编号压入堆栈
 
 				wsLineSum++; //分水岭脊线像素数
-				wsLineLabelValue += adjustedBG_pixdat[id];
+				wsLineLabelValue += m_psImgAdjust[id];
 			}
 			if (*(exImg + id) != 1)
 			{
@@ -3405,9 +3270,8 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 				exStack.push(id);  //将编号压入堆栈
 
 				exLabelSum++;
-				exLabelValue += adjustedBG_pixdat[id];
+				exLabelValue += m_psImgAdjust[id];
 			}
-
 			*(image_out + id) = label;
 		}
 
@@ -3471,7 +3335,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 	maxY = max(maxY, yy);
 
 	inLabelSum++;  // 内标记数+1（当前点）
-	inLabelValue += (255 - adjustedBG_pixdat[yy*pixWidth + xx]); // 内标记总灰度值+ （当前点）
+	inLabelValue += (255 - m_psImgAdjust[yy*pixWidth + xx]); // 内标记总灰度值+ （当前点）
 	*(image_out + yy * pixWidth + xx) = label;	// 符合条件，则在输出标记图像中标记当前点
 
 	std::stack<int> exStack;	// 空堆栈 存储为外标记点的标号
@@ -3542,7 +3406,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				maxY = max(maxY, ym);
 
 				inLabelSum++;
-				inLabelValue += (255 - adjustedBG_pixdat[id]);
+				inLabelValue += (255 - m_psImgAdjust[id]);
 			}
 
 			// 蛋白点区域 内部
@@ -3554,7 +3418,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 					isStack = true;
 				}
 				wsLabelSum++;
-				wsLabelValue += (255 - adjustedBG_pixdat[id]);
+				wsLabelValue += (255 - m_psImgAdjust[id]);
 			}
 
 			// 分水岭脊线  蛋白点边缘
@@ -3569,7 +3433,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				ws_stack.push(id);
 
 				wsLineSum++;
-				wsLineLabelValue += (255 - adjustedBG_pixdat[id]);
+				wsLineLabelValue += (255 - m_psImgAdjust[id]);
 
 				// 求分水岭区域的最大最小坐标
 				minrX = min(minrX, xm);
@@ -3584,7 +3448,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				exStack.push(id);
 
 				exLabelSum++;
-				exLabelValue += (255 - adjustedBG_pixdat[id]);
+				exLabelValue += (255 - m_psImgAdjust[id]);
 			}
 		}	// for (int i = 0; i < 4; ++i)
 	}
@@ -3649,17 +3513,11 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 
 			//2 新建蛋白点节点，并保存蛋白点信息
 			spot_ID++; // 蛋白点编号
-			if (ws_spotList == nullptr)
-			{
-				// 给蛋白点链表分配空间
-				ws_spotList = new SpotList;
-				if (!InitSpotList(ws_spotList, nPixels))
-					return false;
-			}
-			// 添加蛋白点到链表尾
-			if (!TailSpotToList(ws_spotList, spot_ID,
-								center_X, center_Y, centroid_X, centroid_Y,
-								area, volume, rx, ry, wsLineSum, aveGray, exGray, imGray, pWatershedLineA))
+			// 添加蛋白点
+			if (!AddSpot(spot_ID,
+			             center_X, center_Y, centroid_X, centroid_Y,
+			             area, volume, rx, ry, wsLineSum, aveGray, exGray, imGray, pWatershedLineA)
+				)
 				return false;
 
 			if (pWatershedLineA != nullptr)
@@ -3678,36 +3536,9 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 	return true;
 }
 
-/****************************************************************************
-   链表操作  存储蛋白点信息
-*****************************************************************************/
-
 /********************************************************************
-    函数：InitSpotList  -  初始化相同游程链表头节点
-    参数：list：蛋白点链表
-        total：图像像素数
-    返回：如正确执行，则返回true，否则返回false
-********************************************************************/
-bool WaterShed::InitSpotList(SpotList* lsSpot, int total)
-{
-	lsSpot->first = nullptr;
-	lsSpot->last = nullptr;
-
-	lsSpot->watershed_Label = new bool[total];
-	memset(lsSpot->watershed_Label, 0, sizeof(bool)*total);
-
-	lsSpot->adjustedBG_pixdat = new short[total];
-	memset(lsSpot->adjustedBG_pixdat, 0, sizeof(short)*total);
-
-	lsSpot->spotTotal = 0;
-
-	return true;
-}
-
-/********************************************************************
-    函数：TailSpotToList  -  添加新节点到头节点
-    参数：list：蛋白点链表
-          spotID：蛋白点编号
+    函数：AddSpot
+    参数：spotID：蛋白点编号
           centerX：蛋白点中心X坐标
           centerY：蛋白点中心Y坐标
           centroidX：蛋白点质心X坐标
@@ -3723,123 +3554,52 @@ bool WaterShed::InitSpotList(SpotList* lsSpot, int total)
           pWatershedLine：蛋白点分水岭脊线指针
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
-
-bool WaterShed::TailSpotToList(SpotList *list, int spotID, int centerX, int centerY,
-                               int centroidX, int centroidY, int spotArea, int spotVolume,
-                               int spotRx, int SpotRy , int spotPerimeter, float spotAveGray,
-                               float spotBgAveGray, float spotInAveGray , int *pWatershedLine )
+bool WaterShed::AddSpot(int spotID, int centerX, int centerY, int centroidX, int centroidY,
+						int spotArea, int spotVolume, int spotRx, int SpotRy, int spotPerimeter,
+						float spotAveGray, float spotBgAveGray, float spotInAveGray, int *pWatershedLine )
 {
 	//分配和添加新的节点到蛋白点链表的最后
-	SpotNode *newNode = nullptr;
+	ST_SPOT_NODE spot = { 0 };
 
-	newNode = new SpotNode[1];
-	newNode->next = nullptr;
-	newNode->spotID = spotID ;
-	newNode->centerX = centerX ;
-	newNode->centerY = centerY ;
-	newNode->centroidX = centroidX ;
-	newNode->centroidY = centroidY ;
-	newNode->spotArea = spotArea ;
-	newNode->spotVolume = spotVolume ;
-	newNode->spotRx = spotRx ;
-	newNode->spotRy = SpotRy ;
-	newNode->spotPerimeter = spotPerimeter ;
-	newNode->spotAveGray = spotAveGray ;
-	newNode->spotBgAveGray = spotBgAveGray ;
-	newNode->spotInAveGray = spotInAveGray ;
+	spot.id = spotID;
 
-	int *pWatershedLineA;
-	pWatershedLineA = new int[spotPerimeter];
-	memcpy(pWatershedLineA, pWatershedLine, sizeof(int)*spotPerimeter);
-	newNode->pWatershedLine = pWatershedLineA;
+	spot.x = centerX;
+	spot.y = centerY;
+	spot.xm = centroidX;
+	spot.ym = centroidY;
 
-	if (list->first == nullptr)
-	{
-		//如果第一个蛋白点节点为空，则将新蛋白点保存在首节点
-		list->first = newNode;
-		list->last = newNode;
-	}
-	else
-	{
-		//否则保存到最后一个节点的后面
-		list->last->next = newNode;
-	}
-	//使last指向最后一个新加入的节点
-	list->last = newNode;
+	spot.area = spotArea;
+	spot.volume = spotVolume;
+	spot.rx = spotRx;
+	spot.ry = SpotRy;
 
-	//计算蛋白点数
-	list->spotTotal++;
+	spot.perimeter = spotPerimeter;
+	spot.edge = new int[spotPerimeter];
+	memcpy(spot.edge, pWatershedLine, sizeof(int)*spotPerimeter);
 
+	spot.mean = spotAveGray;
+	spot.meanBK = spotBgAveGray;
+	spot.meanIN = spotInAveGray;
+
+	m_plsSpots->push_back(spot);
 
 	return true;
 }
 
-/********************************************************************
-    函数：DeleteHeadNode  -  删除链表头节点
-    参数：list：蛋白点链表
-    返回：如正确执行，则返回true，否则返回false
-********************************************************************/
-bool WaterShed::DeleteHeadNode(SpotList *list)
+/**< 清空所有蛋白点 */
+bool WaterShed::ClearSpots(LS_SPOTS* pList)
 {
-	// 去除和释放头节点
-	SpotNode *killNode;
-
-	if (list->first != nullptr)
-	{
-		killNode = list->first;
-		list->first = killNode->next;
-
-		if (killNode->pWatershedLine)
-		{
-			delete[] killNode->pWatershedLine;
-			killNode->pWatershedLine = nullptr;
-		}
-
-		delete [] killNode;
-		killNode = nullptr;
-
-		list->spotTotal--;
-	}
-	return true;
-}
-
-/********************************************************************
-    函数：DestroyList -  删除链表
-    参数：list：蛋白点链表
-    返回：如正确执行，则返回true，否则返回false
-********************************************************************/
-bool WaterShed::DestroyList(SpotList *list)
-{
-	//释放整个链表
-	if (list == nullptr)
+	if (pList->empty())
 		return true;
 
-	while (list->first != nullptr)
+	// 是否各蛋白点的边缘点集
+	for (auto i = pList->begin(); i != pList->end(); ++i)
 	{
-		//释放蛋白点节点
-		if (!DeleteHeadNode(list))
-			return false ;
+		ST_SPOT_NODE& spot = *i;
+		delete [] spot.edge;
 	}
+	// 清空所有蛋白点
+	pList->clear();
 
-	if (list)
-	{
-		//释放蛋白点链表结构体对象
-		if (list->watershed_Label)
-		{
-			delete[] list->watershed_Label;
-			list->watershed_Label = nullptr;
-		}
-		if (list->adjustedBG_pixdat)
-		{
-			delete[] list->adjustedBG_pixdat;
-			list->adjustedBG_pixdat = nullptr;
-		}
-
-		delete[] list;
-		list = nullptr;
-	}
 	return true;
 }
-
-
-
