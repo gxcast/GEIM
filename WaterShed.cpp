@@ -3494,7 +3494,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 			{
 				id = ws_stack.top();	// 获取栈顶值
 				ws_stack.pop();			// 删除栈顶元素
-				ws_out[id] = 0;			// 不是分水岭脊线
+				ws_out[id] = false;		// 不是分水岭脊线
 			}
 		}
 		else
@@ -3508,7 +3508,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				id = ws_stack.top();		// 获取栈顶值
 				ws_stack.pop();				// 删除栈顶元素
 				pWatershedLineA[kk++] = id;
-				ws_out[id] = 1;
+				ws_out[id] = true;
 			}
 
 			//2 新建蛋白点节点，并保存蛋白点信息
@@ -3559,7 +3559,7 @@ bool WaterShed::AddSpot(int spotID, int centerX, int centerY, int centroidX, int
 						float spotAveGray, float spotBgAveGray, float spotInAveGray, int *pWatershedLine )
 {
 	//分配和添加新的节点到蛋白点链表的最后
-	ST_SPOT_NODE spot = { 0 };
+	ST_SPOT_NODE spot;
 
 	spot.id = spotID;
 

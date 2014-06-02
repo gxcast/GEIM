@@ -72,6 +72,16 @@ class SpotDtDlg : public wxDialog
          */
 		bool Init(const wxArrayPtrVoid* pAryImgs);
 
+        /** \brief obtain the detection parameter
+         *
+         * \return ST_DTPARAM&	the parameter reference
+         *
+         */
+		inline ST_DTPARAM& DtParam()
+		{
+			return m_stDtParam;
+		}
+
 	protected:
 
 	private:
@@ -119,6 +129,7 @@ class SpotDtDlg : public wxDialog
         void OnSpMaxUpdate(wxUpdateUIEvent& event);
         void OnCiImage(wxCommandEvent& event);
         void OnBtnTestParam(wxCommandEvent& event);
+        void OnBtnOK(wxCommandEvent& event);
         void OnBtnProcUpdate(wxUpdateUIEvent& event);
 
 		/**< control id */

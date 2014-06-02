@@ -8,7 +8,6 @@
 #include "ImagePanel.h"
 #include "EffectPar.h"
 #include "Graying.h"
-//#include "SpotDt.h"
 #include "WaterShed.h"
 
 // tools buttons
@@ -379,6 +378,7 @@ bool SpotDtDlg::DyEventMap()
 	Connect(ID_CI_IMAGE, wxEVT_CHOICE, (wxObjectEventFunction)&SpotDtDlg::OnCiImage);
 	Connect(wxID_APPLY, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnBtnTestParam);
 	Connect(wxID_APPLY, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnProcUpdate);
+	Connect(wxID_OK, wxEVT_BUTTON, (wxObjectEventFunction)&SpotDtDlg::OnBtnOK);
 	Connect(wxID_OK, wxEVT_UPDATE_UI, (wxObjectEventFunction)&SpotDtDlg::OnBtnProcUpdate);
 
 	return true;
@@ -784,9 +784,9 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 	pOut = parEft.Output();
 	iSpotN = (int)lsSpots.size();
 	// draw the spot center
-	for (auto i = lsSpots.begin(); i != lsSpots.end(); ++i)
+	for (auto it = lsSpots.begin(); it != lsSpots.end(); ++it)
 	{
-		ST_SPOT_NODE& spot = *i;
+		ST_SPOT_NODE& spot = *it;
 		// 绘制蛋白点+
 		int x = spot.x;
 		int y = spot.y;
@@ -856,6 +856,22 @@ OnBtnTestParam_end:
 
 	// update ui
 	m_pImgPanel->Refresh();
+}
+
+/**< determine the detectiong pearameter, and close dialog*/
+void SpotDtDlg::OnBtnOK(wxCommandEvent& event)
+{
+	// get the detection parameter
+	GetParam();
+
+	// terminate the dialog
+	if (IsModal())
+		EndModal(wxID_OK);
+	else
+	{
+		SetReturnCode(wxID_OK);
+		Show(false);
+	}
 }
 
 /**< update "Test Param" and "Batch" button's state*/

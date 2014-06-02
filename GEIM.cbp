@@ -55,6 +55,8 @@
 		<Unit filename="ImagePanel.h" />
 		<Unit filename="SpotDtDlg.cpp" />
 		<Unit filename="SpotDtDlg.h" />
+		<Unit filename="SpotDtThread.cpp" />
+		<Unit filename="SpotDtThread.h" />
 		<Unit filename="WaterShed.cpp" />
 		<Unit filename="WaterShed.h" />
 		<Extensions>

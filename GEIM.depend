@@ -3665,12 +3665,14 @@
 	"GEIMFrame.h"
 	<wx/wx.h>
 
-1396102844 /home/nicolas/dev/GEIM/GEIMFrame.h
+1401713461 /home/nicolas/dev/GEIM/GEIMFrame.h
 	<wx/frame.h>
 	<wx/sizer.h>
 	<wx/menu.h>
 	<wx/panel.h>
 	<wx/statusbr.h>
+	<wx/busyinfo.h>
+	"GEIMDef.h"
 	"ImagePanel.h"
 
 1397194284 /home/nicolas/dev/GEIM/ImagePanel.h
@@ -3678,10 +3680,12 @@
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1401271676 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1401711590 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+	<wx/wx.h>
 	"AboutDlg.h"
 	"SpotDtDlg.h"
-	<wx/wx.h>
+	"EffectPar.h"
+	"SpotDtThread.h"
 
 1395821276 /home/nicolas/dev/GEIM/AboutDlg.h
 	<wx/dialog.h>
@@ -7152,15 +7156,15 @@
 	"wx/defs.h"
 	"wx/filesys.h"
 
-1399798519 /home/nicolas/dev/GEIM/SpotDtDlg.h
+1401541543 /home/nicolas/dev/GEIM/SpotDtDlg.h
 	<wx/dialog.h>
 	"GEIMDef.h"
 	"ImagePanel.h"
 
-1401354066 /home/nicolas/dev/GEIM/GEIMDef.h
+1401691925 /home/nicolas/dev/GEIM/GEIMDef.h
 	<list>
 
-1401375014 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
+1401694465 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
 	<wx/wx.h>
 	<wx/spinctrl.h>
@@ -7278,11 +7282,22 @@
 	"GEIMDef.h"
 	"EffectPar.h"
 
-1401374790 source:/home/nicolas/dev/GEIM/WaterShed.cpp
+1401694137 source:/home/nicolas/dev/GEIM/WaterShed.cpp
 	"WaterShed.h"
 	<math.h>
 	<queue>
 	<stack>
 	<vector>
 	<algorithm>
+
+1401711482 source:/home/nicolas/dev/GEIM/SpotDtThread.cpp
+	"SpotDtThread.h"
+	"EffectPar.h"
+	"Graying.h"
+	"WaterShed.h"
+
+1401711437 /home/nicolas/dev/GEIM/SpotDtThread.h
+	<wx/event.h>
+	<wx/thread.h>
+	"GEIMDef.h"
 

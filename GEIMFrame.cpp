@@ -1,14 +1,13 @@
 ﻿#include "GEIMFrame.h"
-#include "AboutDlg.h"
-#include "SpotDtDlg.h"
 
-//(*InternalHeaders(GEIMFrame)
-//*)
 #include <wx/wx.h>
 
+#include "AboutDlg.h"
+#include "SpotDtDlg.h"
+#include "EffectPar.h"
+#include "SpotDtThread.h"
 
-//(*IdInit(GEIMFrame)
-//*)
+
 const long GEIMFrame::ID_PANEL_MAIN = wxNewId();
 const long GEIMFrame::ID_STATUSBAR_MAIN = wxNewId();
 const long GEIMFrame::ID_CMD_DT = wxNewId();
@@ -23,15 +22,10 @@ const long GEIMFrame::ID_BMPBTN_IMG_MOVE = wxNewId();
 
 
 BEGIN_EVENT_TABLE(GEIMFrame,wxFrame)
-	//(*EventTable(GEIMFrame)
-	//*)
 END_EVENT_TABLE()
 
 GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 {
-	//(*Initialize(GEIMFrame)
-	//*)
-
 	// create frame
 	Create(parent, wxID_ANY, _("GEIM_Dev"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("wxID_ANY"));
 
@@ -142,13 +136,15 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	Connect(wxID_ANY,wxEVT_CLOSE_WINDOW,(wxObjectEventFunction)&GEIMFrame::OnClose);
 	// menu or tool-button command
 	Connect(wxID_OPEN, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileOpen);
+	Connect(wxID_OPEN, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnFileOpenUpdate);
 	Connect(wxID_CLOSE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnFileClose);
 	Connect(wxID_CLOSE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnFileCloseUpdate);
 	Connect(ID_CMD_DT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDt);
 	Connect(ID_CMD_DT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnDtUpdate);
 	Connect(ID_CMD_MT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMt);
 	Connect(ID_CMD_MT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnMtUpdate);
-	Connect(wxID_EXIT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
+	Connect(wxID_EXIT, wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
+	Connect(wxID_EXIT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnQuitUpdate);
 	Connect(wxID_ABOUT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnAbout);
 	// image operate
 	Connect(ID_BMPBTN_IMG_ZOOMIN, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnZoomIN);
@@ -163,17 +159,25 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
 	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnImgMove);
 	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
+	// thread event
+	Connect(SpotDtThread::ID, wxEVT_THREAD, (wxObjectEventFunction)&GEIMFrame::OnThreadDt);
 }
 
 GEIMFrame::~GEIMFrame()
 {
-	//(*Destroy(GEIMFrame)
-	//*)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-void GEIMFrame::InitFrame()
+/**< refresh all the dispaly image */
+bool GEIMFrame::RefreshImgs()
 {
+	size_t nNum = m_aryImgs.Count();
+	for (size_t i = 0; i < nNum; ++i)
+	{
+		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+		pPanel->Refresh(false);
+	}
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -206,11 +210,11 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	size_t nNum = m_aryImgs.Count();
 	if (nNum > 0)
 	{
-		iRet = wxMessageBox(_("A group of images are already opened, SURE to open a new group of iamges?"),
+		iRet = wxMessageBox(_("A group of images are already opened,\r\n SURE to open a new group of iamges?"),
 		                    _("Confirm"),
 		                    wxYES_NO|wxICON_QUESTION|wxYES_DEFAULT|wxCENTER,
 		                    this);
-		if (iRet != wxOK)
+		if (iRet != wxYES)
 			return;
 	}
 
@@ -290,6 +294,10 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 		pPanel->SetImg(*pImgDisp);
 	}
 }
+void GEIMFrame::OnFileOpenUpdate(wxUpdateUIEvent& event)
+{
+	event.Enable(m_pBusy == nullptr);
+}
 
 /**< command to close the opened file */
 void GEIMFrame::OnFileClose(wxCommandEvent& event)
@@ -326,23 +334,11 @@ void GEIMFrame::OnFileClose(wxCommandEvent& event)
 	m_aryImgsDisp.Empty();
 	// update ui layout
 	m_pBoxSizerImg->Layout();
-
-	// detroy detected images
-	nNum = m_aryImgsDt.Count();
-	for (size_t i = 0; i < nNum; ++i)
-	{
-		wxImage* pImg = static_cast<wxImage*>(m_aryImgsDt.Item(i));
-		if (pImg == nullptr)
-			continue;
-		pImg->Destroy();
-		delete pImg;
-	}
-	m_aryImgsDt.Empty();
 }
 void GEIMFrame::OnFileCloseUpdate(wxUpdateUIEvent& event)
 {
 	size_t nNum = m_aryImgs.Count();
-	event.Enable(nNum > 0);
+	event.Enable(nNum > 0 && m_pBusy == nullptr);
 }
 
 /**< detect spots */
@@ -350,61 +346,48 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
 {
 	int iRet = 0;
 
-	// destroy old dt images
-	size_t nNum = m_aryImgsDt.Count();
-	for (size_t i = 0; i < nNum; ++i)
-	{
-		wxImage* pImgDt = static_cast<wxImage*>(m_aryImgsDt.Item(i));
-		pImgDt->Destroy();
-		delete pImgDt;
-	}
-	m_aryImgsDt.Empty();
-	// new create a copy of images
-	nNum = m_aryImgsDisp.Count();
-	for (size_t i = 0; i < nNum; ++i)
-	{
-		wxImage* pImgDisp = static_cast<wxImage*>(m_aryImgsDisp.Item(i));
-		wxImage* pImgDt = new wxImage();
-		*pImgDt = pImgDisp->Copy();
-		m_aryImgsDt.Add(pImgDt);
-	}
-
-	// show detect dialog
+	// show detect dialog, get the detect parameter
 	SpotDtDlg dlg(this, wxNewId());
-	dlg.Init(&m_aryImgsDt);     // set dt images
+	dlg.Init(&m_aryImgs);     // set dt images
 	iRet = dlg.ShowModal();
 	if (iRet != wxID_OK)
 		return;
 
-	// update dispaly iamges
-	for (size_t i = 0; i < nNum; ++i)
+	// detect the spot in batch, at the same, display the result
+	ST_DTPARAM& stDtParam = dlg.DtParam();
+	SpotDtThread* pThd = new SpotDtThread(this, stDtParam, m_aryImgs, m_aryImgsDisp, m_lsDtResult);
+	if (pThd->Run() != wxTHREAD_NO_ERROR)
 	{
-		wxImage* pImgDisp = static_cast<wxImage*>(m_aryImgsDisp.Item(i));
-		wxImage* pImgDt = static_cast<wxImage*>(m_aryImgsDt.Item(i));
-		*pImgDisp = pImgDt->Copy();
+		wxMessageBox(_("Create dtect thread failed."), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+		return;
 	}
+	// busy indicator
+	m_pBusy = new wxBusyInfo(_("Please wait, batch detecting..."), this);
 }
 void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
 {
 	size_t nNum = m_aryImgs.Count();
-	event.Enable(nNum > 0);
+	event.Enable(nNum > 0 && m_pBusy == nullptr);
 }
 
 /**< match spots */
 void GEIMFrame::OnMt(wxCommandEvent& event)
 {
-
 }
 void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
 {
 	size_t nNum = m_aryImgs.Count();
-	event.Enable(nNum > 0);
+	event.Enable(nNum > 0 && m_pBusy == nullptr);
 }
 
 /**< command to exit the app */
 void GEIMFrame::OnQuit(wxCommandEvent& event)
 {
 	Close();
+}
+void GEIMFrame::OnQuitUpdate(wxUpdateUIEvent& event)
+{
+	event.Enable(m_pBusy == nullptr);
 }
 
 /**< command to display app info */
@@ -514,7 +497,7 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 	IMGPL_CMD cmd = event.GetCMD();
 	void* pParam = event.GetParam();
 
-	size_t nNum = m_aryImgsDisp.Count();
+	size_t nNum = m_aryImgs.Count();
 	for (size_t i = 0; i < nNum; ++i)
 	{
 		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
@@ -526,21 +509,47 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 		switch(cmd)
 		{
 		case IMGPL_CMD::IMG_ZRECT:
-			{
-				wxRect* prcSel = static_cast<wxRect*>(pParam);
-				wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get IMG_ZRECT event param failed."));
-				pPanel->ImgZoomRect(*prcSel);
-			}
-			break;
+		{
+			wxRect* prcSel = static_cast<wxRect*>(pParam);
+			wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get IMG_ZRECT event param failed."));
+			pPanel->ImgZoomRect(*prcSel);
+		}
+		break;
 		case IMGPL_CMD::IMG_MOVE:
-			{
-				wxSize* pszMv = static_cast<wxSize*>(pParam);
-				wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get IMG_MOVE event param failed."));
-				pPanel->ImgMove(*pszMv);
-			}
-			break;
+		{
+			wxSize* pszMv = static_cast<wxSize*>(pParam);
+			wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get IMG_MOVE event param failed."));
+			pPanel->ImgMove(*pszMv);
+		}
+		break;
 		default:
 			break;
 		}
 	}
+}
+
+/**< finish batch detect event*/
+void GEIMFrame::OnThreadDt(wxThreadEvent& event)
+{
+	bool bRet = (event.GetInt() == 1);
+
+	// stop indicator
+	if (m_pBusy != nullptr)
+	{
+		delete m_pBusy;
+		m_pBusy = nullptr;
+	}
+
+	// notice
+	if (!bRet)
+		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+	else
+		// update ui
+		RefreshImgs();
+}
+
+/**< finish match */
+void GEIMFrame::OnThreadMt(wxThreadEvent& event)
+{
+
 }
