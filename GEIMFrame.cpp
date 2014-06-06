@@ -6,6 +6,8 @@
 #include "SpotDtDlg.h"
 #include "EffectPar.h"
 #include "SpotDtThread.h"
+#include "CharactVect.h"
+#include "Graying.h"
 
 
 const long GEIMFrame::ID_PANEL_MAIN = wxNewId();
@@ -167,6 +169,48 @@ GEIMFrame::~GEIMFrame()
 {
 }
 
+/**< detroy the mt param */
+bool GEIMFrame::DestroyMTParam(ST_MTPARAM* pstParm)
+{
+	if (pstParm == nullptr)
+		return true;
+
+	// origin image
+	if (pstParm->pImg != nullptr)
+	{
+		delete [] pstParm->pImg;
+		pstParm->pImg = nullptr;
+	}
+
+	// detect result maybe come from result list
+	pstParm->pData = nullptr;
+
+	// attrib vector
+	if (pstParm->pvtAttr != nullptr)
+	{
+		for (auto it = pstParm->pvtAttr->begin(); it != pstParm->pvtAttr->end(); ++it)
+		{
+			ST_SPOT_ATTR& attr = *it;
+
+			// detect result maybe come from result list
+			attr.pNode = nullptr;
+			// release charact
+			if (attr.pCrt != nullptr)
+			{
+				delete attr.pCrt;
+				attr.pCrt = nullptr;
+			}
+		}
+		if (!pstParm->pvtAttr->empty())
+			pstParm->pvtAttr->clear();
+
+		delete pstParm->pvtAttr;
+		pstParm->pvtAttr = nullptr;
+	}
+
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 /**< refresh all the dispaly image */
 bool GEIMFrame::RefreshImgs()
@@ -184,7 +228,7 @@ bool GEIMFrame::RefreshImgs()
 /**< invoke when window will close */
 void GEIMFrame::OnClose(wxCloseEvent& event)
 {
-	if ( event.CanVeto() )
+	if (event.CanVeto() && m_aryImgs.Count() > 0)
 	{
 		int iDlg = wxMessageBox( _("Are you sure to close the program?"), _("Confirm"), wxYES_NO | wxICON_QUESTION | wxNO_DEFAULT | wxCENTRE );
 		if ( iDlg != wxYES )
@@ -222,7 +266,7 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	wxFileDialog dlgFile(this, _("Choice Images"),
 	                     _T(""), _T(""),
 	                     _T("All Image File|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|Bitmap|*.bmp|JPEG|*.jpg;*.jpeg|PNG|*.png|TIFF|*.tif;*.tiff"),
-	                     wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_MULTIPLE);
+	                     wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_MULTIPLE|wxFD_PREVIEW);
 	if( dlgFile.ShowModal() != wxID_OK )
 		return;
 	// files num
@@ -302,6 +346,10 @@ void GEIMFrame::OnFileOpenUpdate(wxUpdateUIEvent& event)
 /**< command to close the opened file */
 void GEIMFrame::OnFileClose(wxCommandEvent& event)
 {
+	// realse match result
+	// realse detect result
+	SpotDtThread::DestroyDtResult(&m_lsDtResult);
+
 	// destroy origin images
 	size_t nNum = m_aryImgs.Count();
 	for (size_t i = 0; i < nNum; ++i)
@@ -356,7 +404,7 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
 	// detect the spot in batch, at the same, display the result
 	ST_DTPARAM& stDtParam = dlg.DtParam();
 	SpotDtThread* pThd = new SpotDtThread(this, stDtParam, m_aryImgs, m_aryImgsDisp, m_lsDtResult);
-	if (pThd->Run() != wxTHREAD_NO_ERROR)
+	if (pThd->Run() != wxTHREAD_NO_ERROR)	// pThd delete itself auto
 	{
 		wxMessageBox(_("Create dtect thread failed."), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 		return;
@@ -373,11 +421,107 @@ void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
 /**< match spots */
 void GEIMFrame::OnMt(wxCommandEvent& event)
 {
+	ST_MTPARAM stParamA;
+    ST_MTPARAM stParamB;
+    ST_MTRESULT stMtRst;
+
+    auto FillParam = [this](ST_MTPARAM& stParam, int id) -> bool {
+		wxImage* pImg = static_cast<wxImage*>(m_aryImgs.Item(id));
+		unsigned char* pTmp = pImg->GetData();
+		auto it = m_lsDtResult.begin();
+		for (int i = 0; i < id; ++i)
+			++it;
+		ST_DTRESULT& rst = *it;
+
+		stParam.iW = pImg->GetWidth();
+		stParam.iH = pImg->GetHeight();
+		stParam.iWb = stParam.iW*3;
+		stParam.iN = stParam.iW*stParam.iH;
+
+		stParam.pImg = new ST_RGB[stParam.iN];
+		memcpy(stParam.pImg, pTmp, stParam.iN*3);
+
+		stParam.pData = rst.pData;
+
+		size_t nC = rst.pLs->size();
+		stParam.pvtAttr = new VT_ATTR(nC);
+		nC = 0u;
+		for(auto ir = rst.pLs->begin(); ir != rst.pLs->end(); ++ir)
+		{
+			ST_SPOT_NODE& stNode = *ir;
+			ST_SPOT_ATTR& attr = stParam.pvtAttr->at(nC++);
+			attr.pNode = &stNode;
+			attr.pCrt = new ST_SPOT_CHARACT;
+		}
+		wxASSERT_MSG(nC == rst.pLs->size(), _T("Fill match param's pNode failed."));
+
+		return true;
+    };
+    FillParam(stParamA, 0);
+    FillParam(stParamB, 1);
+
+    // match
+    CharactVect cvt;
+    if (cvt.CVMain(std::make_pair(stParamA, stParamB), &stMtRst))
+	{
+		// get the result
+		auto GetRst = [this](ST_MTPARAM& stParam, int id) -> bool {
+			wxImage* pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(id));
+			PST_RGB pDes = (PST_RGB)pImg->GetData();
+			int iW = stParam.iW;
+			int iH = stParam.iH;
+			int iN = stParam.iN;
+			// copy the image
+			memcpy(pDes, stParam.pImg, iN*3);
+			// draw spot's character
+			for (auto it = stParam.pvtAttr->begin(); it != stParam.pvtAttr->end(); ++it)
+			{
+				if (it->bInvalid)
+					continue;
+				ST_SPOT_NODE& spot = *(it->pNode);
+				ST_SPOT_CHARACT& crt = *(it->pCrt);
+				// 蛋白点座标
+				int x = spot.x;
+				int y = spot.y;
+				// character
+				ST_RGB clr;
+				Graying::ColorMap(crt.plump, &clr);
+				for (int j = -3; j <= 3; ++j)
+				{
+					if (y+j < 0 || y+j >= iH)
+						continue;
+					PST_RGB pLine = pDes + (y+j)*iW;
+					for (int i = -3; i <=3; ++i)
+					{
+						if (x+i < 0 || x+i >= iW)
+							continue;
+						PST_RGB pPix = pLine + (x+i);
+						*pPix = clr;
+					}
+				}
+			}
+
+			return true;
+		};
+		GetRst(stParamA, 0);
+		GetRst(stParamB, 1);
+
+		// update ui
+		RefreshImgs();
+	}
+
+    // release param
+    GEIMFrame::DestroyMTParam(&stParamA);
+    GEIMFrame::DestroyMTParam(&stParamB);
 }
 void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
 {
+	bool bEn = true;
 	size_t nNum = m_aryImgs.Count();
-	event.Enable(nNum > 0 && m_pBusy == nullptr);
+	bEn = (nNum > 0);
+	bEn = bEn && (m_pBusy == nullptr);
+	bEn = bEn && (m_lsDtResult.size() >= 2);
+	event.Enable(bEn);
 }
 
 /**< command to exit the app */
@@ -548,7 +692,7 @@ void GEIMFrame::OnThreadDt(wxThreadEvent& event)
 		RefreshImgs();
 }
 
-/**< finish match */
+/**< finish match event*/
 void GEIMFrame::OnThreadMt(wxThreadEvent& event)
 {
 

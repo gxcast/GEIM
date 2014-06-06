@@ -1,6 +1,59 @@
 #include "Graying.h"
 
+// math
+#include <math.h>
+
 /////////////////////////////////////////////////////////
+/**< jet color map generic */
+bool Graying::ColorMap(double d, PST_RGB pClr)
+{
+	if (pClr == nullptr)
+	{
+		wxASSERT_MSG(false, _T("ColorMap parameter is nullptr."));
+		return false;
+	}
+	if (d < 0)
+		d = -d;
+	if (0 <= d && d <= 1.0)
+		d *= 1000;
+	else if(d > 1.0)
+	{
+		pClr->r = 255u;
+		pClr->g = 255u;
+		pClr->b = 255u;
+		return false;
+	}
+
+	if (0 <= d && d <= 117.0 )
+		pClr->b = (unsigned char)(d + 138);
+	else if (117.0 < d && d <= 372.0)
+	{
+		pClr->g = (unsigned char)(d - 117);
+		pClr->b = 255;
+	}
+	else if (372.0 < d && d <= 627.0)
+	{
+		pClr->r = (unsigned char)(d - 372);
+		pClr->g = 255;
+		pClr->b = (unsigned char)(627 - d);
+	}
+	else if (627.0 < d && d <= 882)
+	{
+		pClr->r = 255;
+		pClr->g = (unsigned char)(882 - d);
+	}
+	else if (882.0 < d && d <= 1000)
+		pClr->r = (unsigned char)(1137 - d);
+
+	return true;
+}
+ST_RGB Graying::ColorMap(double d)
+{
+	ST_RGB rgb;
+	ColorMap(d, &rgb);
+	return rgb;
+}
+
 // Abandon image's color
 bool Graying::Gray(EffectPar& parEft)
 {
@@ -166,5 +219,59 @@ bool Graying::Subtract(EffectPar& parEft, int iCg)
 	}
 
 	parEft.Output(pDes);
+	return true;
+}
+
+/**< gray normalization */
+bool Graying::Normalize(EffectPar& parEft, double dE0, double dV0)
+{
+	PST_RGB pSrc = (PST_RGB)parEft.Input();
+	if (pSrc == nullptr)
+		return false;
+	// pixel number
+	int iN = parEft.PixNum();
+
+	// dest image
+	PST_RGB pDes = nullptr;
+	if (parEft.Modify())
+		pDes = pSrc;
+	else
+		pDes = (PST_RGB)parEft.GetCache();
+
+	// caculate ecpectation and variance
+	double dE = 0.0;
+	double dV = 0.0;
+	dV0 = dV0*dV0;
+	for (int i = 0; i < iN; ++i)
+		dE += pSrc[i].r;
+	dE /= iN;
+	for (int i = 0; i < iN; ++i)
+	{
+		double dT = pSrc[i].r - dE;
+		dV += dT*dT;
+	}
+	dV /= iN;
+
+	// normalization
+	for (int i = 0; i < iN; ++i)
+	{
+		double dG = pSrc[i].r;
+		double dT = dG - dE;
+		dT = sqrt(dT*dT*dV0/dV);
+		if (dG >= dE)
+			dT = dE0 + dT;
+		else
+			dT = dE0 - dT;
+		if (dT > 255.0)
+			dT = 255.0;
+		else if (dT < 0.0)
+			dT = 0.0;
+
+		pDes[i].r = (unsigned char)dT;
+		pDes[i].g = (unsigned char)dT;
+		pDes[i].b = (unsigned char)dT;
+	}
+
+	parEft.Output((unsigned char*)pDes);
 	return true;
 }

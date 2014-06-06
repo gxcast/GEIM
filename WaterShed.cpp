@@ -167,9 +167,12 @@ bool WaterShed::WSTmain(EffectPar* pParEft, PST_DTPARAM pDtParam, LS_SPOTS* pLis
 		unsigned char* pDest = pOut;
 		for (int i = 0; i < nPixels; ++i)
 		{
+			// 预处理后图像
 			pDest[0] = (unsigned char)m_psImgAdjust[i];
+			// 蛋白点边缘（不包括伪蛋白点）
 			pDest[1] = watershed_label[i] ? 0xff : 0x00;
-			pDest[2] = external_label[i] ? 0xff : 0x00;
+			// 蛋白点内部（包括伪蛋白点）
+			pDest[2] = (grad_pixdat[i] > 0) ? 0xff : 0x00;
 			pDest += 3;
 		}
 		pParEft->Output(pOut);
@@ -2914,16 +2917,6 @@ bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *
 	if (inImg == nullptr || exImg == nullptr || wsImg == nullptr || ws_Img == nullptr)
 		return false;
 
-	int *tempout;  //标记图像，判断是否标记
-	tempout = new int[nPixels];
-	memset(tempout, 0, sizeof(int)*nPixels);
-
-	bool *wsout;  //修改后的分水岭脊线
-	wsout = new bool[nPixels];
-	memset(wsout, 0, sizeof(bool)*nPixels);
-
-	int label;
-	label = LABEL;
 	if (faintThreshold <= 0)
 	{
 		// 如果最弱点阈值为负，则需要根据最弱点坐标重新计算阈值
@@ -2938,29 +2931,42 @@ bool WaterShed::CalculateLabel(bool *inImg , bool *exImg , bool *wsImg , short *
 			delete [] tempFaint;
 	}
 
-	bool* pTIn = inImg;
-	int* pTOut = tempout;
+	short *tempout;  //标记图像，判断是否标记
+	tempout = new short[nPixels];
+	memset(tempout, 0, sizeof(short)*nPixels);
+	bool *wsout;  //修改后的分水岭脊线
+	wsout = new bool[nPixels];
+	memset(wsout, 0, sizeof(bool)*nPixels);
+	bool* pEdge = wsImg;
+	short* pTIn = ws_Img;
+	short* pTOut = tempout;
+
+	short label = LABEL;
 	for (int j = 0; j < pixHeight; j++)
 	{
 		for (int i = 0; i < pixWidth; i++)
 		{
-			//判断输入图像中的当前点是否为内标记点,并且在输出标记图像中是否没有标记
-			if (*pTIn && *pTOut == 0)
+			// 判断输入图像中的当前点是否为准蛋白点内部, 并且未处理过
+			//  则从当前点开始向其邻阈寻找未标记的蛋白点区域，并对其标记
+			if (!(*pEdge) && (*pTIn > 2) && (*pTOut == 0))
 			{
-				// 如果当前点为50,并且没有在输出标记图像中标记数字 (除0外)
-				//  则从当前点开始向其邻阈寻找未标记的蛋白点区域，并对其标记
 				if (!CalculateLabel(inImg, exImg, wsImg, ws_Img, tempout, wsout, i, j, label))
 					return false;
 
 				// 标记序号加1
 				label++;
+				if (label < 0)
+					label = LABEL;
 			}
+			++pEdge;
 			++pTIn;
 			++pTOut;
 		}
 	}
 
-	// 蛋白点边缘
+	// 蛋白点内部（包括伪蛋白点）
+	memcpy(ws_Img, tempout, sizeof(short)*nPixels);
+	// 蛋白点边缘（不包含伪蛋白点）
 	for (int i = 0; i < nPixels; ++i)
 		wsImg[i] = wsout[i];
 
@@ -3036,7 +3042,6 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
 		if (ip >= pixWidth) ip = pixWidth - 1;
 		if (jm < 0) jm = 0;
 		if (jp >= pixHeight) jp = pixHeight - 1;
-
 
 
 		if (*(exImg + jm * pixWidth + xs) != 1 && *(image_out + jm * pixWidth + xs) == 0)
@@ -3300,8 +3305,8 @@ float WaterShed::CalculateFaintRatio(bool *inImg, bool *exImg , bool *wsImg, sho
     返回：如正确执行，则返回true，否则返回false
 ********************************************************************/
 bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
-                               int *image_out, bool *ws_out,
-                               int xx , int yy , int label)
+                               short *image_out, bool *ws_out,
+                               int xx , int yy , short label)
 {
 	// 计算有内标记的区域
 	if (ws_out == nullptr || image_out == nullptr)
@@ -3353,7 +3358,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 		int xs = id % pixWidth;
 		int ys = id / pixWidth;
 
-		// 上下左右四邻域扩散 从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
+		// 上左右下四邻域扩散 从内标记开始扩展 非外标记分水岭脊线，且没有在输出中标记
 		int iNB_x[4] = {-1, -1, -1, -1};
 		int iNB_y[4] = {-1, -1, -1, -1};
 		if (ys - 1 >= 0)
@@ -3384,20 +3389,17 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 			int ym = iNB_y[i];
 			id = ym*pixWidth + xm;
 
+			// 该点是外标或已被处理，跳过
 			if (exImg[id] || image_out[id] != 0)
 				continue;
 
-			bool isStack = false;
-			image_out[id] = label;
+			// 该点是否要压栈 0否 1是 2是，蛋白点内部
+			int isStack = 0;
 
 			// 内标区域
 			if (inImg[id])
 			{
-				if (!isStack)
-				{
-					exStack.push(id);
-					isStack = true;
-				}
+				isStack |= 1;
 
 				// 求内标记区域的最大最小坐标
 				minX = min(minX, xm);
@@ -3412,11 +3414,8 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 			// 蛋白点区域 内部
 			if (!wsImg[id] && ws_Img[id] > 2)
 			{
-				if (!isStack)
-				{
-					exStack.push(id);
-					isStack = true;
-				}
+				isStack |= 3;
+
 				wsLabelSum++;
 				wsLabelValue += (255 - m_psImgAdjust[id]);
 			}
@@ -3424,12 +3423,9 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 			// 分水岭脊线  蛋白点边缘
 			if (wsImg[id])
 			{
-				if (!isStack)
-				{
-					exStack.push(id);
-					isStack = true;
-				}
+				isStack |= 1;
 
+				// 记录边缘点
 				ws_stack.push(id);
 
 				wsLineSum++;
@@ -3442,19 +3438,33 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				maxrY = max(maxrY, ym);
 			}
 
-			// 外标区域
+			// 外标区域（蛋白点外部，外标记内部）
 			if (!exImg[id])
 			{
-				exStack.push(id);
+				isStack |= 1;
 
 				exLabelSum++;
 				exLabelValue += (255 - m_psImgAdjust[id]);
+			}
+
+			// 标记情况
+			if (isStack > 0)
+			{
+				exStack.push(id);
+
+				// 标记该蛋白点的标注
+				if ((isStack & 2) == 2)
+					image_out[id] = label;
+				else
+					image_out[id] = -1;
 			}
 		}	// for (int i = 0; i < 4; ++i)
 	}
 
 	// 输出符合要求的点
-	if (wsLabelSum && exLabelSum && !ws_stack.empty())
+	if (wsLabelSum > 0 &&		// 内部面积大于0
+		exLabelSum > 0 &&		// 外围面积 > 0
+		!ws_stack.empty() )		// 周长 > 0
 	{
 		// 蛋白点信息 内标记中心 质心
 		int centroid_X = int((minX + maxX) / 2.0 + 0.5);
@@ -3482,12 +3492,16 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 		if (exLabelSum > 0)
 			exGray = 255 - (float)((exLabelValue - wsLabelValue) / (exLabelSum - wsLabelSum));
 
+		// 当前蛋白点中心的索引
+		id = center_Y*pixWidth + center_X;
+
 		// 去除不合格点
-		if (fabs(exGray - imGray) <= faintThreshold ||	// 内外标记平均灰度差 小于 阈值
-		        min(rx, ry) < minSpotRadius ||				// 小半径 小于 最小半径
-		        area < minSpotRadius * minSpotRadius ||		// 面积 小于 最小面积
-		        rx / float(ry + 0.5) >= spotRxRyRatio ||	// 宽高比
-		        ry / float(rx + 0.5) >= spotRxRyRatio)
+		if ( fabs(exGray - imGray) <= faintThreshold ||	// 内外标记平均灰度差 小于 阈值
+			min(rx, ry) < minSpotRadius ||				// 小半径 小于 最小半径
+			area < minSpotRadius * minSpotRadius ||		// 面积 小于 最小面积
+			rx / float(ry + 0.5) >= spotRxRyRatio ||	// 宽高比
+			ry / float(rx + 0.5) >= spotRxRyRatio ||
+			image_out[id] <= 0)							// 蛋白点中心位于蛋白点外部
 		{
 			// 剔除
 			while (!ws_stack.empty())
@@ -3504,7 +3518,7 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 			int kk = 0;
 			while (!ws_stack.empty())
 			{
-				//分水岭脊线
+				// 分水岭脊线
 				id = ws_stack.top();		// 获取栈顶值
 				ws_stack.pop();				// 删除栈顶元素
 				pWatershedLineA[kk++] = id;

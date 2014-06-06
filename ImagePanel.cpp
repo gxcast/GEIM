@@ -1,26 +1,23 @@
 ﻿#include <wx/wx.h>
+#include <wx/utils.h>
+#include <wx/filename.h>
+
 #include <math.h>
 #include "ImagePanel.h"
+
+// ContextMenu
+const long ImagePanel::ID_CMENU_SAVE = wxNewId();
 
 // define notify evet type
 IMPLEMENT_DYNAMIC_CLASS(wxImgplEvent, wxNotifyEvent)
 DEFINE_EVENT_TYPE(wxEVT_IMGPL)
 
 
-//(*IdInit(ImagePanel)
-//*)
-
-
 BEGIN_EVENT_TABLE(ImagePanel,wxPanel)
-	//(*EventTable(ImagePanel)
-	//*)
 END_EVENT_TABLE()
 
 ImagePanel::ImagePanel(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& sz)
 {
-	//(*Initialize(ImagePanel)
-	//*)
-
 	// create panel
 	Create(parent, id, pos, sz, wxTAB_TRAVERSAL, _T("_imgpanel"));
 	// stop auto erase background
@@ -38,16 +35,18 @@ ImagePanel::ImagePanel(wxWindow* parent,wxWindowID id,const wxPoint& pos,const w
 	Connect(wxEVT_PAINT, (wxObjectEventFunction)&ImagePanel::OnPaint);
 	Connect(wxEVT_ERASE_BACKGROUND, (wxObjectEventFunction)&ImagePanel::OnErase);
 	Connect(wxEVT_SIZE, (wxObjectEventFunction)&ImagePanel::OnSize);
+	Connect(wxEVT_CONTEXT_MENU, (wxObjectEventFunction)&ImagePanel::OnContextMenu);
+	Connect(wxEVT_KILL_FOCUS, (wxObjectEventFunction)&ImagePanel::OnKillFocus);
 	// mouse event
 	Connect(wxEVT_LEFT_DOWN, (wxObjectEventFunction)&ImagePanel::OnMouseLD);
 	Connect(wxEVT_LEFT_UP, (wxObjectEventFunction)&ImagePanel::OnMouseLU);
 	Connect(wxEVT_MOTION, (wxObjectEventFunction)&ImagePanel::OnMouseMove);
+	// menu or tool-button command
+	Connect(ID_CMENU_SAVE, wxEVT_MENU, (wxObjectEventFunction)&ImagePanel::OnCmenuSave);
 }
 
 ImagePanel::~ImagePanel()
 {
-	//(*Destroy(ImagePanel)
-	//*)
 	// release double buffer draw
 	m_dcMem.SelectObject(wxNullBitmap);
 }
@@ -1264,6 +1263,46 @@ void ImagePanel::OnSize(wxSizeEvent& event)
 	//Refresh(false);
 }
 
+/**< context menu */
+void ImagePanel::OnContextMenu(wxContextMenuEvent& event)
+{
+	wxMenu* pMenu = new wxMenu();
+	wxASSERT_MSG(pMenu != nullptr, _T("Create Popup Menu failed."));
+	wxMenuItem* pMenuItem = nullptr;
+	// group 1
+	if (m_img.IsOk())
+	{
+		pMenuItem = new wxMenuItem(pMenu, ID_CMENU_SAVE, _("&Save Image"), _("Save the Image"));
+		pMenu->Append(pMenuItem);
+	}
+	// popup
+	if (pMenuItem != nullptr)
+	{
+		wxPoint pt = event.GetPosition();
+		if (pt == wxDefaultPosition)
+		{
+			// position invalide, get the mouse position
+			pt = wxGetMousePosition();
+			wxRect rc = GetScreenRect();
+			if (!rc.Contains(pt))
+			{
+				// mouse is't in the panel, get the panel center
+				pt.x = rc.x + rc.width/2;
+				pt.y = rc.y + rc.height/2;
+			}
+		}
+		pt = ScreenToClient(pt);
+		PopupMenu(pMenu, pt);
+	}
+	delete pMenu;
+}
+
+/**< kill focus. if capture mouse, should release */
+void ImagePanel::OnKillFocus(wxFocusEvent& event)
+{
+	EndDrag(false);
+}
+
 /**< invoke when mouse left button up */
 void ImagePanel::OnMouseLD(wxMouseEvent& event)
 {
@@ -1354,9 +1393,30 @@ void ImagePanel::OnMouseMove(wxMouseEvent& event)
 	}
 }
 
-/**< kill focus. if capture mouse, should release */
-void ImagePanel::OnKillFocus(wxFocusEvent& event)
+/**< ContextMenu save image */
+void ImagePanel::OnCmenuSave(wxCommandEvent& event)
 {
-	EndDrag(false);
+	static const wxString EXTS[] =
+	{
+		_T("bmp"),
+		_T("jpg"),
+		_T("png"),
+		_T("tif")
+	};
+	// choose images file's name
+	wxFileDialog dlgFile(this, _("Save Image"),
+	                     _T(""), _T(""),
+	                     _T("Bitmap|*.bmp|JPEG|*.jpg;*.jpeg|PNG|*.png|TIFF|*.tif;*.tiff"),
+	                     wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+	dlgFile.SetFilterIndex(2);	// png
+	if(dlgFile.ShowModal() != wxID_OK)
+		return;
+	// extention
+	int iExt = dlgFile.GetFilterIndex();
+	// path modify
+	wxFileName fln(dlgFile.GetPath());
+	fln.ClearExt();
+	fln.SetExt(EXTS[iExt]);
+	wxString strFile = fln.GetFullPath();
+	m_img.SaveFile(strFile);
 }
-

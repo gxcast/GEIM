@@ -78,6 +78,9 @@ bool SpotDtThread::SpotDtBatch(ST_DTPARAM& stDtParam)
 	EffectPar parEft;
 	unsigned char* pIn = nullptr;
 
+	// release pre result
+	SpotDtThread::DestroyDtResult(&m_lsDtResult);
+
 	// traverse all the image
 	size_t nNum = m_aryImgs.size();
 	for (size_t i = 0; i < nNum && bRet; ++i)

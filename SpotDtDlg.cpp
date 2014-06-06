@@ -298,7 +298,7 @@ bool SpotDtDlg::CreateControl()
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrl(this, ID_SP_MIN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
-					                       1, 9999, 4);
+					                       1, 9999, 2);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 4
 					pCtrl = new wxStaticText(this, wxID_ANY, _("Max Rad:"));

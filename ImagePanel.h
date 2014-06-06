@@ -322,8 +322,6 @@ private:
 	 */
 	bool EndDrag(bool bFuc = true);
 
-	//(*Handlers(ImagePanel)
-	//*)
 	/** \brief paint wnd
 	 *
 	 * \param event wxPaintEvent&	[INOUT] event
@@ -345,6 +343,20 @@ private:
 	 *
 	 */
 	void OnSize(wxSizeEvent& event);
+	/** \brief context menu
+	 *
+	 * \param event wxContextMenuEvent&	[INOUT] the event
+	 * \return void
+	 *
+	 */
+	void OnContextMenu(wxContextMenuEvent& event);
+	/** \brief kill focus. if capture mouse, should release
+	 *
+	 * \param event wxFocusEvent&	[INOUT] the event
+	 * \return void
+	 *
+	 */
+	void OnKillFocus(wxFocusEvent& event);
 	/** \brief invoke when mouse left button down
 	 *
 	 * \param event wxMouseEvent&   [INOUT] the event
@@ -366,19 +378,20 @@ private:
 	 *
 	 */
 	void OnMouseMove(wxMouseEvent& event);
-	/** \brief kill focus. if capture mouse, should release
-	 *
-	 * \param event wxFocusEvent&	[INOUT] the event
-	 * \return void
-	 *
-	 */
-	void OnKillFocus(wxFocusEvent& event);
 
-	//(*Identifiers(ImagePanel)
-	//*)
+    /** \brief ContextMenu save image
+     *
+     * \param event wxCommandEvent&   [INOUT] the event
+     * \return void
+     *
+     */
+	void OnCmenuSave(wxCommandEvent& event);
 
-	//(*Declarations(ImagePanel)
-	//*)
+
+	// ContextMenu
+	static const long ID_CMENU_SAVE;
+
+
 	/**< image to display. */
 	wxImage m_img;
 	/**< note the old size of the panel, used in calculate locate when size changed */

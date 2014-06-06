@@ -20,6 +20,14 @@ class GEIMFrame: public wxFrame
         GEIMFrame(wxWindow* parent,wxWindowID id = -1);
         virtual ~GEIMFrame();
 
+        /** \brief detroy the mt param
+         *
+         * \param pstParm ST_MTPARAM*   [IN] param to destroy
+         * \return bool true:success false:failed
+         *
+         */
+        static bool DestroyMTParam(ST_MTPARAM* pstParm);
+
     private:
         /** \brief refresh all the dispaly image
          *

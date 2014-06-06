@@ -183,8 +183,8 @@ private:
 	/*-----------------------------后处理-------------------------------------*/
 	bool CalculateLabel(bool *inImg, bool *exImg , bool *wsImg , short *ws_Img);
 	bool CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws_Img,
-	                    int *image_out, bool *ws_out,
-	                    int xx , int yy , int label);
+	                    short *image_out, bool *ws_out,
+	                    int xx , int yy , short label);
 	/********************************************************************
 	    函数：CalculateFaintRatio  -  计算最弱点阈值
 	    参数：image_in：输入标记图像
