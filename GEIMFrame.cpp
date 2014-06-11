@@ -480,12 +480,12 @@ void GEIMFrame::OnMt(wxCommandEvent& event)
 					continue;
 				ST_SPOT_NODE& spot = *(it->pNode);
 				ST_SPOT_CHARACT& crt = *(it->pCrt);
-				// 蛋白点座标
+				// gel spot coordinate
 				int x = spot.x;
 				int y = spot.y;
 				// character
 				ST_RGB clr;
-				Graying::ColorMap(crt.plump, &clr);
+				Graying::ColorMap(crt.deep, &clr);	// charact's value color-map
 				for (int j = -3; j <= 3; ++j)
 				{
 					if (y+j < 0 || y+j >= iH)
