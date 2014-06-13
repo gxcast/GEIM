@@ -3656,12 +3656,12 @@
 	<wx/image.h>
 	<wx/string.h>
 
-1402539180 source:/home/nicolas/dev/GEIM/AboutDlg.cpp
+1402649061 source:/home/nicolas/dev/GEIM/AboutDlg.cpp
 	<wx/wx.h>
 	<wx/intl.h>
 	<wx/string.h>
 
-1402539294 source:/home/nicolas/dev/GEIM/GEIMApp.cpp
+1402649061 source:/home/nicolas/dev/GEIM/GEIMApp.cpp
 	"GEIMFrame.h"
 	<wx/wx.h>
 
@@ -3689,7 +3689,7 @@
 	"CharactVect.h"
 	"Graying.h"
 
-1402539205 /home/nicolas/dev/GEIM/AboutDlg.h
+1402649061 /home/nicolas/dev/GEIM/AboutDlg.h
 	<wx/dialog.h>
 	<wx/html/htmlwin.h>
 
@@ -7165,7 +7165,7 @@
 	"GEIMDef.h"
 	"ImagePanel.h"
 
-1402643873 /home/nicolas/dev/GEIM/GEIMDef.h
+1402649061 /home/nicolas/dev/GEIM/GEIMDef.h
 	<list>
 	<vector>
 	<utility>
@@ -7309,7 +7309,7 @@
 	<wx/thread.h>
 	"GEIMDef.h"
 
-1402038080 source:/home/nicolas/dev/GEIM/CharactVect.cpp
+1402649523 source:/home/nicolas/dev/GEIM/CharactVect.cpp
 	"CharactVect.h"
 	<stack>
 	"EffectPar.h"
@@ -7319,17 +7319,21 @@
 	<wx/wx.h>
 	"GEIMDef.h"
 
-1402647830 source:/home/nicolas/dev/GEIM/ICP.cpp
+1402651002 source:/home/nicolas/dev/GEIM/ICP.cpp
 	"ICP.h"
 	<math.h>
+	"GEIMMatrix.cpp"
 
-1402647812 /home/nicolas/dev/GEIM/ICP.h
+1402651201 /home/nicolas/dev/GEIM/ICP.h
 	<wx/wx.h>
 	"GEIMDef.h"
 	"GEIMMatrix.h"
 
-1402648617 source:/home/nicolas/dev/GEIM/GEIMMatrix.cpp
+1402649367 source:/home/nicolas/dev/GEIM/GEIMMatrix.cpp
 	"GEIMMatrix.h"
 
-1402646936 /home/nicolas/dev/GEIM/GEIMMatrix.h
+1402649061 /home/nicolas/dev/GEIM/GEIMMatrix.h
+
+1402649367 /home/nicolas/dev/GEIM/GEIMMatrix.cpp
+	"GEIMMatrix.h"
 

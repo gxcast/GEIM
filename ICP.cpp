@@ -2,6 +2,9 @@
 
 #include <math.h>
 
+// implement matrix template
+#include "GEIMMatrix.cpp"
+
 
 ICP::ICP()
 {
