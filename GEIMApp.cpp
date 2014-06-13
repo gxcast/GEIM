@@ -1,8 +1,6 @@
 ﻿#include "GEIMApp.h"
 #include "GEIMFrame.h"
 
-//(*AppHeaders
-//*)
 #include <wx/wx.h>
 
 
@@ -10,8 +8,6 @@ IMPLEMENT_APP(GEIMApp);
 
 bool GEIMApp::OnInit()
 {
-	//(*AppInitialize
-	//*)
 	bool wxsOK = true;
 	wxInitAllImageHandlers();
 	if ( wxsOK )

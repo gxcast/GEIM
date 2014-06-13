@@ -134,4 +134,13 @@ typedef struct _ST_MTRESULT_
 	int id = 0;
 } ST_MTRESULT, *PST_MTRESULT;
 
+// point transform
+typedef struct _ST_POINT_TRANS_
+{
+	double x = 0.0;
+	double y = 0.0;
+	double tx = 0.0;
+	double ty = 0.0;
+} ST_POINT_TRANS, *PST_POINT_TRANS;
+
 #endif // GEIMDEF_H_INCLUDED

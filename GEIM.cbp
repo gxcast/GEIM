@@ -51,8 +51,12 @@
 		<Unit filename="GEIMDef.h" />
 		<Unit filename="GEIMFrame.cpp" />
 		<Unit filename="GEIMFrame.h" />
+		<Unit filename="GEIMMatrix.cpp" />
+		<Unit filename="GEIMMatrix.h" />
 		<Unit filename="Graying.cpp" />
 		<Unit filename="Graying.h" />
+		<Unit filename="ICP.cpp" />
+		<Unit filename="ICP.h" />
 		<Unit filename="ImagePanel.cpp" />
 		<Unit filename="ImagePanel.h" />
 		<Unit filename="SpotDtDlg.cpp" />
