@@ -3665,7 +3665,7 @@
 	"GEIMFrame.h"
 	<wx/wx.h>
 
-1401869936 /home/nicolas/dev/GEIM/GEIMFrame.h
+1403097997 /home/nicolas/dev/GEIM/GEIMFrame.h
 	<wx/frame.h>
 	<wx/sizer.h>
 	<wx/menu.h>
@@ -3680,13 +3680,13 @@
 	<wx/geometry.h>
 	<wx/dcmemory.h>
 
-1402471335 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
+1403099407 source:/home/nicolas/dev/GEIM/GEIMFrame.cpp
 	<wx/wx.h>
 	"AboutDlg.h"
 	"SpotDtDlg.h"
 	"EffectPar.h"
 	"SpotDtThread.h"
-	"CharactVect.h"
+	"SpotMtThread.h"
 	"Graying.h"
 
 1402649061 /home/nicolas/dev/GEIM/AboutDlg.h
@@ -7165,10 +7165,11 @@
 	"GEIMDef.h"
 	"ImagePanel.h"
 
-1402649061 /home/nicolas/dev/GEIM/GEIMDef.h
+1402996614 /home/nicolas/dev/GEIM/GEIMDef.h
 	<list>
 	<vector>
 	<utility>
+	<wx/wx.h>
 
 1401955973 source:/home/nicolas/dev/GEIM/SpotDtDlg.cpp
 	"SpotDtDlg.h"
@@ -7223,8 +7224,7 @@
 	"Graying.h"
 	<math.h>
 
-1402031895 /home/nicolas/dev/GEIM/Graying.h
-	<wx/wx.h>
+1402839280 /home/nicolas/dev/GEIM/Graying.h
 	"GEIMDef.h"
 	"EffectPar.h"
 
@@ -7304,36 +7304,52 @@
 	"Graying.h"
 	"WaterShed.h"
 
-1401711437 /home/nicolas/dev/GEIM/SpotDtThread.h
+1403061808 /home/nicolas/dev/GEIM/SpotDtThread.h
+	"GEIMDef.h"
 	<wx/event.h>
 	<wx/thread.h>
-	"GEIMDef.h"
 
-1402649523 source:/home/nicolas/dev/GEIM/CharactVect.cpp
+1402996734 source:/home/nicolas/dev/GEIM/CharactVect.cpp
 	"CharactVect.h"
 	<stack>
 	"EffectPar.h"
 	"Graying.h"
+	"ICP.h"
 
-1401958437 /home/nicolas/dev/GEIM/CharactVect.h
-	<wx/wx.h>
+1402994282 /home/nicolas/dev/GEIM/CharactVect.h
 	"GEIMDef.h"
 
-1402651002 source:/home/nicolas/dev/GEIM/ICP.cpp
+1403167478 source:/home/nicolas/dev/GEIM/ICP.cpp
 	"ICP.h"
 	<math.h>
 	"GEIMMatrix.cpp"
 
-1402651201 /home/nicolas/dev/GEIM/ICP.h
-	<wx/wx.h>
+1402994189 /home/nicolas/dev/GEIM/ICP.h
 	"GEIMDef.h"
 	"GEIMMatrix.h"
+	"TPS_2D.h"
 
-1402649367 source:/home/nicolas/dev/GEIM/GEIMMatrix.cpp
+1402999163 source:/home/nicolas/dev/GEIM/GEIMMatrix.cpp
 	"GEIMMatrix.h"
 
 1402649061 /home/nicolas/dev/GEIM/GEIMMatrix.h
 
-1402649367 /home/nicolas/dev/GEIM/GEIMMatrix.cpp
+1402999163 /home/nicolas/dev/GEIM/GEIMMatrix.cpp
 	"GEIMMatrix.h"
+
+1403159051 source:/home/nicolas/dev/GEIM/TPS_2D.cpp
+	"TPS_2D.h"
+	<math.h>
+
+1403156642 /home/nicolas/dev/GEIM/TPS_2D.h
+	"GEIMDef.h"
+
+1403099481 source:/home/nicolas/dev/GEIM/SpotMtThread.cpp
+	"SpotMtThread.h"
+	"CharactVect.h"
+
+1403098787 /home/nicolas/dev/GEIM/SpotMtThread.h
+	"GEIMDef.h"
+	<wx/event.h>
+	<wx/thread.h>
 

@@ -6,6 +6,8 @@
 #include "EffectPar.h"
 // image's gray operation
 #include "Graying.h"
+// icp
+#include "ICP.h"
 
 CharactVect::CharactVect()
 {
@@ -35,6 +37,22 @@ bool CharactVect::CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 	CalcuCharacr(m_stParamA);
 	CalcuCharacr(m_stParamB);
 
+	// icp
+	ICP icp;
+	icp.ICPMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
+
+	return true;
+}
+
+bool CharactVect::DestroyResult(PST_MTRESULT pRst)
+{
+	if (pRst == nullptr)
+		return false;
+    if (pRst->pvtSpair != nullptr)
+	{
+		delete pRst->pvtSpair;
+		pRst->pvtSpair = nullptr;
+	}
 	return true;
 }
 

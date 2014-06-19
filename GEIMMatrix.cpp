@@ -86,7 +86,8 @@ bool GEIMMatrix<_T, _Tx, _Ty>::Resize(int w, int h, bool bCpy)
 					for (int i = 0; bCpy && i < iMin; ++i)
 						pAxisX[i] = m_pAxisX[i];
 
-					delete [] m_pAxisX;
+					if(m_pAxisX != nullptr)
+						delete [] m_pAxisX;
 					m_iAxisX = w;
 					m_pAxisX = pAxisX;
 				}
@@ -100,7 +101,8 @@ bool GEIMMatrix<_T, _Tx, _Ty>::Resize(int w, int h, bool bCpy)
 					for (int i = 0; bCpy && i < iMin; ++i)
 						pAxisY[i] = m_pAxisY[i];
 
-					delete [] m_pAxisY;
+					if (m_pAxisY != nullptr)
+						delete [] m_pAxisY;
 					m_iAxisY = h;
 					m_pAxisY = pAxisY;
 				}
@@ -149,7 +151,8 @@ bool GEIMMatrix<_T, _Tx, _Ty>::Resize(int w, int h, bool bCpy)
 						for (int i = 0; bCpy && i < iMin; ++i)
 							pAxisX[i] = m_pAxisX[i];
 
-						delete [] m_pAxisX;
+						if (m_pAxisX != nullptr)
+							delete [] m_pAxisX;
 						m_iAxisX = w;
 						m_pAxisX = pAxisX;
 					}
@@ -163,14 +166,24 @@ bool GEIMMatrix<_T, _Tx, _Ty>::Resize(int w, int h, bool bCpy)
 						for (int i = 0; bCpy && i < iMin; ++i)
 							pAxisY[i] = m_pAxisY[i];
 
-						delete [] m_pAxisY;
+						if (m_pAxisY != nullptr)
+							delete [] m_pAxisY;
 						m_iAxisY = h;
 						m_pAxisY = pAxisY;
 					}
 				}
 
 				// release pre data
-				Destroy();
+				if (m_pItems != nullptr)
+				{
+					delete [] m_pItems;
+					m_pItems = nullptr;
+				}
+				if (m_pIndex != nullptr)
+				{
+					delete [] m_pIndex;
+					m_pIndex = nullptr;
+				}
 				m_pIndex = pIndex;
 				m_pItems = pItems;
 				m_iW = w;

@@ -1,7 +1,8 @@
+#pragma once
+
 #ifndef CHARACTVECT_H
 #define CHARACTVECT_H
 
-#include <wx/wx.h>
 // generic define
 #include "GEIMDef.h"
 
@@ -19,6 +20,14 @@ public:
 	 *
 	 */
 	bool CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet);
+
+    /** \brief destroy the match result
+     *
+     * \param pRst PST_MTRESULT	[IN] the result struct
+     * \return bool true:success false:failed
+     *
+     */
+	static bool DestroyResult(PST_MTRESULT pRst);
 
 protected:
 

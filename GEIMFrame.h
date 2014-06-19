@@ -20,14 +20,6 @@ class GEIMFrame: public wxFrame
         GEIMFrame(wxWindow* parent,wxWindowID id = -1);
         virtual ~GEIMFrame();
 
-        /** \brief detroy the mt param
-         *
-         * \param pstParm ST_MTPARAM*   [IN] param to destroy
-         * \return bool true:success false:failed
-         *
-         */
-        static bool DestroyMTParam(ST_MTPARAM* pstParm);
-
     private:
         /** \brief refresh all the dispaly image
          *
@@ -99,6 +91,8 @@ class GEIMFrame: public wxFrame
 
         /**< all the image's detection result */
         LS_DTRESULT m_lsDtResult;
+        /**< match result */
+        ST_MTRESULT m_stMtResult;
 
         DECLARE_EVENT_TABLE()
 };

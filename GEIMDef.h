@@ -11,10 +11,13 @@
 #ifndef GEIMDEF_H_INCLUDED
 #define GEIMDEF_H_INCLUDED
 
-// 链表标准模板厍头文件
+// 标准模板厍头文件
 #include <list>
 #include <vector>
 #include <utility>
+
+// widgets base library
+#include <wx/wx.h>
 
 /**< pixel struct */
 typedef struct _ST_RGB_
@@ -128,18 +131,32 @@ typedef struct _ST_MTPARAM_
 // 待匹配的一对图像
 typedef std::pair<ST_MTPARAM,ST_MTPARAM> ST_MTPAIR;
 
+// 蛋白点对
+typedef struct _ST_SPAIR_
+{
+	int iOdA = -1;
+	int iOdB = -1;
+} ST_SPAIR, *PST_SPAIR;
+// 点对集
+typedef std::vector<ST_SPAIR> VT_SPAIR;
+
 // 匹配结果
 typedef struct _ST_MTRESULT_
 {
-	int id = 0;
+	VT_SPAIR* pvtSpair = nullptr;
 } ST_MTRESULT, *PST_MTRESULT;
 
 // point transform
 typedef struct _ST_POINT_TRANS_
 {
-	double x = 0.0;
+	/**< the spot's order in vector */
+	int iOrder = -1;
+
+	double x = 0.0;		// origin position
 	double y = 0.0;
-	double tx = 0.0;
+	double sx = 0.0;	// position's statistical deviation
+	double sy = 0.0;
+	double tx = 0.0;	// transform position
 	double ty = 0.0;
 } ST_POINT_TRANS, *PST_POINT_TRANS;
 

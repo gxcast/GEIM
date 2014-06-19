@@ -6,9 +6,8 @@
 #include "SpotDtDlg.h"
 #include "EffectPar.h"
 #include "SpotDtThread.h"
-#include "CharactVect.h"
+#include "SpotMtThread.h"
 #include "Graying.h"
-
 
 const long GEIMFrame::ID_PANEL_MAIN = wxNewId();
 const long GEIMFrame::ID_STATUSBAR_MAIN = wxNewId();
@@ -163,52 +162,11 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
 	// thread event
 	Connect(SpotDtThread::ID, wxEVT_THREAD, (wxObjectEventFunction)&GEIMFrame::OnThreadDt);
+	Connect(SpotMtThread::ID, wxEVT_THREAD, (wxObjectEventFunction)&GEIMFrame::OnThreadMt);
 }
 
 GEIMFrame::~GEIMFrame()
 {
-}
-
-/**< detroy the mt param */
-bool GEIMFrame::DestroyMTParam(ST_MTPARAM* pstParm)
-{
-	if (pstParm == nullptr)
-		return true;
-
-	// origin image
-	if (pstParm->pImg != nullptr)
-	{
-		delete [] pstParm->pImg;
-		pstParm->pImg = nullptr;
-	}
-
-	// detect result maybe come from result list
-	pstParm->pData = nullptr;
-
-	// attrib vector
-	if (pstParm->pvtAttr != nullptr)
-	{
-		for (auto it = pstParm->pvtAttr->begin(); it != pstParm->pvtAttr->end(); ++it)
-		{
-			ST_SPOT_ATTR& attr = *it;
-
-			// detect result maybe come from result list
-			attr.pNode = nullptr;
-			// release charact
-			if (attr.pCrt != nullptr)
-			{
-				delete attr.pCrt;
-				attr.pCrt = nullptr;
-			}
-		}
-		if (!pstParm->pvtAttr->empty())
-			pstParm->pvtAttr->clear();
-
-		delete pstParm->pvtAttr;
-		pstParm->pvtAttr = nullptr;
-	}
-
-	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -347,6 +305,7 @@ void GEIMFrame::OnFileOpenUpdate(wxUpdateUIEvent& event)
 void GEIMFrame::OnFileClose(wxCommandEvent& event)
 {
 	// realse match result
+	SpotMtThread::DestroyMtResult(&m_stMtResult);
 	// realse detect result
 	SpotDtThread::DestroyDtResult(&m_lsDtResult);
 
@@ -421,98 +380,15 @@ void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
 /**< match spots */
 void GEIMFrame::OnMt(wxCommandEvent& event)
 {
-	ST_MTPARAM stParamA;
-    ST_MTPARAM stParamB;
-    ST_MTRESULT stMtRst;
-
-    auto FillParam = [this](ST_MTPARAM& stParam, int id) -> bool {
-		wxImage* pImg = static_cast<wxImage*>(m_aryImgs.Item(id));
-		unsigned char* pTmp = pImg->GetData();
-		auto it = m_lsDtResult.begin();
-		for (int i = 0; i < id; ++i)
-			++it;
-		ST_DTRESULT& rst = *it;
-
-		stParam.iW = pImg->GetWidth();
-		stParam.iH = pImg->GetHeight();
-		stParam.iWb = stParam.iW*3;
-		stParam.iN = stParam.iW*stParam.iH;
-
-		stParam.pImg = new ST_RGB[stParam.iN];
-		memcpy(stParam.pImg, pTmp, stParam.iN*3);
-
-		stParam.pData = rst.pData;
-
-		size_t nC = rst.pLs->size();
-		stParam.pvtAttr = new VT_ATTR(nC);
-		nC = 0u;
-		for(auto ir = rst.pLs->begin(); ir != rst.pLs->end(); ++ir)
-		{
-			ST_SPOT_NODE& stNode = *ir;
-			ST_SPOT_ATTR& attr = stParam.pvtAttr->at(nC++);
-			attr.pNode = &stNode;
-			attr.pCrt = new ST_SPOT_CHARACT;
-		}
-		wxASSERT_MSG(nC == rst.pLs->size(), _T("Fill match param's pNode failed."));
-
-		return true;
-    };
-    FillParam(stParamA, 0);
-    FillParam(stParamB, 1);
-
-    // match
-    CharactVect cvt;
-    if (cvt.CVMain(std::make_pair(stParamA, stParamB), &stMtRst))
+	SpotMtThread* pThd = new SpotMtThread(this, m_lsDtResult, m_aryImgs, m_aryImgsDisp, m_stMtResult);
+	// match process
+	if (pThd->Run() != wxTHREAD_NO_ERROR)	// pThd delete itself auto
 	{
-		// get the result
-		auto GetRst = [this](ST_MTPARAM& stParam, int id) -> bool {
-			wxImage* pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(id));
-			PST_RGB pDes = (PST_RGB)pImg->GetData();
-			int iW = stParam.iW;
-			int iH = stParam.iH;
-			int iN = stParam.iN;
-			// copy the image
-			memcpy(pDes, stParam.pImg, iN*3);
-			// draw spot's character
-			for (auto it = stParam.pvtAttr->begin(); it != stParam.pvtAttr->end(); ++it)
-			{
-				if (it->bInvalid)
-					continue;
-				ST_SPOT_NODE& spot = *(it->pNode);
-				ST_SPOT_CHARACT& crt = *(it->pCrt);
-				// gel spot coordinate
-				int x = spot.x;
-				int y = spot.y;
-				// character
-				ST_RGB clr;
-				Graying::ColorMap(crt.deep, &clr);	// charact's value color-map
-				for (int j = -3; j <= 3; ++j)
-				{
-					if (y+j < 0 || y+j >= iH)
-						continue;
-					PST_RGB pLine = pDes + (y+j)*iW;
-					for (int i = -3; i <=3; ++i)
-					{
-						if (x+i < 0 || x+i >= iW)
-							continue;
-						PST_RGB pPix = pLine + (x+i);
-						*pPix = clr;
-					}
-				}
-			}
-
-			return true;
-		};
-		GetRst(stParamA, 0);
-		GetRst(stParamB, 1);
-
-		// update ui
-		RefreshImgs();
+		wxMessageBox(_("Create match thread failed."), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+		return;
 	}
-
-    // release param
-    GEIMFrame::DestroyMTParam(&stParamA);
-    GEIMFrame::DestroyMTParam(&stParamB);
+	// busy indicator
+	m_pBusy = new wxBusyInfo(_("Please wait, matching..."), this);
 }
 void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
 {
@@ -695,5 +571,19 @@ void GEIMFrame::OnThreadDt(wxThreadEvent& event)
 /**< finish match event*/
 void GEIMFrame::OnThreadMt(wxThreadEvent& event)
 {
+	bool bRet = (event.GetInt() == 1);
 
+	// stop indicator
+	if (m_pBusy != nullptr)
+	{
+		delete m_pBusy;
+		m_pBusy = nullptr;
+	}
+
+	// notice
+	if (!bRet)
+		wxMessageBox(_("Match failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+	else
+		// update ui
+		RefreshImgs();
 }

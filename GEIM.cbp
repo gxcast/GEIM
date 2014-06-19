@@ -63,6 +63,10 @@
 		<Unit filename="SpotDtDlg.h" />
 		<Unit filename="SpotDtThread.cpp" />
 		<Unit filename="SpotDtThread.h" />
+		<Unit filename="SpotMtThread.cpp" />
+		<Unit filename="SpotMtThread.h" />
+		<Unit filename="TPS_2D.cpp" />
+		<Unit filename="TPS_2D.h" />
 		<Unit filename="WaterShed.cpp" />
 		<Unit filename="WaterShed.h" />
 		<Extensions>
