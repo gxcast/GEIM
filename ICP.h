@@ -38,7 +38,8 @@ protected:
 private:
 	bool Init();
 	bool Distance();
-	bool Correspond();
+	bool Correspond0();
+	bool Correspond1();
 	bool Transform();
 	bool Mahalanobis();
 

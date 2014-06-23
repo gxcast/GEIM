@@ -35,14 +35,18 @@ bool ICP::ICPMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 	{
 		++m_iIter;
 		bRet = Distance();
-		bRet = bRet && Correspond();
+		bRet = bRet && Correspond0();
+		//bRet = bRet && Correspond1();
 		bRet = bRet && Transform();
 	}
 	while(bRet && Mahalanobis());
 
-	// use the tps parameter
-	MtResult();
-	TransImg();
+	if (bRet)
+	{
+		// use the tps parameter
+		MtResult();
+		TransImg();
+	}
 
 	// release last transform data
 	m_TPS.Destroy();
@@ -181,7 +185,7 @@ bool ICP::Distance()
 	return true;
 }
 
-bool ICP::Correspond()
+bool ICP::Correspond0()
 {
 	int iW = m_mtxDist.Width();
 	int iH = m_mtxDist.Height();
@@ -227,6 +231,74 @@ bool ICP::Correspond()
 	return true;
 }
 
+bool ICP::Correspond1()
+{
+	int iW = m_mtxDist.Width();
+	int iH = m_mtxDist.Height();
+
+	// mark minimum item to 1 else to 0 for every line
+	for (int y = 0; y < iH; ++y)
+	{
+		double* pLD = m_mtxDist[y];
+		unsigned char* pLC = m_mtxCorre[y];
+
+		// traverse the line, find minimum value
+		double dMin = pLD[0];
+		for (int x = 1; x < iW; ++x)
+		{
+			if (pLD[x] < dMin)
+				dMin = pLD[x];
+		}
+		// mark the minimum item to 1 else to 0
+		for (int x = 0; x < iW; ++x)
+		{
+			if (fabs(pLD[x]-dMin) < 1e-6)
+				pLC[x] = 1u;
+			else
+				pLC[x] = 0u;
+		}
+	}
+
+	// mark minimum item to 2-bit for every column
+	for (int x = 0; x < iW; ++x)
+	{
+		double* pColD = m_mtxDist[0] + x;
+		unsigned char* pColC = m_mtxCorre[0] + x;
+
+		// traverse the column, find the minimum value
+		double dMin = *pColD;
+		for (int y = 1; y < iH; ++y)
+		{
+			pColD += iW;
+			if(*pColD < dMin)
+				dMin = *pColD;
+		}
+		// mark the minimum item's 2-bit to 1
+		pColD = m_mtxDist[0] + x;
+		for (int y = 0; y < iH; ++y)
+		{
+			if (fabs(*pColD-dMin) < 1e-6)
+				*pColC |= 0x02u;
+
+			pColD += iW;
+			pColC += iW;
+		}
+	}
+
+	// erase item that mark is not 0x03
+	for (int y = 0; y < iH; ++y)
+	{
+		unsigned char* pLC = m_mtxCorre[y];
+		for (int x = 0; x < iW; ++x)
+		{
+			if(*pLC != 0x03)
+				*pLC = 0u;
+			++pLC;
+		}
+	}
+	return true;
+}
+
 bool ICP::Transform()
 {
 	// release last data
@@ -237,10 +309,10 @@ bool ICP::Transform()
 	int iH = m_mtxDist.Height();
 	for (int y = 0; y < iH; ++y)
 	{
-		unsigned char* dLC = m_mtxCorre[y];
+		unsigned char* pLC = m_mtxCorre[y];
 		for (int x = 0; x < iW; ++x)
 		{
-			if (*dLC == 1)
+			if (*pLC == 1)
 			{
 				Coorder crr;
 				ST_POINT_TRANS& stPTA = m_mtxDist.AxisY(y);
@@ -252,8 +324,14 @@ bool ICP::Transform()
 				pvtPair->push_back(crr);
 				break;
 			}
-			++dLC;
+			++pLC;
 		}
+	}
+	if (pvtPair->size() <= 0)
+	{
+		delete pvtPair;
+		pvtPair = nullptr;
+		return false;
 	}
 
 	// calculate TPS parameter
@@ -413,8 +491,8 @@ bool ICP::Mahalanobis()
 	dEnergy += m_dLambda*m_dJt;
 
 	// converged ?
-	if(m_iIter >= 10)
-		return false;
+	//if(m_iIter >= 10)
+	//	return false;
 	if (m_iIter > 0)	// not the fist iteration
 	{
 		// delta enough small

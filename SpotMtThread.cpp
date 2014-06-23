@@ -104,9 +104,9 @@ bool SpotMtThread::SpotMatch()
 		bRet = true;
 	}
 
-    // release param
-    SpotMtThread::DestroyMTParam(&stParamA);
-    SpotMtThread::DestroyMTParam(&stParamB);
+	// release param
+	SpotMtThread::DestroyMTParam(&stParamA);
+	SpotMtThread::DestroyMTParam(&stParamB);
 
 	return bRet;
 }
@@ -154,11 +154,12 @@ bool SpotMtThread::DispMtResult(ST_MTPARAM& stParam, int id)
 {
 	wxImage* pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(id));
 	PST_RGB pDes = (PST_RGB)pImg->GetData();
-	//int iW = stParam.iW;
-	//int iH = stParam.iH;
+	int iW = stParam.iW;
+	int iH = stParam.iH;
 	int iN = stParam.iN;
 	// copy the image
-	memcpy(pDes, stParam.pImg, iN*3);
+	if (id == 1)
+		memcpy(pDes, stParam.pImg, iN*3);
 	/*// draw spot's character
 	for (auto it = stParam.pvtAttr->begin(); it != stParam.pvtAttr->end(); ++it)
 	{
@@ -186,6 +187,61 @@ bool SpotMtThread::DispMtResult(ST_MTPARAM& stParam, int id)
 			}
 		}
 	}*/
+	// draw match pair
+	if (id == 0)
+	{
+		VT_SPAIR* pvtPairs = m_stMtResult.pvtSpair;
+		for (auto it = pvtPairs->begin(); it != pvtPairs->end(); ++it)
+		{
+			ST_SPOT_ATTR& spot = stParam.pvtAttr->at(it->iOdA);
+			// gel spot coordinate
+			int x = spot.pNode->x;
+			int y = spot.pNode->y;
+			// character
+			ST_RGB clr;
+			clr.b = 255;
+			for (int j = -2; j <= 2; ++j)
+			{
+				if (y+j < 0 || y+j >= iH)
+					continue;
+				PST_RGB pLine = pDes + (y+j)*iW;
+				for (int i = -2; i <=2; ++i)
+				{
+					if (x+i < 0 || x+i >= iW)
+						continue;
+					PST_RGB pPix = pLine + (x+i);
+					*pPix = clr;
+				}
+			}
+		}
+	}
+	else
+	{
+		VT_SPAIR* pvtPairs = m_stMtResult.pvtSpair;
+		for (auto it = pvtPairs->begin(); it != pvtPairs->end(); ++it)
+		{
+			ST_SPOT_ATTR& spot = stParam.pvtAttr->at(it->iOdB);
+			// gel spot coordinate
+			int x = spot.pNode->x;
+			int y = spot.pNode->y;
+			// character
+			ST_RGB clr;
+			clr.b = 255;
+			for (int j = -2; j <= 2; ++j)
+			{
+				if (y+j < 0 || y+j >= iH)
+					continue;
+				PST_RGB pLine = pDes + (y+j)*iW;
+				for (int i = -2; i <=2; ++i)
+				{
+					if (x+i < 0 || x+i >= iW)
+						continue;
+					PST_RGB pPix = pLine + (x+i);
+					*pPix = clr;
+				}
+			}
+		}
+	}
 
 	return true;
 }
