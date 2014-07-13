@@ -1,9 +1,9 @@
-﻿#ifndef ABOUTDLG_H
+﻿#pragma once
+#ifndef ABOUTDLG_H
 #define ABOUTDLG_H
 
-//(*Headers(AboutDlg)
 #include <wx/dialog.h>
-//*)
+
 #include <wx/html/htmlwin.h>
 
 class AboutDlg: public wxDialog
@@ -15,17 +15,11 @@ class AboutDlg: public wxDialog
 
 	private:
 
-		//(*Handlers(AboutDlg)
-		//*)
 		void OnHtmlCellClicked(wxHtmlCellEvent& event);
 
-		//(*Identifiers(AboutDlg)
-		//*)
 		static const long ID_HTMWND;
 
-		//(*Declarations(AboutDlg)
         wxHtmlWindow* m_pHtmWnd;
-		//*)
 
 		DECLARE_EVENT_TABLE()
 };

@@ -42,12 +42,33 @@
 		</Linker>
 		<Unit filename="AboutDlg.cpp" />
 		<Unit filename="AboutDlg.h" />
+		<Unit filename="CharactVect.cpp" />
+		<Unit filename="CharactVect.h" />
+		<Unit filename="EffectPar.cpp" />
+		<Unit filename="EffectPar.h" />
 		<Unit filename="GEIMApp.cpp" />
 		<Unit filename="GEIMApp.h" />
+		<Unit filename="GEIMDef.h" />
 		<Unit filename="GEIMFrame.cpp" />
 		<Unit filename="GEIMFrame.h" />
+		<Unit filename="GEIMMatrix.cpp" />
+		<Unit filename="GEIMMatrix.h" />
+		<Unit filename="Graying.cpp" />
+		<Unit filename="Graying.h" />
+		<Unit filename="ICP.cpp" />
+		<Unit filename="ICP.h" />
 		<Unit filename="ImagePanel.cpp" />
 		<Unit filename="ImagePanel.h" />
+		<Unit filename="SpotDtDlg.cpp" />
+		<Unit filename="SpotDtDlg.h" />
+		<Unit filename="SpotDtThread.cpp" />
+		<Unit filename="SpotDtThread.h" />
+		<Unit filename="SpotMtThread.cpp" />
+		<Unit filename="SpotMtThread.h" />
+		<Unit filename="TPS_2D.cpp" />
+		<Unit filename="TPS_2D.h" />
+		<Unit filename="WaterShed.cpp" />
+		<Unit filename="WaterShed.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

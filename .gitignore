@@ -16,6 +16,7 @@
 *.exe
 *.out
 *.app
+run
 bin/Debug/GEIM
 
 # VIM
@@ -26,3 +27,6 @@ Session.vim
 .netrwhist
 *~
 
+# Code::Blocks
+GEIM.layout
+GEIM.depend
