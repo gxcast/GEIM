@@ -6,6 +6,8 @@
 #include "EffectPar.h"
 // image's gray operation
 #include "Graying.h"
+// icp
+#include "ICP.h"
 
 CharactVect::CharactVect()
 {
@@ -18,6 +20,7 @@ CharactVect::~CharactVect()
 /**< match main entry */
 bool CharactVect::CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 {
+	bool bRet = true;
 	if (pstMtRet == nullptr)
 	{
 		wxASSERT_MSG(false, _T("CharactVect::CVMain parameter is nullptr."));
@@ -28,13 +31,29 @@ bool CharactVect::CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 	m_pstMtRet = pstMtRet;
 
 	// normalization
-	Normalize(m_stParamA);
-	Normalize(m_stParamB);
+	bRet = bRet && Normalize(m_stParamA);
+	bRet = bRet && Normalize(m_stParamB);
 
 	// calculate the charact vector
-	CalcuCharacr(m_stParamA);
-	CalcuCharacr(m_stParamB);
+	bRet = bRet && CalcuCharacr(m_stParamA);
+	bRet = bRet && CalcuCharacr(m_stParamB);
 
+	// icp
+	ICP icp;
+	bRet = bRet && icp.ICPMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
+
+	return bRet;
+}
+
+bool CharactVect::DestroyResult(PST_MTRESULT pRst)
+{
+	if (pRst == nullptr)
+		return false;
+    if (pRst->pvtSpair != nullptr)
+	{
+		delete pRst->pvtSpair;
+		pRst->pvtSpair = nullptr;
+	}
 	return true;
 }
 

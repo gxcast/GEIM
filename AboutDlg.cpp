@@ -1,25 +1,17 @@
 ﻿#include "AboutDlg.h"
 #include <wx/wx.h>
 
-//(*InternalHeaders(AboutDlg)
 #include <wx/intl.h>
 #include <wx/string.h>
-//*)
 
-//(*IdInit(AboutDlg)
-//*)
 const long AboutDlg::ID_HTMWND = wxNewId();
 
 BEGIN_EVENT_TABLE(AboutDlg,wxDialog)
-    //(*EventTable(AboutDlg)
-    //*)
 END_EVENT_TABLE()
 
 AboutDlg::AboutDlg(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSize& size)
     : m_pHtmWnd( NULL )
 {
-    //(*Initialize(AboutDlg)
-    //*)
     Create(parent, id, _("About GEIM..."), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE, _T("About GEIM"));
     wxBoxSizer* pSizer = new wxBoxSizer(wxVERTICAL);
     {
@@ -41,8 +33,6 @@ AboutDlg::AboutDlg(wxWindow* parent,wxWindowID id,const wxPoint& pos,const wxSiz
 
 AboutDlg::~AboutDlg()
 {
-    //(*Destroy(AboutDlg)
-    //*)
 }
 
 void AboutDlg::OnHtmlCellClicked(wxHtmlCellEvent& event)

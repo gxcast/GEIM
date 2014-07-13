@@ -9,7 +9,6 @@
 #ifndef GRAYING_H
 #define GRAYING_H
 
-#include <wx/wx.h>
 #include "GEIMDef.h"
 #include "EffectPar.h"
 

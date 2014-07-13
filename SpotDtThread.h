@@ -1,13 +1,14 @@
+#pragma once
 #ifndef SPOTDTTHREAD_H
 #define SPOTDTTHREAD_H
 
+// generic define
+#include "GEIMDef.h"
 // event handler
 #include <wx/event.h>
 // thread include
 #include <wx/thread.h>
 
-// generic define
-#include "GEIMDef.h"
 
 class SpotDtThread : public wxThread
 {
@@ -18,10 +19,10 @@ class SpotDtThread : public wxThread
         /** \brief construct
          *
          * \param host wxEvtHandler*		[IN] host, handle the event
-         * \param sets LS_DTRESULT&			[INOUT] the detect result
+         * \param param ST_DTPARAM&			[IN] detect param
          * \param imgs wxArrayPtrVoid&		[IN] origin images
          * \param disps wxArrayPtrVoid&		[IN] diplay images
-         * \param param ST_DTPARAM&			[IN] detect param
+         * \param sets LS_DTRESULT&			[INOUT] the detect result
          *
          */
 		SpotDtThread(wxEvtHandler* host, ST_DTPARAM& param,
