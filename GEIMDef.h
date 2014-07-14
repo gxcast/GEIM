@@ -19,6 +19,13 @@
 // widgets base library
 #include <wx/wx.h>
 
+
+
+/**<  max feature descriptor length */
+#define FEATURE_MAX_D 7
+
+
+
 /**< pixel struct */
 typedef struct _ST_RGB_
 {
@@ -146,7 +153,7 @@ typedef struct _ST_MTRESULT_
 	VT_SPAIR* pvtSpair = nullptr;
 } ST_MTRESULT, *PST_MTRESULT;
 
-// point transform
+// point transform for icp
 typedef struct _ST_POINT_TRANS_
 {
 	/**< the spot's order in vector */
@@ -159,5 +166,25 @@ typedef struct _ST_POINT_TRANS_
 	double tx = 0.0;	// transform position
 	double ty = 0.0;
 } ST_POINT_TRANS, *PST_POINT_TRANS;
+
+/**<  feature descriptor */
+typedef struct _ST_FEATURE_
+{
+	int n;							/**< descriptor length */
+	double descr[FEATURE_MAX_D];	/**< descriptor */
+	void *feature_data;				/**< user-definable data */
+} ST_FEATURE, *PST_FEATURE;
+
+
+
+/** \brief Calculates the squared Euclidian distance between two feature descriptors.
+ *
+ * \param f1 ST_FEATURE*	first feature
+ * \param f2 ST_FEATURE*	second feature
+ * \return double	Returns the squared Euclidian distance between the descriptors of
+ *    \a f1 and \a f2.
+ *
+ */
+extern double feat_dist_sq( ST_FEATURE *f1, ST_FEATURE *f2 );
 
 #endif // GEIMDEF_H_INCLUDED

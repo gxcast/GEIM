@@ -48,6 +48,7 @@
 		<Unit filename="EffectPar.h" />
 		<Unit filename="GEIMApp.cpp" />
 		<Unit filename="GEIMApp.h" />
+		<Unit filename="GEIMDef.cpp" />
 		<Unit filename="GEIMDef.h" />
 		<Unit filename="GEIMFrame.cpp" />
 		<Unit filename="GEIMFrame.h" />
@@ -59,6 +60,10 @@
 		<Unit filename="ICP.h" />
 		<Unit filename="ImagePanel.cpp" />
 		<Unit filename="ImagePanel.h" />
+		<Unit filename="Kdtree.cpp" />
+		<Unit filename="Kdtree.h" />
+		<Unit filename="Minpq.cpp" />
+		<Unit filename="Minpq.h" />
 		<Unit filename="SpotDtDlg.cpp" />
 		<Unit filename="SpotDtDlg.h" />
 		<Unit filename="SpotDtThread.cpp" />
