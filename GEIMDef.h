@@ -17,13 +17,17 @@
 #include <utility>
 
 // widgets base library
+#ifndef wxUSE_GUI
+#	define wxUSE_GUI 1
+#endif // wxUSE_GUI
 #include <wx/wx.h>
 
 
 
 /**<  max feature descriptor length */
 #define FEATURE_MAX_D 7
-
+/**< threshold on squared ratio of distances between NN and 2nd NN  */
+#define NN_SQ_DIST_RATIO_THR 0.49
 
 
 /**< pixel struct */
@@ -150,7 +154,11 @@ typedef std::vector<ST_SPAIR> VT_SPAIR;
 // 匹配结果
 typedef struct _ST_MTRESULT_
 {
+	/**< spot pairs */
 	VT_SPAIR* pvtSpair = nullptr;
+
+	/**< image union two gel-image, wxImage */
+	void *pImgUnion = nullptr;
 } ST_MTRESULT, *PST_MTRESULT;
 
 // point transform for icp
@@ -170,6 +178,8 @@ typedef struct _ST_POINT_TRANS_
 /**<  feature descriptor */
 typedef struct _ST_FEATURE_
 {
+	int iOrder;						/**< the spot's order in vector */
+
 	int n;							/**< descriptor length */
 	double descr[FEATURE_MAX_D];	/**< descriptor */
 	void *feature_data;				/**< user-definable data */
@@ -186,5 +196,15 @@ typedef struct _ST_FEATURE_
  *
  */
 extern double feat_dist_sq( ST_FEATURE *f1, ST_FEATURE *f2 );
+
+/** \brief draw a line in the image
+ *
+ * \param img wxImage&		the image be drew
+ * \param rc const wxRect&	the line start point and range
+ * \param clr const ST_RGB&	the line color
+ * \return extern bool	true if success, else, false
+ *
+ */
+extern bool img_draw_line(wxImage &img, const wxRect &rc, const ST_RGB &clr);
 
 #endif // GEIMDEF_H_INCLUDED

@@ -44,6 +44,8 @@
 		<Unit filename="AboutDlg.h" />
 		<Unit filename="CharactVect.cpp" />
 		<Unit filename="CharactVect.h" />
+		<Unit filename="DispDlg.cpp" />
+		<Unit filename="DispDlg.h" />
 		<Unit filename="EffectPar.cpp" />
 		<Unit filename="EffectPar.h" />
 		<Unit filename="GEIMApp.cpp" />

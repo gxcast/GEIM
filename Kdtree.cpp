@@ -417,7 +417,7 @@ int Kdtree::insert_into_nbr_array( ST_FEATURE *feat, ST_FEATURE **nbrs, int n, i
 bool Kdtree::build( ST_FEATURE *features, int n )
 {
 	kd_node *root = nullptr;
-	if ( features != nullptr ||  n <= 0 )
+	if ( features == nullptr ||  n <= 0 )
 	{
 		//fprintf( stderr, "Warning: kdtree_build(): no features, %s, line %d\n", __FILE__, __LINE__ );
 		return false;
@@ -546,4 +546,5 @@ void Kdtree::release()
 			stk.push(prt_node->kd_left);
 		free(prt_node);
 	}
+	kd_root = nullptr;
 }

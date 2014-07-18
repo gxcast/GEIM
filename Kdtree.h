@@ -4,6 +4,9 @@
 #include "GEIMDef.h"
 #include "Minpq.h"
 
+/* the maximum number of keypoint NN candidates to check during BBF search */
+#define KDTREE_BBF_MAX_NN_CHKS 200
+
 /** a node in a k-d tree */
 typedef struct _kd_node_
 {
