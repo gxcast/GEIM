@@ -24,6 +24,15 @@ public:
 	static bool ColorMap(double d, PST_RGB pClr);
 	static ST_RGB ColorMap(double d);
 
+    /** \brief prseudo-random color generic
+     *
+     * \param pClr PST_RGB	the random color
+	 * \return ST_RGB		the random color
+     *
+     */
+	static bool RandColor(PST_RGB pClr);
+	static ST_RGB RandColor();
+
 	/** \brief Abandon image's color
 	 *
 	 * \param EffectPar&		[INOUT] process data

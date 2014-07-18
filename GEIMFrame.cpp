@@ -4,6 +4,7 @@
 
 #include "AboutDlg.h"
 #include "SpotDtDlg.h"
+#include "DispDlg.h"
 #include "EffectPar.h"
 #include "SpotDtThread.h"
 #include "SpotMtThread.h"
@@ -584,6 +585,18 @@ void GEIMFrame::OnThreadMt(wxThreadEvent& event)
 	if (!bRet)
 		wxMessageBox(_("Match failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 	else
+	{
+		if (m_stMtResult.pImgUnion != nullptr)
+		{
+			wxImage *pImg = (wxImage *)m_stMtResult.pImgUnion;
+			if (pImg->IsOk())
+			{
+				DispDlg disp(this, wxNewId(), _("Match Result"));
+				disp.SetImage(pImg);
+				disp.ShowModal();
+			}
+		}
 		// update ui
 		RefreshImgs();
+	}
 }

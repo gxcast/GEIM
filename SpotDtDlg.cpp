@@ -195,7 +195,7 @@ bool SpotDtDlg::CreateControl()
 
 				// image panel
 				m_pImgPanel = new ImagePanel(this, wxID_ANY, wxDefaultPosition, wxSize(600, 500) );
-				pIT->Add(m_pImgPanel, 1, wxALL|wxALIGN_CENTER|wxEXPAND,  3);
+				pIT->Add(m_pImgPanel, 1, wxALL|wxALIGN_CENTER|wxEXPAND, 3);
 			}
 			pLeft->Add(pIT, 1,  wxALL|wxALIGN_CENTER|wxEXPAND, 0);
 
@@ -797,7 +797,9 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 			if (x+i < 0 || x+i >= iW)
 				continue;
 			unsigned char* pT = pPix + i*3;
-			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+			pT[0] = 255;
+			pT[1] = 0;
+			pT[2] = 0;
 		}
 		// |
 		for (int i = -3; i <= 3; ++i)
@@ -805,7 +807,9 @@ void SpotDtDlg::OnBtnTestParam(wxCommandEvent& event)
 			if (y+i < 0 || y+i >= iH)
 				continue;
 			unsigned char* pT = pPix + i*iWb;
-			pT[0] = 255; pT[1] = 0; pT[2] = 0;
+			pT[0] = 255;
+			pT[1] = 0;
+			pT[2] = 0;
 		}
 	}
 	// draw the spot edge

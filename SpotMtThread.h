@@ -64,14 +64,15 @@ private:
 	 *
 	 */
 	bool InitParam(ST_MTPARAM& stParam, int id);
-    /** \brief display match result
+    /** \brief display match result, for icp method
      *
      * \param stParam ST_MTPARAM&	[IN] match infomation
      * \param id int				[IN] which iamge
      * \return bool true:success false:failed
      *
      */
-	bool DispMtResult(ST_MTPARAM& stParam, int id);
+	bool DispMtResult_icp(ST_MTPARAM& stParam, int id);
+	bool DispMtResult_vec(ST_MTPARAM& paramA, ST_MTPARAM& paramB);
 
 	/**< host */
 	wxEvtHandler* m_pHost = nullptr;
