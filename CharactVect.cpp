@@ -10,6 +10,8 @@
 #include "ICP.h"
 // kdtree-bbf
 #include "Kdtree.h"
+// gray stratification
+#include "GrayStratify.h"
 
 CharactVect::CharactVect()
 {
@@ -40,10 +42,13 @@ bool CharactVect::CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 	bRet = bRet && CalcuCharacr(m_stParamA);
 	bRet = bRet && CalcuCharacr(m_stParamB);
 
+	//bRet = bRet && VectMatch();
 	// icp
 	//ICP icp;
 	//bRet = bRet && icp.ICPMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
-	bRet = bRet && VectMatch();
+	// match_clp
+	GrayStratify gs;
+	bRet = bRet && gs.GSMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
 
 	return bRet;
 }

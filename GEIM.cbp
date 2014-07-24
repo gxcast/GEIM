@@ -56,6 +56,8 @@
 		<Unit filename="GEIMFrame.h" />
 		<Unit filename="GEIMMatrix.cpp" />
 		<Unit filename="GEIMMatrix.h" />
+		<Unit filename="GrayStratify.cpp" />
+		<Unit filename="GrayStratify.h" />
 		<Unit filename="Graying.cpp" />
 		<Unit filename="Graying.h" />
 		<Unit filename="ICP.cpp" />
