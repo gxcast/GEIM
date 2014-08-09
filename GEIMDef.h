@@ -17,7 +17,18 @@
 #include <utility>
 
 // widgets base library
+#ifndef wxUSE_GUI
+#	define wxUSE_GUI 1
+#endif // wxUSE_GUI
 #include <wx/wx.h>
+
+
+
+/**<  max feature descriptor length */
+#define FEATURE_MAX_D 7
+/**< threshold on squared ratio of distances between NN and 2nd NN  */
+#define NN_SQ_DIST_RATIO_THR 0.49
+
 
 /**< pixel struct */
 typedef struct _ST_RGB_
@@ -143,10 +154,14 @@ typedef std::vector<ST_SPAIR> VT_SPAIR;
 // 匹配结果
 typedef struct _ST_MTRESULT_
 {
+	/**< spot pairs */
 	VT_SPAIR* pvtSpair = nullptr;
+
+	/**< image union two gel-image, wxImage */
+	void *pImgUnion = nullptr;
 } ST_MTRESULT, *PST_MTRESULT;
 
-// point transform
+// point transform for icp
 typedef struct _ST_POINT_TRANS_
 {
 	/**< the spot's order in vector */
@@ -159,5 +174,53 @@ typedef struct _ST_POINT_TRANS_
 	double tx = 0.0;	// transform position
 	double ty = 0.0;
 } ST_POINT_TRANS, *PST_POINT_TRANS;
+
+/**< feature descriptor */
+typedef struct _ST_FEATURE_
+{
+	int iOrder;						/**< the spot's order in vector */
+
+	int n;							/**< descriptor length */
+	double descr[FEATURE_MAX_D];	/**< descriptor */
+	void *feature_data;				/**< user-definable data */
+} ST_FEATURE, *PST_FEATURE;
+
+/**< grayscale stratification spot */
+typedef struct _ST_GSNODE_
+{
+	int iOrder = -1;	/**< the index in attribute vector */
+
+	int level = -1;		/**< stratification: 0, 1, 2 */
+
+	bool match = false;	/**< if find partner, is the last result */
+
+	_ST_GSNODE_ * partner = nullptr;	/**< the partner */
+	double ovlp = 0.0;	/**< overlap with partner */
+	double itst = 0.0;	/**< intensity similarity with partner*/
+	double simi = 0.0;	/**< synthetical similarity */
+} ST_GSNODE, *PST_GSNODE;
+// gs_node set
+typedef std::vector<ST_GSNODE> VT_GS;
+
+
+/** \brief Calculates the squared Euclidian distance between two feature descriptors.
+ *
+ * \param f1 ST_FEATURE*	first feature
+ * \param f2 ST_FEATURE*	second feature
+ * \return double	Returns the squared Euclidian distance between the descriptors of
+ *    \a f1 and \a f2.
+ *
+ */
+extern double feat_dist_sq( ST_FEATURE *f1, ST_FEATURE *f2 );
+
+/** \brief draw a line in the image
+ *
+ * \param img wxImage&		the image be drew
+ * \param rc const wxRect&	the line start point and range
+ * \param clr const ST_RGB&	the line color
+ * \return extern bool	true if success, else, false
+ *
+ */
+extern bool img_draw_line(wxImage &img, const wxRect &rc, const ST_RGB &clr);
 
 #endif // GEIMDEF_H_INCLUDED

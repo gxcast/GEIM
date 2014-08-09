@@ -2,6 +2,8 @@
 
 // math
 #include <math.h>
+#include <time.h>
+#include <stdlib.h>
 
 /////////////////////////////////////////////////////////
 /**< jet color map generic */
@@ -51,6 +53,38 @@ ST_RGB Graying::ColorMap(double d)
 {
 	ST_RGB rgb;
 	ColorMap(d, &rgb);
+	return rgb;
+}
+
+// prseudo-random color generic
+bool Graying::RandColor(PST_RGB pClr)
+{
+	static bool bSeek = false;
+	// init random generic
+	if (!bSeek)
+	{
+		time_t tme = time(nullptr);
+		srandom((unsigned int)tme);
+		bSeek = true;
+	}
+
+	if (pClr == nullptr)
+	{
+		wxASSERT_MSG(false, _T("RandColor parameter is nullptr."));
+		return false;
+	}
+
+	long lclr = random();
+	pClr->b = (unsigned char)(lclr&0x000000ff);
+	pClr->g = (unsigned char)((lclr>>8)&0x000000ff);
+	pClr->r = (unsigned char)((lclr>>16)&0x000000ff);
+
+	return true;
+}
+ST_RGB Graying::RandColor()
+{
+	ST_RGB rgb;
+	RandColor(&rgb);
 	return rgb;
 }
 
