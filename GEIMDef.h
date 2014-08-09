@@ -175,7 +175,7 @@ typedef struct _ST_POINT_TRANS_
 	double ty = 0.0;
 } ST_POINT_TRANS, *PST_POINT_TRANS;
 
-/**<  feature descriptor */
+/**< feature descriptor */
 typedef struct _ST_FEATURE_
 {
 	int iOrder;						/**< the spot's order in vector */
@@ -185,6 +185,22 @@ typedef struct _ST_FEATURE_
 	void *feature_data;				/**< user-definable data */
 } ST_FEATURE, *PST_FEATURE;
 
+/**< grayscale stratification spot */
+typedef struct _ST_GSNODE_
+{
+	int iOrder = -1;	/**< the index in attribute vector */
+
+	int level = -1;		/**< stratification: 0, 1, 2 */
+
+	bool match = false;	/**< if find partner, is the last result */
+
+	_ST_GSNODE_ * partner = nullptr;	/**< the partner */
+	double ovlp = 0.0;	/**< overlap with partner */
+	double itst = 0.0;	/**< intensity similarity with partner*/
+	double simi = 0.0;	/**< synthetical similarity */
+} ST_GSNODE, *PST_GSNODE;
+// gs_node set
+typedef std::vector<ST_GSNODE> VT_GS;
 
 
 /** \brief Calculates the squared Euclidian distance between two feature descriptors.
