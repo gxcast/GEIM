@@ -48,6 +48,8 @@
 		<Unit filename="DispDlg.h" />
 		<Unit filename="EffectPar.cpp" />
 		<Unit filename="EffectPar.h" />
+		<Unit filename="GCI.cpp" />
+		<Unit filename="GCI.h" />
 		<Unit filename="GEIMApp.cpp" />
 		<Unit filename="GEIMApp.h" />
 		<Unit filename="GEIMDef.cpp" />
