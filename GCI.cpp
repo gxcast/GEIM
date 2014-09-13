@@ -1,5 +1,9 @@
 #include "GCI.h"
 
+#include <math.h>
+#include <float.h>
+#include <wx/file.h>
+
 GCI::GCI()
 {
 }
@@ -30,12 +34,12 @@ bool GCI::Main(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 
 bool GCI::Stratify()
 {
-	stratify_one(m_stParamA, m_aScaleA, m_vtGsA);
-	stratify_one(m_stParamB, m_aScaleB, m_vtGsB);
+	stratify_one(m_stParamA, m_aScaleA, m_vtGciA);
+	stratify_one(m_stParamB, m_aScaleB, m_vtGciB);
 	return true;
 }
 
-bool GCI::stratify_one(ST_MTPARAM &param, int *scale, VT_GS &vt_gs)
+bool GCI::stratify_one(ST_MTPARAM &param, int *scale, VT_GCI &vt_gci)
 {
 	// statistics min and max gray value
 	unsigned char gray_min = 255, gray_max = 0;
@@ -82,7 +86,7 @@ bool GCI::stratify_one(ST_MTPARAM &param, int *scale, VT_GS &vt_gs)
 	}
 
 	// pre-alloc memory
-	vt_gs.resize(cnt_nd);
+	vt_gci.resize(cnt_nd);
 	cnt_nd = 0;
 	for (int lv = 0; lv < NUM_STRATIFY; ++lv)
 	{
@@ -111,10 +115,12 @@ bool GCI::stratify_one(ST_MTPARAM &param, int *scale, VT_GS &vt_gs)
 					idx = cnt_lv[0];
 				else
 					idx = scale[lv-1] + cnt_lv[lv];
-				ST_GSNODE& nd_gs = vt_gs[idx];
-
-				nd_gs.iOrder = cnt_nd;
-				nd_gs.level = lv;
+				ST_GCINODE& nd_gci = vt_gci[idx];
+				// init gci-node
+				nd_gci.iOrder = cnt_nd;
+				nd_gci.level = lv;
+				nd_gci.tran_x = it->pNode->x;
+				nd_gci.tran_y = it->pNode->y;
 
 				cnt_lv[lv] += 1;
 				break;
@@ -127,118 +133,32 @@ bool GCI::stratify_one(ST_MTPARAM &param, int *scale, VT_GS &vt_gs)
 
 bool GCI::CoarseMT()
 {
-	int num_pair = 0, num_trd = 0;
-
-	// least spot number
-	num_trd = (int)m_vtGsA.size();
-	num_pair = (int)m_vtGsB.size();
-	if (num_pair < num_trd)
-		num_trd = num_pair;
-	num_trd /= 4;
-	if (num_trd < 10)
-		num_trd = 10;
-	num_pair = 0;
-
+	int num_trd = 0;
+	// least pair number thresold
+	num_trd = least_pair_num();
+	// similary thresold
 	InitThresold();
 
-	// only match level 0
+	// only match level 0, get the initial mean-center
+	m_nPair = 0;
 	GetCenter(true);
-	for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(it_a->level == 0); ++it_a)
-	{
-		for (auto it_b = m_vtGsB.begin(); (it_b != m_vtGsB.end())&&(it_b->level == 0); ++it_b)
-			Similary(*it_a, *it_b);
-	}
-	// verify one-to-one match
-	for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(it_a->level == 0); ++it_a)
-	{
-		if (it_a->ovlp > m_trdOvlp && it_a->simi > m_trdSimi &&
-		        it_a->partner->partner != nullptr && it_a->iOrder == it_a->partner->partner->iOrder)
-		{
-			it_a->match = true;
-			it_a->partner->match = true;
-			++num_pair;
-		}
-	}
-
+	LayerMT(0x02);	// 0-layer, mean-center
 	// depend on first match result, calculate center
-	if (num_pair <= 0)
+	if (m_nPair <= 0)
 		return false;
 	GetCenter(false);
 
 	// clean first match result
-	for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(it_a->level == 0); ++it_a)
-	{
-		it_a->match = false;
-		it_a->partner = nullptr;
-		it_a->ovlp = 0.0;
-		it_a->itst = 0.0;
-		it_a->simi = 0.0;
-	}
-	for (auto it_b = m_vtGsB.begin(); (it_b != m_vtGsB.end())&&(it_b->level == 0); ++it_b)
-	{
-		it_b->match = false;
-		it_b->partner = nullptr;
-		it_b->ovlp = 0.0;
-		it_b->itst = 0.0;
-		it_b->simi = 0.0;
-	}
-	num_pair = 0;
+	clean_mt_result();
 
 	// iterate match
 	do
 	{
-		// do match for every level
-		for (int lv = 0; lv < NUM_STRATIFY; ++lv)
-		{
-			// use has matched pair to calculate center
-			if (num_pair > 0)
-				GetCenter(false);
-
-			// one-to-one match
-			for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(it_a->level <= lv); ++it_a)
-			{
-				if (it_a->match)
-					continue;
-				for (auto it_b = m_vtGsB.begin(); (it_b != m_vtGsB.end())&&(it_b->level <= lv); ++it_b)
-				{
-					if (!it_b->match)
-						Similary(*it_a, *it_b);
-				}
-			}
-
-			// verify match result
-			for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(it_a->level <= lv); ++it_a)
-			{
-				if (it_a->match)
-					continue;
-
-				ST_GSNODE *part = it_a->partner;
-				if (it_a->ovlp > m_trdOvlp && it_a->simi > m_trdSimi &&
-				        !part->match && part->partner != nullptr && it_a->iOrder == part->partner->iOrder)
-				{
-					bool oneone = true;
-					for (auto it_b = m_vtGsB.begin(); (it_b != m_vtGsB.end())&&(it_b->level <= lv); ++it_b)
-					{
-						if (it_b->partner != nullptr &&
-						        it_b->partner->iOrder == it_a->iOrder &&
-						        it_b->iOrder != part->iOrder)
-						{
-							oneone = false;
-							break;
-						}
-					}
-					if (oneone)
-					{
-						it_a->match = true;
-						part->match = true;
-						++num_pair;
-					}
-				}
-			}	// verify
-		}	// every level
+		// do match for every level, use mean-center
+		LayerMT(0x03);
 
 		// whether pair number enough, else, decrease thresold
-		if (num_pair >= num_trd)
+		if (m_nPair >= num_trd)
 			break;
 		m_trdOvlp -= 0.05;
 		m_trdItst -= 0.05;
@@ -246,8 +166,7 @@ bool GCI::CoarseMT()
 	}
 	while(m_trdSimi > 0.60);
 
-	// record pairs' number
-	m_nPair = num_pair;
+	cull_mt_result();
 
 	return true;
 }
@@ -278,6 +197,95 @@ bool GCI::InitThresold()
 	return true;
 }
 
+int GCI::least_pair_num()
+{
+	int num_b = 0, num_trd = 0;
+
+	num_trd = (int)m_vtGciA.size();
+	num_b = (int)m_vtGciB.size();
+	if (num_b < num_trd)
+		num_trd = num_b;
+	num_trd /= 4;
+	if (num_trd < 10)
+		num_trd = 10;
+
+	return num_trd;
+}
+
+/** \brief match use clp method,
+ *
+ * \param mode int	[IN] bit-filed, 0x01 multi-layer, 0x02 mean-center
+ * \return bool true ; false;
+ *
+ * pair-number is the m_nPair.
+ */
+bool GCI::LayerMT(int mode)
+{
+	bool multi_layer = ((mode & 0x01) != 0);
+	bool mean_center = ((mode & 0x02) != 0);
+
+	// calculate all pots' minmium distance to their neighbor
+	adjoining_distance();
+
+	// do match for every level
+	for (int lv = 0; lv < NUM_STRATIFY; ++lv)
+	{
+		// use has matched pair to calculate center
+		if (mean_center && m_nPair > 0)
+			GetCenter(false);
+
+		// one-to-one match
+		for (auto it_a = m_vtGciA.begin(); (it_a != m_vtGciA.end())&&(it_a->level <= lv); ++it_a)
+		{
+			if (it_a->match)
+				continue;
+			for (auto it_b = m_vtGciB.begin(); (it_b != m_vtGciB.end())&&(it_b->level <= lv); ++it_b)
+			{
+				if (!it_b->match)
+					Similary(*it_a, *it_b, mean_center);
+			}
+		}
+
+		// verify match result
+		for (auto it_a = m_vtGciA.begin(); (it_a != m_vtGciA.end())&&(it_a->level <= lv); ++it_a)
+		{
+			if (it_a->match)
+				continue;
+
+			ST_GCINODE *part = it_a->partner;
+			if (it_a->ovlp > m_trdOvlp && it_a->simi > m_trdSimi &&
+			        !part->match && part->partner != nullptr && it_a->iOrder == part->partner->iOrder)
+			{
+				bool oneone = true;
+				if (multi_layer)	// if only layer0, not check
+				{
+					for (auto it_b = m_vtGciB.begin(); (it_b != m_vtGciB.end())&&(it_b->level <= lv); ++it_b)
+					{
+						if (it_b->partner != nullptr &&
+						        it_b->partner->iOrder == it_a->iOrder &&
+						        it_b->iOrder != part->iOrder)
+						{
+							oneone = false;
+							break;
+						}
+					}
+				}
+				if (oneone)
+				{
+					it_a->match = true;
+					part->match = true;
+					++m_nPair;
+				}
+			}
+		}	// verify
+
+		if (!multi_layer)
+			break;
+	}	// every level
+
+	return true;
+}
+
 bool GCI::GetCenter(bool global)
 {
 	if (global)
@@ -287,13 +295,13 @@ bool GCI::GetCenter(bool global)
 	}
 	else
 	{
-		center_mp(m_ptCenterA, m_stParamA, m_vtGsA);
-		center_mp(m_ptCenterB, m_stParamB, m_vtGsB);
+		center_mp(m_ptCenterA, m_stParamA, m_vtGciA);
+		center_mp(m_ptCenterB, m_stParamB, m_vtGciB);
 	}
 	return true;
 }
 
-bool GCI::center_global(wxPoint &pt, ST_MTPARAM &param)
+bool GCI::center_global(wxPoint2DDouble &pt, ST_MTPARAM &param)
 {
 	double cent_x = 0.0, cent_y = 0.0;
 	int nd_x = 0, nd_y = 0;
@@ -322,48 +330,45 @@ bool GCI::center_global(wxPoint &pt, ST_MTPARAM &param)
 	cent_x /= num;
 	cent_y /= num;
 
-	pt.x = (int)cent_x;
-	pt.y = (int)cent_y;
+	pt.m_x = cent_x;
+	pt.m_y = cent_y;
 
 	return true;
 }
 
-bool GCI::center_mp(wxPoint &pt, ST_MTPARAM &param, VT_GS &vtgs)
+bool GCI::center_mp(wxPoint2DDouble &pt, ST_MTPARAM &param, VT_GCI &vt_gci)
 {
 	double cent_x = 0.0, cent_y = 0.0;
 	int num = 0;
 
-	for (auto it = vtgs.begin(); it != vtgs.end(); ++it)
+	for (auto it = vt_gci.begin(); it != vt_gci.end(); ++it)
 	{
 		if (!it->match)
 			continue;
-		ST_SPOT_NODE *nd_spot = param.pvtAttr->at(it->iOrder).pNode;
-		cent_x += nd_spot->x;
-		cent_y += nd_spot->y;
+		cent_x += it->tran_x;
+		cent_y += it->tran_y;
 		++num;
 	}
 	cent_x /= num;
 	cent_y /= num;
 
-	pt.x = (int)cent_x;
-	pt.y = (int)cent_y;
+	pt.m_x = cent_x;
+	pt.m_y = cent_y;
 
 	return true;
 }
 
-double GCI::Similary(ST_GSNODE &gs_a, ST_GSNODE &gs_b)
+double GCI::Similary(ST_GCINODE &gci_a, ST_GCINODE &gci_b, bool mean_center)
 {
-	double sm_ovlp = 0.0, sm_itst = 0.0, sm_syn;
-	ST_SPOT_NODE *nd_a = m_stParamA.pvtAttr->at(gs_a.iOrder).pNode;
-	ST_SPOT_NODE *nd_b = m_stParamB.pvtAttr->at(gs_b.iOrder).pNode;
+	double sm_ovlp = 0.0, sm_itst = 0.0, sm_syn = 0.0;
 
 	// similary of position
-	sm_ovlp = simi_overlap(nd_a->x, nd_a->y, nd_b->x, nd_b->y);
+	sm_ovlp = simi_overlap(gci_a, gci_b, mean_center);
 	if (sm_ovlp < m_trdOvlp - 0.05)
 		return false;
 
 	// similary of intensity
-	sm_itst = simi_intensity(*nd_a, *nd_b);
+	sm_itst = simi_intensity(gci_a, gci_b);
 
 	// synthetical
 	sm_syn = m_dFactor*sm_itst + (1 - m_dFactor)*sm_ovlp;
@@ -371,71 +376,110 @@ double GCI::Similary(ST_GSNODE &gs_a, ST_GSNODE &gs_b)
 		return false;
 
 	// record most match
-	if (sm_ovlp > gs_a.ovlp && sm_syn > gs_a.simi)
+	if (sm_ovlp > gci_a.ovlp && sm_syn > gci_a.simi)
 	{
-		gs_a.ovlp = sm_ovlp;
-		gs_a.itst = sm_itst;
-		gs_a.simi = sm_syn;
-		gs_a.partner = &gs_b;
+		gci_a.ovlp = sm_ovlp;
+		gci_a.itst = sm_itst;
+		gci_a.simi = sm_syn;
+		gci_a.partner = &gci_b;
 	}
-	if (sm_ovlp > gs_b.ovlp && sm_syn > gs_b.simi)
+	if (sm_ovlp > gci_b.ovlp && sm_syn > gci_b.simi)
 	{
-		gs_b.ovlp = sm_ovlp;
-		gs_b.itst = sm_itst;
-		gs_b.simi = sm_syn;
-		gs_b.partner = &gs_a;
+		gci_b.ovlp = sm_ovlp;
+		gci_b.itst = sm_itst;
+		gci_b.simi = sm_syn;
+		gci_b.partner = &gci_a;
 	}
 
 	return true;
 }
 
-double GCI::simi_overlap(int a_x, int a_y, int b_x, int b_y)
+double GCI::simi_overlap(ST_GCINODE &gci_a, ST_GCINODE &gci_b, bool mean_center)
 {
+	double simi = 0.0;
+	double a_x = gci_a.tran_x;
+	double a_y = gci_a.tran_y;
+	double b_x = gci_b.tran_x;
+	double b_y = gci_b.tran_y;
 	double rt_x = 0.0, rt_y = 0.0;
-	rt_x = fabs((a_x - m_ptCenterA.x)/(double)m_stParamA.iW - (b_x - m_ptCenterB.x)/(double)m_stParamB.iW);
-	rt_y = fabs((a_y - m_ptCenterA.y)/(double)m_stParamA.iH - (b_y - m_ptCenterB.y)/(double)m_stParamB.iH);
-	if (rt_x > 1.0)
-		rt_x = 1.0;
-	if (rt_y > 1.0)
-		rt_y = 1.0;
-	return (1.0 - rt_x)*(1.0 - rt_y);
+
+	if (mean_center)
+	{
+		rt_x = fabs((a_x - m_ptCenterA.m_x)/(double)m_stParamA.iW - (b_x - m_ptCenterB.m_x)/(double)m_stParamB.iW);
+		rt_y = fabs((a_y - m_ptCenterA.m_y)/(double)m_stParamA.iH - (b_y - m_ptCenterB.m_y)/(double)m_stParamB.iH);
+		if (rt_x > 1.0)
+			rt_x = 1.0;
+		if (rt_y > 1.0)
+			rt_y = 1.0;
+		simi = (1.0 - rt_x)*(1.0 - rt_y);
+	}
+	else
+	{
+		rt_x = fabs((a_x - b_x)/(double)m_stParamB.iW);
+		rt_y = fabs((a_y - b_y)/(double)m_stParamB.iH);
+		if (rt_x > 1.0)
+			rt_x = 1.0;
+		if (rt_y > 1.0)
+			rt_y = 1.0;
+		simi = (1.0 - rt_x)*(1.0 - rt_y);
+	}
+	return simi;
 }
 
-double GCI::simi_intensity(ST_SPOT_NODE &nd_a, ST_SPOT_NODE &nd_b)
+double GCI::simi_intensity(ST_GCINODE &gci_a, ST_GCINODE &gci_b)
 {
+	ST_SPOT_NODE *nd_a = m_stParamA.pvtAttr->at(gci_a.iOrder).pNode;
+	ST_SPOT_NODE *nd_b = m_stParamB.pvtAttr->at(gci_b.iOrder).pNode;
+
 	int a_l = 0, a_t = 0, a_r = 0, a_b = 0;
 	int b_l = 0, b_t = 0, b_r = 0, b_b = 0;
-	double rat_w = 0.0, rat_h = 0.0;
-	int a_x = 0, a_y = 0, b_x = 0, b_y = 0;
 	int a_x0 = 0, a_x1 = 0, a_y0 = 0, a_y1 = 0;
 	int b_x0 = 0, b_x1 = 0, b_y0 = 0, b_y1 = 0;
+	double rat_w = 0.0, rat_h = 0.0;
 	int a_np = 0, b_np = 0;
+	int a_x = 0, a_y = 0, b_x = 0, b_y = 0;
 	ST_RGB *a_img = nullptr, *b_img = nullptr;
 	double mean_a = 0.0, mean_b = 0.0;
 	unsigned char pix_a = 0u, pix_b = 0u;
 	double rab = 0.0, lab = 0.0, laa = 0.0, lbb = 0.0;
 
 	// calculate extend radius
-	a_r = m_stParamA.iW/50 + 20;
-	if (a_r < nd_a.rx) a_r = nd_a.rx;
-	a_r /= 2;
+	/*a_r = m_stParamA.iW/50 + 20;
+	if (a_r < nd_a->rx) a_r = nd_a->rx;
+	a_r = a_r/2 + nd_a->rx;
 	a_b = m_stParamA.iH/50 + 20;
-	if (a_b < nd_a.ry) a_b = nd_a.ry;
-	a_b /= 2;
+	if (a_b < nd_a->ry) a_b = nd_a->ry;
+	a_b = a_b/2 + nd_a->ry;
 	b_r = m_stParamB.iW/50 + 20;
-	if (b_r < nd_b.rx) b_r = nd_b.rx;
-	b_r /= 2;
+	if (b_r < nd_b->rx) b_r = nd_b->rx;
+	b_r = b_r/2 + nd_b->rx;
 	b_b = m_stParamB.iH/50 + 20;
-	if (b_b < nd_b.ry) b_b = nd_b.ry;
+	if (b_b < nd_b->ry) b_b = nd_b->ry;
+	b_b = b_b/2 + nd_b->ry;
 	// get spot rect in origin image
-	a_l = nd_a.x - a_r;
-	a_t = nd_a.y - a_b;
-	a_r = nd_a.x + a_r + 1;
-	a_b = nd_a.y + a_b + 1;
-	b_l = nd_b.x - b_r;
-	b_t = nd_b.y - b_b;
-	b_r = nd_b.x + b_r + 1;
-	b_b = nd_b.y + b_b + 1;
+	a_l = nd_a->x - a_r;
+	a_t = nd_a->y - a_b;
+	a_r = nd_a->x + a_r + 1;
+	a_b = nd_a->y + a_b + 1;
+	b_l = nd_b->x - b_r;
+	b_t = nd_b->y - b_b;
+	b_r = nd_b->x + b_r + 1;
+	b_b = nd_b->y + b_b + 1;*/
+	rab = (gci_a.crct > gci_b.crct) ? gci_a.crct:gci_b.crct;
+	lab = nd_a->rx;
+	if (lab < nd_a->ry) lab = nd_a->ry;
+	if (lab < nd_b->rx) lab = nd_b->rx;
+	if (lab < nd_b->ry) lab = nd_b->ry;
+	if (rab > 3*lab) rab = 2*lab;
+	b_b = (int)rab;
+	a_l = nd_a->x - b_b;
+	a_t = nd_a->y - b_b;
+	a_r = nd_a->x + b_b + 1;
+	a_b = nd_a->y + b_b + 1;
+	b_l = nd_b->x - b_b;
+	b_t = nd_b->y - b_b;
+	b_r = nd_b->x + b_b + 1;
+	b_b = nd_b->y + b_b + 1;
 	// width ratio, height ratio: b/a
 	rat_w = (b_r - b_l)/(double)(a_r - a_l);
 	rat_h = (b_b - b_t)/(double)(a_b - a_t);
@@ -474,6 +518,7 @@ double GCI::simi_intensity(ST_SPOT_NODE &nd_a, ST_SPOT_NODE &nd_b)
 	mean_b /= b_np;
 
 	// calculate correlation between a and b, little image map to large image
+	rab = lab = laa = lbb = 0.0;
 	if (rat_w*rat_h > 1.0)	// image B large than A, A->B
 	{
 		for (a_y = a_y0; a_y < a_y1; ++a_y)
@@ -520,6 +565,86 @@ double GCI::simi_intensity(ST_SPOT_NODE &nd_a, ST_SPOT_NODE &nd_b)
 	return rab;
 }
 
+bool GCI::adjoining_distance()
+{
+	// set all the distance to infinite
+	auto fuc_cl = [](VT_GCI &gci)
+	{
+		for (auto it = gci.begin(); it != gci.end(); ++it)
+			it->crct = DBL_MAX;
+	};
+	fuc_cl(m_vtGciA);
+	fuc_cl(m_vtGciB);
+
+	// statistics of minimium distance
+	auto fuc_min = [](VT_GCI &gci)
+	{
+		auto it_end_2 = gci.end();
+		auto it_end_1 = it_end_2 - 1;
+		double d_x = 0.0, d_y = 0.0, d_dist = 0.0;
+		for (auto it_1 = gci.begin(); it_1 != it_end_1; ++it_1)
+		{
+			for (auto it_2 = it_1 + 1; it_2 != it_end_2; ++it_2)
+			{
+				d_x = fabs(it_1->tran_x - it_2->tran_x);
+				d_y = fabs(it_1->tran_y - it_2->tran_y);
+				d_dist = sqrt(d_x*d_x + d_y*d_y);
+
+				if (it_1->crct > d_dist)
+					it_1->crct = d_dist;
+				if (it_2->crct > d_dist)
+					it_2->crct = d_dist;
+			}
+		}
+	};
+	fuc_min(m_vtGciA);
+	fuc_min(m_vtGciB);
+
+	return true;
+}
+
+bool GCI::clean_mt_result()
+{
+	auto cl_vt = [](VT_GCI &vt_gci)
+	{
+		for (auto it = vt_gci.begin(); it != vt_gci.end(); ++it)
+		{
+			it->match = false;
+			it->partner = nullptr;
+			it->ovlp = 0.0;
+			it->itst = 0.0;
+			it->simi = 0.0;
+		}
+	};
+	cl_vt(m_vtGciA);
+	cl_vt(m_vtGciB);
+
+	m_nPair = 0;
+
+	return true;
+}
+
+bool GCI::cull_mt_result()
+{
+	// write pair to file
+	wxFile fl_out;
+	fl_out.Open(_T("/home/nicolas/Desktop/out.txt"), wxFile::write);
+	for (auto it_a = m_vtGciA.begin(); it_a != m_vtGciA.end(); ++it_a)
+	{
+		if (it_a->match)
+		{
+			wxString str_out;
+			str_out.Printf(_T("%lf %lf %lf %lf\r\n"),
+			               it_a->tran_x, it_a->tran_y,
+			               it_a->partner->tran_x, it_a->partner->tran_y);
+			fl_out.Write(str_out);
+		}
+	}
+	fl_out.Close();
+
+	return true;
+}
+
 bool GCI::Release()
 {
 	if (m_nPair > 0)
@@ -530,7 +655,7 @@ bool GCI::Release()
 			m_pstMtRet->pvtSpair = new VT_SPAIR;
 		m_pstMtRet->pvtSpair->resize(m_nPair);
 
-		for (auto it_a = m_vtGsA.begin(); (it_a != m_vtGsA.end())&&(cnt_p <= m_nPair); ++it_a)
+		for (auto it_a = m_vtGciA.begin(); (it_a != m_vtGciA.end())&&(cnt_p <= m_nPair); ++it_a)
 		{
 			if (it_a->match)
 			{
@@ -547,8 +672,8 @@ bool GCI::Release()
 			m_pstMtRet->pvtSpair->resize(cnt_p);
 		}
 	}
-	m_vtGsA.clear();
-	m_vtGsB.clear();
+	m_vtGciA.clear();
+	m_vtGciB.clear();
 
 	return true;
 }

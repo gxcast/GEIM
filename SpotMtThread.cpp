@@ -169,7 +169,7 @@ bool SpotMtThread::InitParam(ST_MTPARAM& stParam, int id)
 /**< display the match result */
 bool SpotMtThread::DispMtResult_crt(ST_MTPARAM& paramA, ST_MTPARAM& paramB)
 {
-	int block = 2;	// block's width
+	int block = 3;	// block's width
 	wxImage* pImg = nullptr;
 
 	// function: draw spots character of one image
@@ -219,7 +219,7 @@ bool SpotMtThread::DispMtResult_crt(ST_MTPARAM& paramA, ST_MTPARAM& paramB)
 
 bool SpotMtThread::DispMtResult_icp(ST_MTPARAM& paramA, ST_MTPARAM& paramB, int bgi)
 {
-	int block = 2;	// spot block's width
+	int block = 3;	// spot block's width
 	ST_RGB clr;
 
 	wxImage* pImg = nullptr;

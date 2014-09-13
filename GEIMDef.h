@@ -202,6 +202,26 @@ typedef struct _ST_GSNODE_
 // gs_node set
 typedef std::vector<ST_GSNODE> VT_GS;
 
+/**< GCI spot */
+typedef struct _ST_GCINODE_
+{
+	int iOrder = -1;	/**< the index in attribute vector */
+
+	int level = -1;		/**< stratification: 0, 1, 2 */
+
+	double tran_x = 0.0;	/**< x-coord after transform */
+	double tran_y = 0.0;	/**< y-coord after transform */
+
+	bool match = false;	/**< if find partner, is the last result */
+
+	_ST_GCINODE_ * partner = nullptr;	/**< the partner */
+	double ovlp = 0.0;	/**< overlap with partner */
+	double itst = 0.0;	/**< intensity similarity with partner*/
+	double crct = 0.0;	/**< charact similarity with partner */
+	double simi = 0.0;	/**< synthetical similarity */
+} ST_GCINODE, *PST_GCINODE;
+// gs_node set
+typedef std::vector<ST_GCINODE> VT_GCI;
 
 /** \brief Calculates the squared Euclidian distance between two feature descriptors.
  *
