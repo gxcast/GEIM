@@ -64,14 +64,31 @@ private:
 	 *
 	 */
 	bool InitParam(ST_MTPARAM& stParam, int id);
-    /** \brief display match result, for icp method
+
+	/** \brief display spots' character in each image
+	 *
+	 * \param paramA ST_MTPARAM&	[IN] match info of image A
+	 * \param paramB ST_MTPARAM&	[IN] match info of image B
+	 * \return bool	true
+	 *
+	 */
+	bool DispMtResult_crt(ST_MTPARAM& paramA, ST_MTPARAM& paramB);
+	/** \brief draw piar in each image, using the same color
+	 *
+	 * \param stParam ST_MTPARAM&	[IN] match infomation
+	 * \param id int				[IN] which iamge
+	 * \param bgi int				[IN] if draw back-image, bit-domain 0x01:image A, 0x02 :image B
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool DispMtResult_icp(ST_MTPARAM& paramA, ST_MTPARAM& paramB, int bgi = 0);
+    /** \brief union two image into one, and draw pair-line
      *
-     * \param stParam ST_MTPARAM&	[IN] match infomation
-     * \param id int				[IN] which iamge
-     * \return bool true:success false:failed
+	 * \param paramA ST_MTPARAM&	[IN] match info of image A
+	 * \param paramB ST_MTPARAM&	[IN] match info of image B
+     * \return bool true, false
      *
      */
-	bool DispMtResult_icp(ST_MTPARAM& stParam, int id);
 	bool DispMtResult_vec(ST_MTPARAM& paramA, ST_MTPARAM& paramB);
 
 	/**< host */

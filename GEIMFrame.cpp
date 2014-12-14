@@ -586,6 +586,9 @@ void GEIMFrame::OnThreadMt(wxThreadEvent& event)
 		wxMessageBox(_("Match failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 	else
 	{
+		// update ui
+		RefreshImgs();
+		// display union image
 		if (m_stMtResult.pImgUnion != nullptr)
 		{
 			wxImage *pImg = (wxImage *)m_stMtResult.pImgUnion;
@@ -596,7 +599,5 @@ void GEIMFrame::OnThreadMt(wxThreadEvent& event)
 				disp.ShowModal();
 			}
 		}
-		// update ui
-		RefreshImgs();
 	}
 }

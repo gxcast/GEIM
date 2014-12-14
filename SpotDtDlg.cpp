@@ -289,13 +289,13 @@ bool SpotDtDlg::CreateControl()
 					}
 					pParLay->Add(pCoord, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 2
-					pCtrl = new wxStaticText(this, wxID_ANY, _("Faint Thre:"));
+					pCtrl = new wxStaticText(this, wxID_ANY, _("&Faint Thre:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrlDouble(this, ID_SPD_FAINT_T, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
 					                             0.0, 100.0, 0.00, 0.05);
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 					// 3
-					pCtrl = new wxStaticText(this, wxID_ANY, _("Min Rad:"));
+					pCtrl = new wxStaticText(this, wxID_ANY, _("&Min Rad:"));
 					pParLay->Add(pCtrl, 0, wxALL|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL, 2);
 					pCtrl = new wxSpinCtrl(this, ID_SP_MIN, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS|wxALIGN_RIGHT,
 					                       1, 9999, 2);

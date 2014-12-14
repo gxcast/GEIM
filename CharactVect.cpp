@@ -7,11 +7,13 @@
 // image's gray operation
 #include "Graying.h"
 // icp
-#include "ICP.h"
+//#include "ICP.h"
 // kdtree-bbf
 #include "Kdtree.h"
 // gray stratification
-#include "GrayStratify.h"
+//#include "GrayStratify.h"
+// gray-strtification + character + icp
+#include "GCI.h"
 
 CharactVect::CharactVect()
 {
@@ -47,8 +49,11 @@ bool CharactVect::CVMain(ST_MTPAIR&& stMtPair, ST_MTRESULT* pstMtRet)
 	//ICP icp;
 	//bRet = bRet && icp.ICPMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
 	// match_clp
-	GrayStratify gs;
-	bRet = bRet && gs.GSMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
+	//GrayStratify gs;
+	//bRet = bRet && gs.GSMain(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
+	// GCI
+	GCI gci;
+	bRet = bRet && gci.Main(std::make_pair(m_stParamA, m_stParamB), pstMtRet);
 
 	return bRet;
 }

@@ -26,10 +26,12 @@ SpotMtThread::~SpotMtThread()
 /**< thread's entry */
 void* SpotMtThread::Entry()
 {
+	int value = 0;
 	bool bRet = SpotMatch();
+	value = bRet?1:0;
 	// notition host, pEvt's memory auto release
 	wxThreadEvent* pEvt = new wxThreadEvent(wxEVT_THREAD, SpotMtThread::ID);
-	pEvt->SetInt(bRet?1:0);
+	pEvt->SetInt(value);
 	m_pHost->QueueEvent(pEvt);
 
 	return nullptr;
@@ -112,8 +114,8 @@ bool SpotMtThread::SpotMatch()
 	CharactVect cvt;
 	if (cvt.CVMain(std::make_pair(stParamA, stParamB), &m_stMtResult))
 	{
-		//DispMtResult_icp(stParamA, 0);
-		//DispMtResult_icp(stParamB, 1);
+		//DispMtResult_crt(stParamA, stParamB);
+		DispMtResult_icp(stParamA, stParamB);
 		DispMtResult_vec(stParamA, stParamB);
 
 		bRet = true;
@@ -165,35 +167,96 @@ bool SpotMtThread::InitParam(ST_MTPARAM& stParam, int id)
 }
 
 /**< display the match result */
-bool SpotMtThread::DispMtResult_icp(ST_MTPARAM& stParam, int id)
+bool SpotMtThread::DispMtResult_crt(ST_MTPARAM& paramA, ST_MTPARAM& paramB)
 {
-	wxImage* pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(id));
-	PST_RGB pDes = (PST_RGB)pImg->GetData();
-	int iW = stParam.iW;
-	int iH = stParam.iH;
-	int iN = stParam.iN;
-	// copy the image
-	if (id == 1)
-		memcpy(pDes, stParam.pImg, iN*3);
-	/*// draw spot's character
-	for (auto it = stParam.pvtAttr->begin(); it != stParam.pvtAttr->end(); ++it)
+	int block = 3;	// block's width
+	wxImage* pImg = nullptr;
+
+	// function: draw spots character of one image
+	auto draw_charact = [block] (ST_MTPARAM stParam, wxImage* pImg)
 	{
-		if (it->bInvalid)
-			continue;
-		ST_SPOT_NODE& spot = *(it->pNode);
-		ST_SPOT_CHARACT& crt = *(it->pCrt);
+		PST_RGB pDes = (PST_RGB)pImg->GetData();
+		int iW = stParam.iW;
+		int iH = stParam.iH;
+		// draw spot's character
+		for (auto it = stParam.pvtAttr->begin(); it != stParam.pvtAttr->end(); ++it)
+		{
+			if (it->bInvalid)
+				continue;
+			ST_SPOT_NODE& spot = *(it->pNode);
+			ST_SPOT_CHARACT& crt = *(it->pCrt);
+			double dValue = crt.deep;	// character
+			// gel spot coordinate
+			int x = spot.x;
+			int y = spot.y;
+
+			// charact's value color-map
+			ST_RGB clr;
+			Graying::ColorMap(dValue, &clr);
+			for (int j = -block; j <= block; ++j)
+			{
+				if (y+j < 0 || y+j >= iH)
+					continue;
+				PST_RGB pLine = pDes + (y+j)*iW;
+				for (int i = -block; i <= block; ++i)
+				{
+					if (x+i < 0 || x+i >= iW)
+						continue;
+					PST_RGB pPix = pLine + (x+i);
+					*pPix = clr;
+				}
+			}
+		}
+	};
+
+	pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(0));
+	draw_charact(paramA, pImg);
+	pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(1));
+	draw_charact(paramB, pImg);
+
+	return true;
+}
+
+bool SpotMtThread::DispMtResult_icp(ST_MTPARAM& paramA, ST_MTPARAM& paramB, int bgi)
+{
+	int block = 3;	// spot block's width
+	ST_RGB clr;
+
+	wxImage* pImg = nullptr;
+	PST_RGB pDes_A = nullptr, pDes_B = nullptr;
+	int iW_A = 0, iW_B = 0, iH_A = 0, iH_B = 0, iN_A = 0, iN_B = 0;
+	// image A
+	pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(0));
+	pDes_A = (PST_RGB)pImg->GetData();
+	iW_A = paramA.iW;
+	iH_A = paramA.iH;
+	iN_A = paramA.iN;
+	// image B
+	pImg = static_cast<wxImage*>(m_aryImgsDisp.Item(1));
+	pDes_B = (PST_RGB)pImg->GetData();
+	iW_B = paramB.iW;
+	iH_B = paramB.iH;
+	iN_B = paramB.iN;
+
+	// copy the back-image
+	if ((bgi & 0x01) != 0)
+		memcpy(pDes_A, paramA.pImg, iN_A*3);
+	if ((bgi & 0x02) != 0)
+		memcpy(pDes_B, paramB.pImg, iN_B*3);
+
+	// function: draw a spot block
+	auto draw_spot = [&clr, block] (ST_SPOT_ATTR& spot, PST_RGB pDes, int iW, int iH)
+	{
 		// gel spot coordinate
-		int x = spot.x;
-		int y = spot.y;
+		int x = spot.pNode->x;
+		int y = spot.pNode->y;
 		// character
-		ST_RGB clr;
-		Graying::ColorMap(crt.deep, &clr);	// charact's value color-map
-		for (int j = -3; j <= 3; ++j)
+		for (int j = -block; j <= block; ++j)
 		{
 			if (y+j < 0 || y+j >= iH)
 				continue;
 			PST_RGB pLine = pDes + (y+j)*iW;
-			for (int i = -3; i <=3; ++i)
+			for (int i = -block; i <= block; ++i)
 			{
 				if (x+i < 0 || x+i >= iW)
 					continue;
@@ -201,61 +264,18 @@ bool SpotMtThread::DispMtResult_icp(ST_MTPARAM& stParam, int id)
 				*pPix = clr;
 			}
 		}
-	}*/
+	};
 	// draw match pair
-	if (id == 0)
+	VT_SPAIR* pvtPairs = m_stMtResult.pvtSpair;
+	for (auto it = pvtPairs->begin(); it != pvtPairs->end(); ++it)
 	{
-		VT_SPAIR* pvtPairs = m_stMtResult.pvtSpair;
-		for (auto it = pvtPairs->begin(); it != pvtPairs->end(); ++it)
-		{
-			ST_SPOT_ATTR& spot = stParam.pvtAttr->at(it->iOdA);
-			// gel spot coordinate
-			int x = spot.pNode->x;
-			int y = spot.pNode->y;
-			// character
-			ST_RGB clr;
-			clr.b = 255;
-			for (int j = -2; j <= 2; ++j)
-			{
-				if (y+j < 0 || y+j >= iH)
-					continue;
-				PST_RGB pLine = pDes + (y+j)*iW;
-				for (int i = -2; i <=2; ++i)
-				{
-					if (x+i < 0 || x+i >= iW)
-						continue;
-					PST_RGB pPix = pLine + (x+i);
-					*pPix = clr;
-				}
-			}
-		}
-	}
-	else
-	{
-		VT_SPAIR* pvtPairs = m_stMtResult.pvtSpair;
-		for (auto it = pvtPairs->begin(); it != pvtPairs->end(); ++it)
-		{
-			ST_SPOT_ATTR& spot = stParam.pvtAttr->at(it->iOdB);
-			// gel spot coordinate
-			int x = spot.pNode->x;
-			int y = spot.pNode->y;
-			// character
-			ST_RGB clr;
-			clr.b = 255;
-			for (int j = -2; j <= 2; ++j)
-			{
-				if (y+j < 0 || y+j >= iH)
-					continue;
-				PST_RGB pLine = pDes + (y+j)*iW;
-				for (int i = -2; i <=2; ++i)
-				{
-					if (x+i < 0 || x+i >= iW)
-						continue;
-					PST_RGB pPix = pLine + (x+i);
-					*pPix = clr;
-				}
-			}
-		}
+		ST_SPOT_ATTR& spotA = paramA.pvtAttr->at(it->iOdA);
+		ST_SPOT_ATTR& spotB = paramB.pvtAttr->at(it->iOdB);
+		// random color
+		Graying::RandColor(&clr);
+		// draw the pair
+		draw_spot(spotA, pDes_A, iW_A, iH_A);
+		draw_spot(spotB, pDes_B, iW_B, iH_B);
 	}
 
 	return true;
@@ -329,3 +349,4 @@ bool SpotMtThread::DispMtResult_vec(ST_MTPARAM& paramA, ST_MTPARAM& paramB)
 	m_stMtResult.pImgUnion = pImgUnion;
 	return true;
 }
+
