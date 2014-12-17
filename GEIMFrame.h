@@ -27,6 +27,12 @@ class GEIMFrame: public wxFrame
          *
          */
         bool RefreshImgs();
+        /** \brief display the detect result
+         *
+         * \return bool true:success false:failed
+         *
+         */
+        bool DispDtResult();
 
         void OnClose(wxCloseEvent& event);
         // menu or tool-button command
@@ -36,8 +42,16 @@ class GEIMFrame: public wxFrame
         void OnFileCloseUpdate(wxUpdateUIEvent& event);
         void OnDt(wxCommandEvent& event);
         void OnDtUpdate(wxUpdateUIEvent& event);
+        void OnDtSave(wxCommandEvent& event);
+        void OnDtSaveUpdate(wxUpdateUIEvent& event);
+        void OnDtLoad(wxCommandEvent& event);
+        void OnDtLoadUpdate(wxUpdateUIEvent& event);
         void OnMt(wxCommandEvent& event);
         void OnMtUpdate(wxUpdateUIEvent& event);
+        void OnMtSave(wxCommandEvent& event);
+        void OnMtSaveUpdate(wxUpdateUIEvent& event);
+        void OnMtLoad(wxCommandEvent& event);
+        void OnMtLoadUpdate(wxUpdateUIEvent& event);
         void OnQuit(wxCommandEvent& event);
         void OnQuitUpdate(wxUpdateUIEvent& event);
         void OnAbout(wxCommandEvent& event);
@@ -48,6 +62,10 @@ class GEIMFrame: public wxFrame
         void OnZoomFit(wxCommandEvent& event);
         void OnZoomActual(wxCommandEvent& event);
         void OnImgMove(wxCommandEvent& event);
+        void OnSelSpot(wxCommandEvent& event);
+        void OnDelSpot(wxCommandEvent& event);
+        void OnSelPair(wxCommandEvent& event);
+        void OnDelPair(wxCommandEvent& event);
         void OnBtnsUpdate(wxUpdateUIEvent& event);
         void OnImgplNtfy(wxImgplEvent& event);
         // thread event
@@ -58,7 +76,11 @@ class GEIMFrame: public wxFrame
         static const long ID_PANEL_MAIN;
         static const long ID_STATUSBAR_MAIN;
         static const long ID_CMD_DT;
+        static const long ID_CMD_DT_SAVE;
+        static const long ID_CMD_DT_LOAD;
         static const long ID_CMD_MT;
+        static const long ID_CMD_MT_SAVE;
+        static const long ID_CMD_MT_LOAD;
         // tools buttons
         static const long ID_BMPBTN_IMG_ZOOMIN;
         static const long ID_BMPBTN_IMG_ZOOMOUT;
@@ -66,7 +88,13 @@ class GEIMFrame: public wxFrame
         static const long ID_BMPBTN_IMG_ZOOMFIT;
         static const long ID_BMPBTN_IMG_ZOOMACTUAL;
         static const long ID_BMPBTN_IMG_MOVE;
+        static const long ID_BMPBTN_SEL_SPOT;
+        static const long ID_BMPBTN_DEL_SPOT;
+        static const long ID_BMPBTN_SEL_PAIR;
+        static const long ID_BMPBTN_DEL_PAIR;
 
+	/**< mouse function, use button's id */
+	long m_lMouseFunc = 0;
 
         /**< the menu bar */
         wxMenuBar* m_pMenuBarMain = nullptr;

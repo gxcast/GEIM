@@ -13,7 +13,11 @@
 const long GEIMFrame::ID_PANEL_MAIN = wxNewId();
 const long GEIMFrame::ID_STATUSBAR_MAIN = wxNewId();
 const long GEIMFrame::ID_CMD_DT = wxNewId();
+const long GEIMFrame::ID_CMD_DT_SAVE = wxNewId();
+const long GEIMFrame::ID_CMD_DT_LOAD = wxNewId();
 const long GEIMFrame::ID_CMD_MT = wxNewId();
+const long GEIMFrame::ID_CMD_MT_SAVE = wxNewId();
+const long GEIMFrame::ID_CMD_MT_LOAD = wxNewId();
 // tools buttons
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMIN = wxNewId();
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMOUT = wxNewId();
@@ -21,6 +25,10 @@ const long GEIMFrame::ID_BMPBTN_IMG_ZOOMRECT = wxNewId();
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMFIT = wxNewId();
 const long GEIMFrame::ID_BMPBTN_IMG_ZOOMACTUAL = wxNewId();
 const long GEIMFrame::ID_BMPBTN_IMG_MOVE = wxNewId();
+const long GEIMFrame::ID_BMPBTN_SEL_SPOT = wxNewId();
+const long GEIMFrame::ID_BMPBTN_DEL_SPOT = wxNewId();
+const long GEIMFrame::ID_BMPBTN_SEL_PAIR = wxNewId();
+const long GEIMFrame::ID_BMPBTN_DEL_PAIR = wxNewId();
 
 
 BEGIN_EVENT_TABLE(GEIMFrame,wxFrame)
@@ -52,7 +60,17 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	pMenu = new wxMenu();
 	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT, _("&Detect\tCtrl-D"), _("Detect Spots"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT_SAVE, _("Save Detect Result(&F)\tCtrl-F"), _("Save Detect"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_DT_LOAD, _("Load Detect Result(&G)\tCtrl-G"), _("Load Detect"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu);
+	pMenu->Append(pMenuItem);
 	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT, _("&Match\tCtrl-M"), _("Match Spots"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT_SAVE, _("Save Match Result(&N)\tCtrl-N"), _("Save Match"), wxITEM_NORMAL);
+	pMenu->Append(pMenuItem);
+	pMenuItem = new wxMenuItem(pMenu, ID_CMD_MT_LOAD, _("Load Match Result(&B)\tCtrl-B"), _("Load Match"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
 	m_pMenuBarMain->Append(pMenu, _("&Proc"));
 	pMenu = new wxMenu();
@@ -108,6 +126,24 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 				pBmpBtn = new wxBitmapButton(m_pPanelMain, ID_BMPBTN_IMG_MOVE, wxBitmap(_T("./skin/imgmove.png"), wxBITMAP_TYPE_PNG));
 				pBmpBtn->SetToolTip(_("Move Image"));
 				pBoxSizerTools->Add(pBmpBtn, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
+
+				pBoxSizerTools->AddSpacer(2);
+
+				pBmpBtn = new wxBitmapButton(m_pPanelMain, ID_BMPBTN_SEL_SPOT, wxBitmap(_T("./skin/SelSpot.png"), wxBITMAP_TYPE_PNG));
+				pBmpBtn->SetToolTip(_("Select Spot"));
+				pBoxSizerTools->Add(pBmpBtn, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
+
+				pBmpBtn = new wxBitmapButton(m_pPanelMain, ID_BMPBTN_DEL_SPOT, wxBitmap(_T("./skin/DelSpot.png"), wxBITMAP_TYPE_PNG));
+				pBmpBtn->SetToolTip(_("Delete Spot"));
+				pBoxSizerTools->Add(pBmpBtn, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
+
+				pBmpBtn = new wxBitmapButton(m_pPanelMain, ID_BMPBTN_SEL_PAIR, wxBitmap(_T("./skin/SelPair.png"), wxBITMAP_TYPE_PNG));
+				pBmpBtn->SetToolTip(_("Select Pair"));
+				pBoxSizerTools->Add(pBmpBtn, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
+
+				pBmpBtn = new wxBitmapButton(m_pPanelMain, ID_BMPBTN_DEL_PAIR, wxBitmap(_T("./skin/DelPair.png"), wxBITMAP_TYPE_PNG));
+				pBmpBtn->SetToolTip(_("Delete Pair"));
+				pBoxSizerTools->Add(pBmpBtn, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 2);
 			}
 			m_pBoxSizerMain->Add(pBoxSizerTools, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
 
@@ -143,8 +179,16 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	Connect(wxID_CLOSE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnFileCloseUpdate);
 	Connect(ID_CMD_DT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDt);
 	Connect(ID_CMD_DT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnDtUpdate);
+	Connect(ID_CMD_DT_SAVE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDtSave);
+	Connect(ID_CMD_DT_SAVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnDtSaveUpdate);
+	Connect(ID_CMD_DT_LOAD, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnDtLoad);
+	Connect(ID_CMD_DT_LOAD, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnDtLoadUpdate);
 	Connect(ID_CMD_MT, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMt);
 	Connect(ID_CMD_MT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnMtUpdate);
+	Connect(ID_CMD_MT_SAVE, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMtSave);
+	Connect(ID_CMD_MT_SAVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnMtSaveUpdate);
+	Connect(ID_CMD_MT_LOAD, wxEVT_MENU, (wxObjectEventFunction)&GEIMFrame::OnMtLoad);
+	Connect(ID_CMD_MT_LOAD, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnMtLoadUpdate);
 	Connect(wxID_EXIT, wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnQuit);
 	Connect(wxID_EXIT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnQuitUpdate);
 	Connect(wxID_ABOUT,wxEVT_MENU,(wxObjectEventFunction)&GEIMFrame::OnAbout);
@@ -161,6 +205,14 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	Connect(ID_BMPBTN_IMG_ZOOMACTUAL, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
 	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnImgMove);
 	Connect(ID_BMPBTN_IMG_MOVE, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
+	Connect(ID_BMPBTN_SEL_SPOT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnSelSpot);
+	Connect(ID_BMPBTN_SEL_SPOT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
+	Connect(ID_BMPBTN_DEL_SPOT, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnDelSpot);
+	Connect(ID_BMPBTN_DEL_SPOT, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
+	Connect(ID_BMPBTN_SEL_PAIR, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnSelPair);
+	Connect(ID_BMPBTN_SEL_PAIR, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
+	Connect(ID_BMPBTN_DEL_PAIR, wxEVT_BUTTON, (wxObjectEventFunction)&GEIMFrame::OnDelPair);
+	Connect(ID_BMPBTN_DEL_PAIR, wxEVT_UPDATE_UI, (wxObjectEventFunction)&GEIMFrame::OnBtnsUpdate);
 	// thread event
 	Connect(SpotDtThread::ID, wxEVT_THREAD, (wxObjectEventFunction)&GEIMFrame::OnThreadDt);
 	Connect(SpotMtThread::ID, wxEVT_THREAD, (wxObjectEventFunction)&GEIMFrame::OnThreadMt);
@@ -181,6 +233,90 @@ bool GEIMFrame::RefreshImgs()
 		pPanel->Refresh(false);
 	}
 	return true;
+}
+
+/**< display the detect result */
+bool GEIMFrame::DispDtResult()
+{
+	bool  bRet = true;
+	// traverse all the image
+	size_t nNum = m_aryImgs.size();
+	for (size_t i = 0; i < nNum; ++i)
+	{
+		// get the diplay image
+		wxImage* pImgDisp = static_cast<wxImage*>(m_aryImgsDisp.Item(i));
+		if (pImgDisp == nullptr)
+		{
+			wxASSERT_MSG(pImgDisp != nullptr, _T("get display image error"));
+			bRet = true;
+			break;
+		}
+		// get detection result
+		auto it = m_lsDtResult.begin();	for (size_t j = 0; j < i; ++j)	++it;
+		ST_DTRESULT& stResult = *it;
+
+		// display the result
+		int iSpotN = (int)stResult.pLs->size();
+		if (iSpotN <= 0)
+			continue;
+
+		unsigned char* pDest = pImgDisp->GetData();
+		int iW = pImgDisp->GetWidth();
+		int iWb = iW*3;
+		int iH = pImgDisp->GetHeight();
+		int iN = iW*iH;
+		PST_RGB pFlag = stResult.pData;
+		// draw the spot edge
+		for (int i = 0; i < iN; ++i)
+		{
+			if(pFlag->g > 0)	// edge
+			{
+				pDest[0] = 0u;
+				pDest[1] = 255u;
+				pDest[2] = 0u;
+			}
+			else	// image
+			{
+				pDest[0] = pFlag->r;
+				pDest[1] = pFlag->r;
+				pDest[2] = pFlag->r;
+			}
+			pDest += 3;
+			++pFlag;
+		}
+		// draw the spot center
+		pDest = pImgDisp->GetData();
+		pFlag = stResult.pData;
+		for (auto it = stResult.pLs->begin(); it != stResult.pLs->end(); ++it)
+		{
+			ST_SPOT_NODE& spot = *it;
+			// 绘制蛋白点+
+			int x = spot.x;
+			int y = spot.y;
+			unsigned char* pPix = pDest + (y*iW + x)*3;
+			// -
+			for (int i = -3; i <= 3; ++i)
+			{
+				if (x+i < 0 || x+i >= iW)
+					continue;
+				unsigned char* pT = pPix + i*3;
+				pT[0] = 255;
+				pT[1] = 0;
+				pT[2] = 0;
+			}
+			// |
+			for (int i = -3; i <= 3; ++i)
+			{
+				if (y+i < 0 || y+i >= iH)
+					continue;
+				unsigned char* pT = pPix + i*iWb;
+				pT[0] = 255;
+				pT[1] = 0;
+				pT[2] = 0;
+			}
+		}
+	}
+	return bRet;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -363,7 +499,7 @@ void GEIMFrame::OnDt(wxCommandEvent& event)
 
 	// detect the spot in batch, at the same, display the result
 	ST_DTPARAM& stDtParam = dlg.DtParam();
-	SpotDtThread* pThd = new SpotDtThread(this, stDtParam, m_aryImgs, m_aryImgsDisp, m_lsDtResult);
+	SpotDtThread* pThd = new SpotDtThread(this, stDtParam, m_aryImgs, m_lsDtResult);
 	if (pThd->Run() != wxTHREAD_NO_ERROR)	// pThd delete itself auto
 	{
 		wxMessageBox(_("Create dtect thread failed."), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
@@ -376,6 +512,31 @@ void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
 {
 	size_t nNum = m_aryImgs.Count();
 	event.Enable(nNum > 0 && m_pBusy == nullptr);
+}
+
+void GEIMFrame::OnDtSave(wxCommandEvent& event)
+{
+
+}
+void GEIMFrame::OnDtSaveUpdate(wxUpdateUIEvent& event)
+{
+	bool bEn = true;
+	bEn = bEn && (m_aryImgs.Count() > 0);
+	bEn = bEn && (m_pBusy == nullptr);
+	bEn = bEn && (m_lsDtResult.size() >= 2);
+	event.Enable(bEn);
+}
+
+void GEIMFrame::OnDtLoad(wxCommandEvent& event)
+{
+
+}
+void GEIMFrame::OnDtLoadUpdate(wxUpdateUIEvent& event)
+{
+	bool bEn = true;
+	bEn = bEn && (m_aryImgs.Count() > 0);
+	bEn = bEn && (m_pBusy == nullptr);
+	event.Enable(bEn);
 }
 
 /**< match spots */
@@ -399,6 +560,24 @@ void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
 	bEn = bEn && (m_pBusy == nullptr);
 	bEn = bEn && (m_lsDtResult.size() >= 2);
 	event.Enable(bEn);
+}
+
+void GEIMFrame::OnMtSave(wxCommandEvent& event)
+{
+
+}
+void GEIMFrame::OnMtSaveUpdate(wxUpdateUIEvent& event)
+{
+
+}
+
+void GEIMFrame::OnMtLoad(wxCommandEvent& event)
+{
+
+}
+void GEIMFrame::OnMtLoadUpdate(wxUpdateUIEvent& event)
+{
+
 }
 
 /**< command to exit the app */
@@ -449,6 +628,10 @@ void GEIMFrame::OnZoomRect(wxCommandEvent& event)
 		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
 		pPanel->ImgZoomRect();
 	}
+	if (m_lMouseFunc != ID_BMPBTN_IMG_ZOOMRECT)
+		m_lMouseFunc = ID_BMPBTN_IMG_ZOOMRECT;
+	else
+		m_lMouseFunc = 0;
 }
 
 /**< zoom image fit the wnd */
@@ -482,6 +665,110 @@ void GEIMFrame::OnImgMove(wxCommandEvent& event)
 		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
 		pPanel->ImgMove();
 	}
+	if (m_lMouseFunc != ID_BMPBTN_IMG_ZOOMRECT)
+		m_lMouseFunc = ID_BMPBTN_IMG_ZOOMRECT;
+	else
+		m_lMouseFunc = 0;
+}
+
+void GEIMFrame::OnSelSpot(wxCommandEvent& event)
+{
+	if (m_lMouseFunc != ID_BMPBTN_SEL_SPOT)
+	{
+		m_lMouseFunc = ID_BMPBTN_SEL_SPOT;
+
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+		}
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::NONE);
+		}
+	}
+}
+
+void GEIMFrame::OnDelSpot(wxCommandEvent& event)
+{
+	if (m_lMouseFunc != ID_BMPBTN_DEL_SPOT)
+	{
+		m_lMouseFunc = ID_BMPBTN_DEL_SPOT;
+
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+		}
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::NONE);
+		}
+	}
+}
+
+void GEIMFrame::OnSelPair(wxCommandEvent& event)
+{
+	if (m_lMouseFunc != ID_BMPBTN_SEL_PAIR)
+	{
+		m_lMouseFunc = ID_BMPBTN_SEL_PAIR;
+
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+		}
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::NONE);
+		}
+	}
+}
+
+void GEIMFrame::OnDelPair(wxCommandEvent&event)
+{
+	if (m_lMouseFunc != ID_BMPBTN_DEL_PAIR)
+	{
+		m_lMouseFunc = ID_BMPBTN_DEL_PAIR;
+
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+		}
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			pPanel->SelTools(IMGPL_CMD::NONE);
+		}
+	}
 }
 
 /**< update tool btns' state */
@@ -509,6 +796,26 @@ void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
 		pImgPanel->UpdateUI(IMGPL_CMD::IMG_ZACTUAL, event);
 	else if (id == ID_BMPBTN_IMG_MOVE)
 		pImgPanel->UpdateUI(IMGPL_CMD::IMG_MOVE, event);
+	else if (id == ID_BMPBTN_SEL_SPOT)
+	{
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_SEL_SPOT));
+	}
+	else if (id == ID_BMPBTN_DEL_SPOT)
+	{
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_DEL_SPOT));
+	}
+	else if (id == ID_BMPBTN_SEL_PAIR)
+	{
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_SEL_PAIR));
+	}
+	else if (id == ID_BMPBTN_DEL_PAIR)
+	{
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_DEL_PAIR));
+	}
 }
 
 /**< invoke when these iamge panels notify */
@@ -518,34 +825,89 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 	IMGPL_CMD cmd = event.GetCMD();
 	void* pParam = event.GetParam();
 
-	size_t nNum = m_aryImgs.Count();
-	for (size_t i = 0; i < nNum; ++i)
+	// execu notify
+	switch(cmd)
 	{
-		ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
-		// pass over itself
-		if (pPanel->GetId() == id)
-			continue;
+	case IMGPL_CMD::IMG_ZRECT:
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get IMG_ZRECT event param failed."));
 
-		// execu notify
-		switch(cmd)
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
 		{
-		case IMGPL_CMD::IMG_ZRECT:
-		{
-			wxRect* prcSel = static_cast<wxRect*>(pParam);
-			wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get IMG_ZRECT event param failed."));
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			// pass over itself
+			if (pPanel->GetId() == id)
+				continue;
 			pPanel->ImgZoomRect(*prcSel);
 		}
-		break;
-		case IMGPL_CMD::IMG_MOVE:
+	}
+	break;
+	case IMGPL_CMD::IMG_MOVE:
+	{
+		wxSize* pszMv = static_cast<wxSize*>(pParam);
+		wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get IMG_MOVE event param failed."));
+
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
 		{
-			wxSize* pszMv = static_cast<wxSize*>(pParam);
-			wxASSERT_MSG(pszMv != nullptr, _T("EVT_IMGPL get IMG_MOVE event param failed."));
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			// pass over itself
+			if (pPanel->GetId() == id)
+				continue;
 			pPanel->ImgMove(*pszMv);
 		}
+	}
+	break;
+	case IMGPL_CMD::SEL_CIRCLE:
 		break;
-		default:
+	case IMGPL_CMD::SEL_ELLIPSE:
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_ELLIPSE event param failed."));
+		if (prcSel == nullptr)
 			break;
+
+		// get which selection in which image
+		int iSel = -1;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			if (pPanel->GetId() == id)
+			{
+				iSel = (int)i;
+				break;
+			}
 		}
+		if (iSel == -1)
+			break;
+
+		if (m_lMouseFunc == ID_BMPBTN_SEL_SPOT)
+		{
+			;
+		}
+		else if (m_lMouseFunc == ID_BMPBTN_DEL_SPOT)
+		{
+			;
+		}
+		else if (m_lMouseFunc == ID_BMPBTN_SEL_PAIR)
+		{
+			;
+		}
+		else if (m_lMouseFunc == ID_BMPBTN_DEL_PAIR)
+		{
+			;
+		}
+	}
+	break;
+	case IMGPL_CMD::SEL_SQUARE:
+		break;
+	case IMGPL_CMD::SEL_RECTANGLE:
+		break;
+	default:
+		break;
 	}
 }
 
@@ -565,8 +927,12 @@ void GEIMFrame::OnThreadDt(wxThreadEvent& event)
 	if (!bRet)
 		wxMessageBox(_("Detect failed!"), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
 	else
+	{
+		// alter dispaly image
+		DispDtResult();
 		// update ui
 		RefreshImgs();
+	}
 }
 
 /**< finish match event*/

@@ -497,82 +497,38 @@ bool ImagePanel::ImgMove(wxSize szMove)
 	return true;
 }
 
-/**< select faint spot in image */
-bool ImagePanel::SelFaint()
+/**< select a CIRCLE/ELLIPSE/SQUARE/RECTANGLE in image */
+bool ImagePanel::SelTools(IMGPL_CMD cmd, const wxString& imgFile /*= wxEmptyString*/, int hx /*= 0*/, int hy /*= 0*/)
 {
 	if (!m_img.IsOk())
 		return false;
 
-	if (m_stMP.emFuc != IMGPL_CMD::SEL_FAINT)
-	{
-		// mouse function is sel faint spot
-		m_stMP.emFuc = IMGPL_CMD::SEL_FAINT;
-		// set mouse cur
-		wxImage img(_T("./skin/SelFaint.png"), wxBITMAP_TYPE_PNG);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
-		SetCursor(wxCursor(img));
-	}
-	else
+	if (cmd == IMGPL_CMD::NONE)
 	{
 		// mouse function is none
 		m_stMP.emFuc = IMGPL_CMD::NONE;
 		// set mouse cur
 		SetCursor(wxCursor(wxCURSOR_ARROW));
+		return true;
 	}
 
-	return true;
-}
+	if ( cmd != IMGPL_CMD::SEL_CIRCLE
+		&& cmd != IMGPL_CMD::SEL_ELLIPSE
+		&& cmd != IMGPL_CMD::SEL_SQUARE
+		&& cmd != IMGPL_CMD::SEL_RECTANGLE)
+			return false;
 
-/**< select min spot in image */
-bool ImagePanel::SelMin()
-{
-	if (!m_img.IsOk())
-		return false;
-
-	if (m_stMP.emFuc != IMGPL_CMD::SEL_MIN)
-	{
-		// mouse function is sel min radius spot
-		m_stMP.emFuc = IMGPL_CMD::SEL_MIN;
-		// set mouse cur
-		wxImage img(_T("./skin/SelMin.png"), wxBITMAP_TYPE_PNG);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
-		SetCursor(wxCursor(img));
-	}
+	// mouse function is sel a circle
+	m_stMP.emFuc = cmd;
+	// set mouse cur
+	if (imgFile.IsEmpty())
+		SetCursor(wxCursor(wxCURSOR_CROSS));
 	else
 	{
-		// mouse function is none
-		m_stMP.emFuc = IMGPL_CMD::NONE;
-		// set mouse cur
-		SetCursor(wxCursor(wxCURSOR_ARROW));
-	}
-
-	return true;
-}
-
-/**< select max spot in image */
-bool ImagePanel::SelMax()
-{
-	if (!m_img.IsOk())
-		return false;
-
-	if (m_stMP.emFuc != IMGPL_CMD::SEL_MAX)
-	{
-		// mouse function is sel max radius spot
-		m_stMP.emFuc = IMGPL_CMD::SEL_MAX;
-		// set mouse cur
-		wxImage img(_T("./skin/SelMax.png"), wxBITMAP_TYPE_PNG);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, 7);
-		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, 7);
+		wxImage img(imgFile, wxBITMAP_TYPE_PNG);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, hx);
+		img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, hy);
 		SetCursor(wxCursor(img));
-	}
-	else
-	{
-		// mouse function is none
-		m_stMP.emFuc = IMGPL_CMD::NONE;
-		// set mouse cur
-		SetCursor(wxCursor(wxCURSOR_ARROW));
 	}
 
 	return true;
@@ -591,9 +547,10 @@ bool ImagePanel::UpdateUI(IMGPL_CMD cmd, wxUpdateUIEvent& event)
 		break;
 	case IMGPL_CMD::IMG_MOVE:
 	case IMGPL_CMD::IMG_ZRECT:
-	case IMGPL_CMD::SEL_FAINT:
-	case IMGPL_CMD::SEL_MIN:
-	case IMGPL_CMD::SEL_MAX:
+	case IMGPL_CMD::SEL_CIRCLE:
+	case IMGPL_CMD::SEL_ELLIPSE:
+	case IMGPL_CMD::SEL_SQUARE:
+	case IMGPL_CMD::SEL_RECTANGLE:
 		event.Enable(m_img.IsOk());
 		event.Check(m_stMP.emFuc == cmd);
 		break;
@@ -659,75 +616,144 @@ bool ImagePanel::I2V(wxRect& rc)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-/**< calculate the rect of the mouse sel */
-bool ImagePanel::RegulaSelRect()
-{
-	// calculate the regula sel rect
-	if (m_stMP.ptB.x < m_stMP.ptE.x)
-	{
-		m_stMP.rcSel.x = m_stMP.ptB.x;
-		m_stMP.rcSel.width = m_stMP.ptE.x - m_stMP.ptB.x;
-	}
-	else
-	{
-		m_stMP.rcSel.x = m_stMP.ptE.x;
-		m_stMP.rcSel.width = m_stMP.ptB.x - m_stMP.ptE.x;
-	}
-	if (m_stMP.ptB.y < m_stMP.ptE.y)
-	{
-		m_stMP.rcSel.y = m_stMP.ptB.y;
-		m_stMP.rcSel.height = m_stMP.ptE.y - m_stMP.ptB.y;
-	}
-	else
-	{
-		m_stMP.rcSel.y = m_stMP.ptE.y;
-		m_stMP.rcSel.height = m_stMP.ptB.y - m_stMP.ptE.y;
-	}
-	wxRect rcDest((int)m_rcDest.m_x, (int)m_rcDest.m_y, (int)m_rcDest.m_width, (int)m_rcDest.m_height);
-	m_stMP.rcSel.Intersect(rcDest);
-	m_stMP.rcSel.x --;		// don't know why, it offset right 1px
-
-	return true;
-}
-
-/**< calculate the max radius of sel circle */
-bool ImagePanel::CalcuMaxRadius()
+/**< calculate the sel max size, related to center */
+bool ImagePanel::CalcuMaxSelSize(bool bEqual /*= false*/)
 {
 	// the distance to 4 boders
 	m_stMP.rcSel.x =m_stMP.ptB.x - (int)m_rcDest.m_x;
 	m_stMP.rcSel.y = m_stMP.ptB.y - (int)m_rcDest.m_y;
-	m_stMP.rcSel.width = m_rcDest.GetRight() - 1 - m_stMP.ptB.x;
-	m_stMP.rcSel.height = m_rcDest.GetBottom() - 1 - m_stMP.ptB.y;
+	m_stMP.rcSel.width = (int)(m_rcDest.m_x + m_rcDest.m_width - 1.0) - m_stMP.ptB.x;
+	m_stMP.rcSel.height = (int)(m_rcDest.m_y + m_rcDest.m_height - 1.0) - m_stMP.ptB.y;
 	// the max distance
-	int iMaxRad = m_stMP.rcSel.x;
-	if (iMaxRad > m_stMP.rcSel.y)
-		iMaxRad = m_stMP.rcSel.y;
-	if (iMaxRad > m_stMP.rcSel.width)
-		iMaxRad = m_stMP.rcSel.width;
-	if (iMaxRad > m_stMP.rcSel.height)
-		iMaxRad = m_stMP.rcSel.height;
+	m_stMP.szMv.x = m_stMP.rcSel.x;
+	if (m_stMP.szMv.x > m_stMP.rcSel.width)
+		m_stMP.szMv.x = m_stMP.rcSel.width;
+	m_stMP.szMv.y = m_stMP.rcSel.y;
+	if (m_stMP.szMv.y > m_stMP.rcSel.height)
+		m_stMP.szMv.y = m_stMP.rcSel.height;
+	// if widht and height equal size
+	if (bEqual)
+	{
+		if (m_stMP.szMv.x < m_stMP.szMv.y)
+			m_stMP.szMv.y = m_stMP.szMv.x;
+		else
+			m_stMP.szMv.x = m_stMP.szMv.y;
+	}
 
 	// the initialize result
-	m_stMP.rcSel.x = m_stMP.ptB.x;		// the center
+	m_stMP.rcSel.x = m_stMP.ptB.x;
 	m_stMP.rcSel.y = m_stMP.ptB.y;
-	m_stMP.rcSel.width = 0;			// the radius
-	m_stMP.rcSel.height = iMaxRad;	// the maxradius
+	m_stMP.rcSel.width = 0;
+	m_stMP.rcSel.height = 0;
+
+	return true;
+}
+
+/**< calculate the rect of the mouse sel */
+bool ImagePanel::RegulaSelRect(bool bI /*= false*/, bool bEqual /*= false*/, bool bCenter /*= false*/)
+{
+	if (bCenter)
+	{
+		// calculate widht and height
+		m_stMP.rcSel.width = abs(m_stMP.ptE.x - m_stMP.ptB.x);
+		m_stMP.rcSel.height = abs(m_stMP.ptE.y - m_stMP.ptB.y);
+		if (m_stMP.rcSel.width > m_stMP.szMv.x)
+			m_stMP.rcSel.width = m_stMP.szMv.x;
+		if (m_stMP.rcSel.height > m_stMP.szMv.y)
+			m_stMP.rcSel.height = m_stMP.szMv.y;
+		// if width be equal to height
+		if (bEqual)
+		{
+			if (m_stMP.rcSel.width > m_stMP.rcSel.height)
+				m_stMP.rcSel.width = m_stMP.rcSel.height;
+			else
+				m_stMP.rcSel.height = m_stMP.rcSel.width;
+		}
+		// adust topleft and widthheight
+		m_stMP.rcSel.x = m_stMP.ptB.x - m_stMP.rcSel.width;
+		m_stMP.rcSel.y = m_stMP.ptB.y - m_stMP.rcSel.height;
+		m_stMP.rcSel.width = m_stMP.rcSel.width*2 + 1;
+		m_stMP.rcSel.height = m_stMP.rcSel.height*2 + 1;
+	}
+	else
+	{
+		wxRect limit;
+		limit.x = (int)m_rcDest.m_x;
+		limit.width = (int)(m_rcDest.m_x + m_rcDest.m_width - 1.0);
+		limit.y = (int)m_rcDest.m_y;
+		limit.height = (int)(m_rcDest.m_y + m_rcDest.m_height - 1.0);
+		if (m_stMP.ptE.x < limit.x)
+			m_stMP.ptE.x = limit.x;
+		else if (m_stMP.ptE.x > limit.width)
+			m_stMP.ptE.x = limit.width;
+		if (m_stMP.ptE.y < limit.y)
+			m_stMP.ptE.y = limit.y;
+		else if (m_stMP.ptE.y > limit.height)
+			m_stMP.ptE.y = limit.height;
+		if (bEqual)
+		{
+			limit.x = m_stMP.ptE.x - m_stMP.ptB.x;
+			limit.width = abs(limit.x);
+			limit.y = m_stMP.ptE.y - m_stMP.ptB.y;
+			limit.height = abs(limit.y);
+			if (limit.width < limit.height)
+			{
+				if (limit.y < 0)
+					m_stMP.ptE.y = m_stMP.ptB.y - limit.width;
+				else
+					m_stMP.ptE.y = m_stMP.ptB.y + limit.width;
+			}
+			else if (limit.width > limit.height)
+			{
+				if (limit.x < 0)
+					m_stMP.ptE.x = m_stMP.ptB.x - limit.height;
+				else
+					m_stMP.ptE.x = m_stMP.ptB.x + limit.height;
+			}
+		}
+
+		if (m_stMP.ptB.x < m_stMP.ptE.x)
+		{
+			m_stMP.rcSel.x = m_stMP.ptB.x;
+			m_stMP.rcSel.width = m_stMP.ptE.x - m_stMP.ptB.x + 1;
+		}
+		else
+		{
+			m_stMP.rcSel.x = m_stMP.ptE.x;
+			m_stMP.rcSel.width = m_stMP.ptB.x - m_stMP.ptE.x + 1;
+		}
+		if (m_stMP.ptB.y < m_stMP.ptE.y)
+		{
+			m_stMP.rcSel.y = m_stMP.ptB.y;
+			m_stMP.rcSel.height = m_stMP.ptE.y - m_stMP.ptB.y + 1;
+		}
+		else
+		{
+			m_stMP.rcSel.y = m_stMP.ptE.y;
+			m_stMP.rcSel.height = m_stMP.ptB.y - m_stMP.ptE.y + 1;
+		}
+	}
+
+	// coordinate system change to image
+	if (bI)
+		V2I(m_stMP.rcSel);
 
 	return true;
 }
 
 /**< calculate the sel radus */
-bool ImagePanel::CalcuSelRadius(bool bI /*=false*/)
+bool ImagePanel::CalcuSelRadius(bool bI /*= false*/)
 {
 	int cx = m_stMP.ptE.x - m_stMP.ptB.x;
 	int cy = m_stMP.ptE.y - m_stMP.ptB.y;
 	m_stMP.rcSel.width = (int)sqrt(cx*cx + cy*cy);
 	// cx should less than the max radius
-	if (m_stMP.rcSel.width > m_stMP.rcSel.height)
-		m_stMP.rcSel.width = m_stMP.rcSel.height;
+	if (m_stMP.rcSel.width > m_stMP.szMv.x)
+		m_stMP.rcSel.width = m_stMP.szMv.x;
 
 	m_stMP.rcSel.x = m_stMP.ptB.x;		// the center
 	m_stMP.rcSel.y = m_stMP.ptB.y;
+	m_stMP.rcSel.height = m_stMP.rcSel.width;
 	if (bI)
 		V2I(m_stMP.rcSel);
 
@@ -738,8 +764,8 @@ bool ImagePanel::CalcuSelRadius(bool bI /*=false*/)
 bool ImagePanel::MLDImgMove(wxMouseEvent& event)
 {
 	// flag
-	m_stMP.iState = 1;              // button down
-	m_stMP.ptB.x = event.m_x;   // start point
+	m_stMP.iState = 1;			// button down
+	m_stMP.ptB.x = event.m_x;	// start point
 	m_stMP.ptB.y = event.m_y;
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
@@ -809,8 +835,8 @@ bool ImagePanel::MMVImgMove(wxMouseEvent& event)
 bool ImagePanel::MLDImgZRect(wxMouseEvent& event)
 {
 	// flag
-	m_stMP.iState = 1;              // button down
-	m_stMP.ptB.x = event.m_x;   // start point
+	m_stMP.iState = 1;			// button down
+	m_stMP.ptB.x = event.m_x;	// start point
 	m_stMP.ptB.y = event.m_y;
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
@@ -868,25 +894,25 @@ bool ImagePanel::MMVImgZRect(wxMouseEvent& event)
 	return true;
 }
 
-/**< Select faint spot mouse event */
-bool ImagePanel::MLDSelFaint(wxMouseEvent& event)
+/**< Select a CIRCLE mouse event */
+bool ImagePanel::MLDSelCircle(wxMouseEvent& event)
 {
 	// flag
-	m_stMP.iState = 1;              // button down
+	m_stMP.iState = 1;			// button down
 	m_stMP.ptB.x = event.m_x;   // start point
 	m_stMP.ptB.y = event.m_y;
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 
 	// calcu the max radius
-	CalcuMaxRadius();
+	CalcuMaxSelSize(true);
 
 	// capture mouse
 	CaptureMouse();
 
 	return true;
 }
-bool ImagePanel::MLUSelFaint(wxMouseEvent& event)
+bool ImagePanel::MLUSelCircle(wxMouseEvent& event)
 {
 	// Release Mouse
 	ReleaseMouse();
@@ -898,9 +924,9 @@ bool ImagePanel::MLUSelFaint(wxMouseEvent& event)
 		m_stMP.ptE.y = event.m_y;
 		// calculate the radius
 		CalcuSelRadius(true);
-		// Notify Parent: SEL_FAINT
+		// Notify Parent: SEL_CIRCLE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
-		evt.SetCMD(IMGPL_CMD::SEL_FAINT);
+		evt.SetCMD(IMGPL_CMD::SEL_CIRCLE);
 		evt.SetParam((void*)&m_stMP.rcSel);
 		GetParent()->GetEventHandler()->ProcessEvent(evt);
 	}
@@ -911,7 +937,7 @@ bool ImagePanel::MLUSelFaint(wxMouseEvent& event)
 
 	return true;
 }
-bool ImagePanel::MMVSelFaint(wxMouseEvent& event)
+bool ImagePanel::MMVSelCircle(wxMouseEvent& event)
 {
 	if (m_stMP.iState == 1)
 		// switch to drag
@@ -920,15 +946,74 @@ bool ImagePanel::MMVSelFaint(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 	// calculate the radius
-	CalcuSelRadius();
+	CalcuSelRadius(false);
 	// draw the circle
 	Refresh(false);
 
 	return true;
 }
 
-/**< Select min spot mouse event */
-bool ImagePanel::MLDSelMin(wxMouseEvent& event)
+/**< Select a ELLIPSE mouse event */
+bool ImagePanel::MLDSelEllipse(wxMouseEvent& event)
+{
+	// flag
+	m_stMP.iState = 1;			// button down
+	m_stMP.ptB.x = event.m_x;	// start point
+	m_stMP.ptB.y = event.m_y;
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+
+	// calculate the max size
+	CalcuMaxSelSize(false);
+
+	// capture mouse
+	CaptureMouse();
+
+	return true;
+}
+bool ImagePanel::MLUSelEllipse(wxMouseEvent& event)
+{
+	// Release Mouse
+	ReleaseMouse();
+	if (m_stMP.iState == 2)	// have draged
+	{
+		m_stMP.iState = 0;
+		// new point
+		m_stMP.ptE.x = event.m_x;
+		m_stMP.ptE.y = event.m_y;
+		// calculate the rectangle
+		RegulaSelRect(true, false, true);
+		// Notify Parent: SEL_ELLIPSE
+		wxImgplEvent evt(wxEVT_IMGPL, GetId());
+		evt.SetCMD(IMGPL_CMD::SEL_ELLIPSE);
+		evt.SetParam((void*)&m_stMP.rcSel);
+		GetParent()->GetEventHandler()->ProcessEvent(evt);
+	}
+	else
+		m_stMP.iState = 0;
+	// update ui
+	Refresh(false);
+
+	return true;
+}
+bool ImagePanel::MMVSelEllipse(wxMouseEvent& event)
+{
+	if (m_stMP.iState == 1)
+		// switch to drag
+		m_stMP.iState = 2;
+	// new point & move incremention
+	m_stMP.ptE.x = event.m_x;
+	m_stMP.ptE.y = event.m_y;
+	// calculate the rectangle
+	RegulaSelRect(false, false, true);
+	// draw the ellipse
+	Refresh(false);
+
+	return true;
+}
+
+/**< Select a SQUARE mouse event */
+bool ImagePanel::MLDSelSquare(wxMouseEvent& event)
 {
 	// flag
 	m_stMP.iState = 1;              // button down
@@ -937,15 +1022,15 @@ bool ImagePanel::MLDSelMin(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 
-	// calculate the max radus
-	CalcuMaxRadius();
+	// calculate the max size
+	CalcuMaxSelSize(true);
 
 	// capture mouse
 	CaptureMouse();
 
 	return true;
 }
-bool ImagePanel::MLUSelMin(wxMouseEvent& event)
+bool ImagePanel::MLUSelSquare(wxMouseEvent& event)
 {
 	// Release Mouse
 	ReleaseMouse();
@@ -955,11 +1040,11 @@ bool ImagePanel::MLUSelMin(wxMouseEvent& event)
 		// new point
 		m_stMP.ptE.x = event.m_x;
 		m_stMP.ptE.y = event.m_y;
-		// calculate the radius
-		CalcuSelRadius(true);
-		// Notify Parent: SEL_MIN
+		// calculate the rectangle
+		RegulaSelRect(true, true, true);
+		// Notify Parent: SEL_SQUARE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
-		evt.SetCMD(IMGPL_CMD::SEL_MIN);
+		evt.SetCMD(IMGPL_CMD::SEL_SQUARE);
 		evt.SetParam((void*)&m_stMP.rcSel);
 		GetParent()->GetEventHandler()->ProcessEvent(evt);
 	}
@@ -970,7 +1055,7 @@ bool ImagePanel::MLUSelMin(wxMouseEvent& event)
 
 	return true;
 }
-bool ImagePanel::MMVSelMin(wxMouseEvent& event)
+bool ImagePanel::MMVSelSquare(wxMouseEvent& event)
 {
 	if (m_stMP.iState == 1)
 		// switch to drag
@@ -978,16 +1063,16 @@ bool ImagePanel::MMVSelMin(wxMouseEvent& event)
 	// new point & move incremention
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
-	// calculate the radius
-	CalcuSelRadius();
-	// draw the circle
+	// calculate the rectangle
+	RegulaSelRect(false, true, true);
+	// draw the square
 	Refresh(false);
 
 	return true;
 }
 
-/**< Select max spot mouse event */
-bool ImagePanel::MLDSelMax(wxMouseEvent& event)
+/**< Select a RECTANGLE mouse event */
+bool ImagePanel::MLDSelRectangle(wxMouseEvent& event)
 {
 	// flag
 	m_stMP.iState = 1;              // button down
@@ -996,15 +1081,15 @@ bool ImagePanel::MLDSelMax(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 
-	// calculate the max radus
-	CalcuMaxRadius();
+	// calculate the max size
+	CalcuMaxSelSize(true);
 
 	// capture mouse
 	CaptureMouse();
 
 	return true;
 }
-bool ImagePanel::MLUSelMax(wxMouseEvent& event)
+bool ImagePanel::MLUSelRectangle(wxMouseEvent& event)
 {
 	// Release Mouse
 	ReleaseMouse();
@@ -1014,11 +1099,11 @@ bool ImagePanel::MLUSelMax(wxMouseEvent& event)
 		// new point
 		m_stMP.ptE.x = event.m_x;
 		m_stMP.ptE.y = event.m_y;
-		// calculate the radius
-		CalcuSelRadius(true);
-		// Notify Parent: SEL_MAX
+		// calculate the rectangle
+		RegulaSelRect(true, false, true);
+		// Notify Parent: SEL_RECTANGLE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
-		evt.SetCMD(IMGPL_CMD::SEL_MAX);
+		evt.SetCMD(IMGPL_CMD::SEL_RECTANGLE);
 		evt.SetParam((void*)&m_stMP.rcSel);
 		GetParent()->GetEventHandler()->ProcessEvent(evt);
 	}
@@ -1029,7 +1114,7 @@ bool ImagePanel::MLUSelMax(wxMouseEvent& event)
 
 	return true;
 }
-bool ImagePanel::MMVSelMax(wxMouseEvent& event)
+bool ImagePanel::MMVSelRectangle(wxMouseEvent& event)
 {
 	if (m_stMP.iState == 1)
 		// switch to drag
@@ -1037,9 +1122,9 @@ bool ImagePanel::MMVSelMax(wxMouseEvent& event)
 	// new point & move incremention
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
-	// calculate the radius
-	CalcuSelRadius();
-	// draw the circle
+	// calculate the rectangle
+	RegulaSelRect(false, false, true);
+	// draw the square
 	Refresh(false);
 
 	return true;
@@ -1067,51 +1152,10 @@ bool ImagePanel::EndDrag(bool bFuc /*= true*/)
 	}
 	break;
 	case IMGPL_CMD::IMG_ZRECT:		// zoom rect
-	{
-		if (m_stMP.iState != 0)
-		{
-			m_stMP.iState = 0;
-			ReleaseMouse();
-			Refresh(false);
-		}
-		if (!bFuc)
-		{
-			m_stMP.emFuc = IMGPL_CMD::NONE;
-			SetCursor(wxCursor(wxCURSOR_ARROW));
-		}
-	}
-	break;
-	case IMGPL_CMD::SEL_FAINT:
-	{
-		if (m_stMP.iState != 0)
-		{
-			m_stMP.iState = 0;
-			ReleaseMouse();
-			Refresh(false);
-		}
-		if (!bFuc)
-		{
-			m_stMP.emFuc = IMGPL_CMD::NONE;
-			SetCursor(wxCursor(wxCURSOR_ARROW));
-		}
-	}
-	break;
-	case IMGPL_CMD::SEL_MIN:
-	{
-		if (m_stMP.iState != 0)
-		{
-			m_stMP.iState = 0;
-			ReleaseMouse();
-			Refresh(false);
-		}
-		if (!bFuc)
-		{
-			m_stMP.emFuc = IMGPL_CMD::NONE;
-			SetCursor(wxCursor(wxCURSOR_ARROW));
-		}
-	}
-	break;
-	case IMGPL_CMD::SEL_MAX:
+	case IMGPL_CMD::SEL_CIRCLE:
+	case IMGPL_CMD::SEL_ELLIPSE:
+	case IMGPL_CMD::SEL_SQUARE:
+	case IMGPL_CMD::SEL_RECTANGLE:
 	{
 		if (m_stMP.iState != 0)
 		{
@@ -1161,7 +1205,7 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 	}
 
 	// draw sel rect fot zoom
-	if (m_stMP.emFuc == IMGPL_CMD::IMG_ZRECT && m_stMP.iState == 2)
+	if (m_stMP.emFuc == IMGPL_CMD::IMG_ZRECT && m_stMP.iState == 2 && m_stMP.rcSel.width > 0)
 	{
 		wxPen pen(wxColour(0x00ff0000), 1, wxPENSTYLE_DOT);
 		m_dcMem.SetPen(pen);
@@ -1172,15 +1216,36 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 		m_dcMem.SetPen(wxNullPen);
 	}
 	// draw sel circle
-	else if ((m_stMP.emFuc == IMGPL_CMD::SEL_FAINT || m_stMP.emFuc == IMGPL_CMD::SEL_MIN || m_stMP.emFuc == IMGPL_CMD::SEL_MAX)
-	         && m_stMP.iState == 2
-	         && m_stMP.rcSel.width > 0)
+	else if (m_stMP.emFuc == IMGPL_CMD::SEL_CIRCLE && m_stMP.iState == 2 && m_stMP.rcSel.width > 0)
 	{
 		wxPen pen(wxColour(0x00ff0000), 1, wxPENSTYLE_DOT);
 		m_dcMem.SetPen(pen);
 		m_dcMem.SetLogicalFunction(wxOR_REVERSE);
 		m_dcMem.SetBrush(wxNullBrush);
 		m_dcMem.DrawCircle(m_stMP.rcSel.x, m_stMP.rcSel.y, m_stMP.rcSel.width);
+		m_dcMem.SetLogicalFunction(wxCOPY);
+		m_dcMem.SetPen(wxNullPen);
+	}
+	// draw a sel ellipse
+	else if (m_stMP.emFuc == IMGPL_CMD::SEL_ELLIPSE && m_stMP.iState == 2 && m_stMP.rcSel.width > 0)
+	{
+		wxPen pen(wxColour(0x00ff0000), 1, wxPENSTYLE_DOT);
+		m_dcMem.SetPen(pen);
+		m_dcMem.SetLogicalFunction(wxOR_REVERSE);
+		m_dcMem.SetBrush(wxNullBrush);
+		m_dcMem.DrawEllipse(m_stMP.rcSel);
+		m_dcMem.SetLogicalFunction(wxCOPY);
+		m_dcMem.SetPen(wxNullPen);
+	}
+	// draw a sel square / rectangle
+	else if ((m_stMP.emFuc == IMGPL_CMD::SEL_SQUARE || m_stMP.emFuc == IMGPL_CMD::SEL_RECTANGLE)
+			&& m_stMP.iState == 2 && m_stMP.rcSel.width > 0)
+	{
+		wxPen pen(wxColour(0x00ff0000), 1, wxPENSTYLE_DOT);
+		m_dcMem.SetPen(pen);
+		m_dcMem.SetLogicalFunction(wxOR_REVERSE);
+		m_dcMem.SetBrush(wxNullBrush);
+		m_dcMem.DrawRectangle(m_stMP.rcSel);
 		m_dcMem.SetLogicalFunction(wxCOPY);
 		m_dcMem.SetPen(wxNullPen);
 	}
@@ -1266,6 +1331,9 @@ void ImagePanel::OnSize(wxSizeEvent& event)
 /**< context menu */
 void ImagePanel::OnContextMenu(wxContextMenuEvent& event)
 {
+	if (m_stMP.iState != 0)
+		return;
+
 	wxMenu* pMenu = new wxMenu();
 	wxASSERT_MSG(pMenu != nullptr, _T("Create Popup Menu failed."));
 	wxMenuItem* pMenuItem = nullptr;
@@ -1315,20 +1383,23 @@ void ImagePanel::OnMouseLD(wxMouseEvent& event)
 
 	switch (m_stMP.emFuc)
 	{
-	case IMGPL_CMD::IMG_MOVE:     // image move
+	case IMGPL_CMD::IMG_MOVE:		// image move
 		MLDImgMove(event);
 		break;
-	case IMGPL_CMD::IMG_ZRECT:     // zoom rect
+	case IMGPL_CMD::IMG_ZRECT:		// zoom rect
 		MLDImgZRect(event);
 		break;
-	case IMGPL_CMD::SEL_FAINT:
-		MLDSelFaint(event);
+	case IMGPL_CMD::SEL_CIRCLE:
+		MLDSelCircle(event);
 		break;
-	case IMGPL_CMD::SEL_MIN:
-		MLDSelMin(event);
+	case IMGPL_CMD::SEL_ELLIPSE:
+		MLDSelEllipse(event);
 		break;
-	case IMGPL_CMD::SEL_MAX:
-		MLDSelMax(event);
+	case IMGPL_CMD::SEL_SQUARE:
+		MLDSelSquare(event);
+		break;
+	case IMGPL_CMD::SEL_RECTANGLE:
+		MLDSelRectangle(event);
 		break;
 	default:
 		break;
@@ -1350,14 +1421,17 @@ void ImagePanel::OnMouseLU(wxMouseEvent& event)
 	case IMGPL_CMD::IMG_ZRECT:     // zoom rect
 		MLUImgZRect(event);
 		break;
-	case IMGPL_CMD::SEL_FAINT:
-		MLUSelFaint(event);
+	case IMGPL_CMD::SEL_CIRCLE:
+		MLUSelCircle(event);
 		break;
-	case IMGPL_CMD::SEL_MIN:
-		MLUSelMin(event);
+	case IMGPL_CMD::SEL_ELLIPSE:
+		MLUSelEllipse(event);
 		break;
-	case IMGPL_CMD::SEL_MAX:
-		MLUSelMax(event);
+	case IMGPL_CMD::SEL_SQUARE:
+		MLUSelSquare(event);
+		break;
+	case IMGPL_CMD::SEL_RECTANGLE:
+		MLUSelRectangle(event);
 		break;
 	default:
 		break;
@@ -1379,14 +1453,17 @@ void ImagePanel::OnMouseMove(wxMouseEvent& event)
 	case IMGPL_CMD::IMG_ZRECT:
 		MMVImgZRect(event);
 		break;
-	case IMGPL_CMD::SEL_FAINT:
-		MMVSelFaint(event);
+	case IMGPL_CMD::SEL_CIRCLE:
+		MMVSelCircle(event);
 		break;
-	case IMGPL_CMD::SEL_MIN:
-		MMVSelMin(event);
+	case IMGPL_CMD::SEL_ELLIPSE:
+		MMVSelEllipse(event);
 		break;
-	case IMGPL_CMD::SEL_MAX:
-		MMVSelMax(event);
+	case IMGPL_CMD::SEL_SQUARE:
+		MMVSelSquare(event);
+		break;
+	case IMGPL_CMD::SEL_RECTANGLE:
+		MMVSelRectangle(event);
 		break;
 	default:
 		break;

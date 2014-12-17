@@ -552,6 +552,10 @@ void SpotDtDlg::OnZoomOut(wxCommandEvent& event)
 void SpotDtDlg::OnZoomRect(wxCommandEvent& event)
 {
 	m_pImgPanel->ImgZoomRect();
+	if (m_lMouseFunc != ID_BMPBTN_IMG_ZOOMRECT)
+		m_lMouseFunc = ID_BMPBTN_IMG_ZOOMRECT;
+	else
+		m_lMouseFunc = 0;
 }
 
 /**< zoom image fit the wnd */
@@ -570,24 +574,58 @@ void SpotDtDlg::OnZoomActual(wxCommandEvent& event)
 void SpotDtDlg::OnImgMove(wxCommandEvent& event)
 {
 	m_pImgPanel->ImgMove();
+	if (m_lMouseFunc != ID_BMPBTN_IMG_MOVE)
+		m_lMouseFunc = ID_BMPBTN_IMG_MOVE;
+	else
+		m_lMouseFunc = 0;
 }
 
 /**< select faint spot */
 void SpotDtDlg::OnDtFaint(wxCommandEvent& event)
 {
-	m_pImgPanel->SelFaint();
+	if (m_lMouseFunc != ID_BMPBTN_DT_FAINT)
+	{
+		m_lMouseFunc = ID_BMPBTN_DT_FAINT;
+		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
+		                      _("./skin/SelFaint.png"), 7, 7);
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		m_pImgPanel->SelTools(IMGPL_CMD::NONE);
+	}
 }
 
 /**< select min radius spot */
 void SpotDtDlg::OnDtMin(wxCommandEvent& event)
 {
-	m_pImgPanel->SelMin();
+	if (m_lMouseFunc != ID_BMPBTN_DT_MIN)
+	{
+		m_lMouseFunc = ID_BMPBTN_DT_MIN;
+		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
+		_("./skin/SelMin.png"), 7, 7);
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		m_pImgPanel->SelTools(IMGPL_CMD::NONE);
+	}
 }
 
 /**< select max radius spot */
 void SpotDtDlg::OnDtMax(wxCommandEvent& event)
 {
-	m_pImgPanel->SelMax();
+	if (m_lMouseFunc != ID_BMPBTN_DT_MAX)
+	{
+		m_lMouseFunc = ID_BMPBTN_DT_MAX;
+		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
+							_("./skin/SelMax.png"), 7, 7);
+	}
+	else
+	{
+		m_lMouseFunc = 0;
+		m_pImgPanel->SelTools(IMGPL_CMD::NONE);
+	}
 }
 
 /**< update tool btns' state */
@@ -613,15 +651,24 @@ void SpotDtDlg::OnBtnsUpdate(wxUpdateUIEvent& event)
 	else if (id == ID_BMPBTN_IMG_MOVE)
 		m_pImgPanel->UpdateUI(IMGPL_CMD::IMG_MOVE, event);
 	else if (id == ID_BMPBTN_DT_FAINT)
-		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_FAINT, event);
+	{
+		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_CIRCLE, event);
+		event.Check(event.GetChecked()&&(m_lMouseFunc == ID_BMPBTN_DT_FAINT));
+	}
 	else if (id == ID_BMPBTN_DT_MIN)
-		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_MIN, event);
+	{
+		m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_CIRCLE, event);
+		event.Check(event.GetChecked()&&(m_lMouseFunc == ID_BMPBTN_DT_MIN));
+	}
 	else if (id == ID_BMPBTN_DT_MAX)
 	{
 		wxCheckBox* pCbx = dynamic_cast<wxCheckBox*>(FindWindow(ID_CB_BKGCORRECT));
 		wxASSERT_MSG(pCbx != nullptr, _T("Get Background checkbox control failed."));
 		if (pCbx != nullptr && pCbx->IsChecked())
-			m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_MAX, event);
+		{
+			m_pImgPanel->UpdateUI(IMGPL_CMD::SEL_CIRCLE, event);
+			event.Check(event.GetChecked()&&(m_lMouseFunc == ID_BMPBTN_DT_MAX));
+		}
 		else
 			event.Enable(false);
 	}
@@ -640,34 +687,39 @@ void SpotDtDlg::OnImgplNtfy(wxImgplEvent& event)
 		break;
 	case IMGPL_CMD::IMG_MOVE:
 		break;
-	case IMGPL_CMD::SEL_FAINT:
+	case IMGPL_CMD::SEL_CIRCLE:
 	{
 		wxRect* prcSel = static_cast<wxRect*>(pParam);
-		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_FAINT event param failed."));
-		if (prcSel != nullptr)
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_CIRCLE event param failed."));
+		if (prcSel == nullptr)
+			break;
+
+		if (m_lMouseFunc == ID_BMPBTN_DT_FAINT)
+		{
 			GetFaintSpot(*prcSel);
+		}
+		else if (m_lMouseFunc == ID_BMPBTN_DT_MAX)
+		{
+			wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MAX));
+			wxASSERT_MSG(pSp != nullptr, _T("Get max spot radius control failed."));
+			if (pSp != nullptr)
+				pSp->SetValue(prcSel->width);
+		}
+		else if(m_lMouseFunc == ID_BMPBTN_DT_MIN)
+		{
+			wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MIN));
+			wxASSERT_MSG(pSp != nullptr, _T("Get min spot radius control failed."));
+			if (pSp != nullptr)
+				pSp->SetValue(prcSel->width);
+		}
 	}
 	break;
-	case IMGPL_CMD::SEL_MIN:
-	{
-		wxRect* prcSel = static_cast<wxRect*>(pParam);
-		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_MIN event param failed."));
-		wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MIN));
-		wxASSERT_MSG(pSp != nullptr, _T("Get min spot radius control failed."));
-		if (pSp != nullptr)
-			pSp->SetValue(prcSel->width);
-	}
-	break;
-	case IMGPL_CMD::SEL_MAX:
-	{
-		wxRect* prcSel = static_cast<wxRect*>(pParam);
-		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_MAX event param failed."));
-		wxSpinCtrl* pSp = dynamic_cast<wxSpinCtrl*>(FindWindow(ID_SP_MAX));
-		wxASSERT_MSG(pSp != nullptr, _T("Get max spot radius control failed."));
-		if (pSp != nullptr)
-			pSp->SetValue(prcSel->width);
-	}
-	break;
+	case IMGPL_CMD::SEL_ELLIPSE:
+		break;
+	case IMGPL_CMD::SEL_SQUARE:
+		break;
+	case IMGPL_CMD::SEL_RECTANGLE:
+		break;
 	default:
 		break;
 	}

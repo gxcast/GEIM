@@ -30,14 +30,15 @@ enum class IMGPL_CMD : int
 
     IMG_ZIN,
     IMG_ZOUT,
-    IMG_ZRECT,
+    IMG_ZRECT,		// wxRect: xy-lefttop w-width h-height
     IMG_ZFIT,
     IMG_ZACTUAL,
-    IMG_MOVE,
+    IMG_MOVE,		// wxSize: x-width y-height
 
-    SEL_FAINT,
-    SEL_MIN,
-    SEL_MAX
+    SEL_CIRCLE,		// wxRect: xy-center w-radius h-radius
+    SEL_ELLIPSE,	// wxRect: xy-lefttop w-width h-height
+    SEL_SQUARE,		// wxRect: xy-lefttop wh-length
+    SEL_RECTANGLE	// wxRect: xy-lefttop w-width h-height
 };
 
 /** \brief declare notify evet type
@@ -196,24 +197,15 @@ public:
 	 */
 	bool ImgMove(wxSize szMove);
 
-	/** \brief select faint spot in image
+	/** \brief select a CIRCLE/ELLIPSE/SQUARE/RECTANGLE in image
 	 *
+	 * \param const wxString& imgFile	[IN] cursor image file(png), if "", cursor_cross be used
+	 * \param int hx				[IN] hotspot x-coordinate
+	 * \param int hy				[IN] hotspot y-coordinate
 	 * \return bool true:success false:failed
 	 *
 	 */
-	bool SelFaint();
-	/** \brief select min spot in image
-	 *
-	 * \return bool true:success false:failed
-	 *
-	 */
-	bool SelMin();
-	/** \brief select max spot in image
-	 *
-	 * \return bool true:success false:failed
-	 *
-	 */
-	bool SelMax();
+	bool SelTools(IMGPL_CMD cmd, const wxString& imgFile = wxEmptyString, int hx = 0, int hy = 0);
 
 	/** \brief proc func btn ui update
 	 *
@@ -248,21 +240,25 @@ public:
 protected:
 
 private:
+	/** \brief calculate the sel max size, related to center
+	 *
+	 * \param bool bEqual	[IN] true:min(w, h) to be w and h |false:w is w, h is h
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool CalcuMaxSelSize(bool bEqual = false);
 	/** \brief calculate the rect of the mouse sel
 	 *
+	 * \param bool bI		[IN] true:the result convert to image coord |false: retain in view coord
+	 * \param bool bEqual	[IN] true:min(w, h) to be w and h |false:w is w, h is h
+	 * \param bool bCenter	[IN] true:begin point is the center |false:begin-point is left-top
 	 * \return bool true:success false:failed
 	 *
 	 */
-	bool RegulaSelRect();
-	/** \brief calculate the sel max radus
-	 *
-	 * \return bool true:success false:failed
-	 *
-	 */
-	bool CalcuMaxRadius();
+	bool RegulaSelRect(bool bI = false, bool bEqual = false, bool bCenter = false);
 	/** \brief calculate the sel radus
 	 *
-	 * \param bool		[IN] true:the result convert to image coord false: retain in view coord
+	 * \param bool bI	[IN] true:the result convert to image coord |false: retain in view coord
 	 * \return bool true:success false:failed
 	 *
 	 */
@@ -286,33 +282,42 @@ private:
 	bool MLDImgZRect(wxMouseEvent& event);
 	bool MLUImgZRect(wxMouseEvent& event);
 	bool MMVImgZRect(wxMouseEvent& event);
-	/** \brief Select faint spot mouse event
+	/** \brief Select a CIRCLE mouse event
 	 *
 	 * \param event wxMouseEvent& [INOUT] event
 	 * \return bool true:success false:failed
 	 *
 	 */
-	bool MLDSelFaint(wxMouseEvent& event);
-	bool MLUSelFaint(wxMouseEvent& event);
-	bool MMVSelFaint(wxMouseEvent& event);
-	/** \brief Select min spot mouse event
+	bool MLDSelCircle(wxMouseEvent& event);
+	bool MLUSelCircle(wxMouseEvent& event);
+	bool MMVSelCircle(wxMouseEvent& event);
+	/** \brief Select a ELLIPSE mouse event
 	 *
 	 * \param event wxMouseEvent& [INOUT] event
 	 * \return bool true:success false:failed
 	 *
 	 */
-	bool MLDSelMin(wxMouseEvent& event);
-	bool MLUSelMin(wxMouseEvent& event);
-	bool MMVSelMin(wxMouseEvent& event);
-	/** \brief Select max spot mouse event
+	bool MLDSelEllipse(wxMouseEvent& event);
+	bool MLUSelEllipse(wxMouseEvent& event);
+	bool MMVSelEllipse(wxMouseEvent& event);
+	/** \brief Select a SQUARE mouse event
 	 *
 	 * \param event wxMouseEvent& [INOUT] event
 	 * \return bool true:success false:failed
 	 *
 	 */
-	bool MLDSelMax(wxMouseEvent& event);
-	bool MLUSelMax(wxMouseEvent& event);
-	bool MMVSelMax(wxMouseEvent& event);
+	bool MLDSelSquare(wxMouseEvent& event);
+	bool MLUSelSquare(wxMouseEvent& event);
+	bool MMVSelSquare(wxMouseEvent& event);
+	/** \brief Select a RECTANGLE mouse event
+	 *
+	 * \param event wxMouseEvent& [INOUT] event
+	 * \return bool true:success false:failed
+	 *
+	 */
+	bool MLDSelRectangle(wxMouseEvent& event);
+	bool MLUSelRectangle(wxMouseEvent& event);
+	bool MMVSelRectangle(wxMouseEvent& event);
 
 	/** \brief stop drag
 	 *

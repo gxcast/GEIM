@@ -160,6 +160,9 @@ private:
 	static const long ID_SPD_ASPECT;
 	static const long ID_ED_SPOTNUM;
 
+	/**< mouse function, use button's id */
+	long m_lMouseFunc = 0;
+
 	/**< detect param */
 	ST_DTPARAM m_stDtParam;
 
