@@ -1082,7 +1082,7 @@ bool ImagePanel::MLDSelRectangle(wxMouseEvent& event)
 	m_stMP.ptE.y = event.m_y;
 
 	// calculate the max size
-	CalcuMaxSelSize(true);
+	CalcuMaxSelSize(false);
 
 	// capture mouse
 	CaptureMouse();
@@ -1202,6 +1202,7 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 		                     (wxDC*)&dcImg,
 		                     (wxCoord)m_rcSrc.m_x, (wxCoord)m_rcSrc.m_y,
 		                     (wxCoord)m_rcSrc.m_width, (wxCoord)m_rcSrc.m_height );
+		dcImg.SelectObject(wxNullBitmap);
 	}
 
 	// draw sel rect fot zoom

@@ -33,6 +33,22 @@ class GEIMFrame: public wxFrame
          *
          */
         bool DispDtResult();
+        /** \brief add a spot
+         *
+         * \param idImg int             [IN] image index
+         * \param rect const wxRect&    [IN] spot rect in the image
+         * \return bool true:success false:add failed
+         *
+         */
+        bool AddASpot(int idImg, const wxRect& rect);
+        /** \brief delete spots in the rectangle of specified image
+         *
+         * \param idImg int             [IN] image index
+         * \param rect const wxRect&    [IN] rectangle in specified iamge
+         * \return bool true:success false:add failed
+         *
+         */
+        bool DelSopts(int idImg, const wxRect& rect);
 
         void OnClose(wxCloseEvent& event);
         // menu or tool-button command

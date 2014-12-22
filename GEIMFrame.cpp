@@ -1,5 +1,7 @@
 ﻿#include "GEIMFrame.h"
 
+#include <stack>
+
 #include <wx/wx.h>
 
 #include "AboutDlg.h"
@@ -241,6 +243,8 @@ bool GEIMFrame::DispDtResult()
 	bool  bRet = true;
 	// traverse all the image
 	size_t nNum = m_aryImgs.size();
+	if (m_lsDtResult.size() != nNum)
+		return false;
 	for (size_t i = 0; i < nNum; ++i)
 	{
 		// get the diplay image
@@ -256,10 +260,6 @@ bool GEIMFrame::DispDtResult()
 		ST_DTRESULT& stResult = *it;
 
 		// display the result
-		int iSpotN = (int)stResult.pLs->size();
-		if (iSpotN <= 0)
-			continue;
-
 		unsigned char* pDest = pImgDisp->GetData();
 		int iW = pImgDisp->GetWidth();
 		int iWb = iW*3;
@@ -275,6 +275,12 @@ bool GEIMFrame::DispDtResult()
 				pDest[1] = 255u;
 				pDest[2] = 0u;
 			}
+			else if(pFlag->b > 0)	// inner
+			{
+				pDest[0] = 0u;
+				pDest[1] = 0u;
+				pDest[2] = 255u;
+			}
 			else	// image
 			{
 				pDest[0] = pFlag->r;
@@ -285,6 +291,9 @@ bool GEIMFrame::DispDtResult()
 			++pFlag;
 		}
 		// draw the spot center
+		int iSpotN = (int)stResult.pLs->size();
+		if (iSpotN <= 0)
+			continue;
 		pDest = pImgDisp->GetData();
 		pFlag = stResult.pData;
 		for (auto it = stResult.pLs->begin(); it != stResult.pLs->end(); ++it)
@@ -317,6 +326,266 @@ bool GEIMFrame::DispDtResult()
 		}
 	}
 	return bRet;
+}
+
+/**< add a spot */
+bool GEIMFrame::AddASpot(int idImg, const wxRect& rect)
+{
+	bool bRet = true;
+
+	// spot index
+	int id_spot = -1;
+
+	// get the specified image detect result
+	if (idImg < 0 || idImg >= (int)m_aryImgs.size())
+		return false;
+    if (m_lsDtResult.size() != m_aryImgs.size())
+	{
+		// release pre result
+		SpotDtThread::DestroyDtResult(&m_lsDtResult);
+
+		for (size_t i = 0; i < m_aryImgs.size(); ++i)
+		{
+			wxImage *pimg = (wxImage*)m_aryImgs.Item(i);
+			ST_RGB *pdata = (ST_RGB *)pimg->GetData();
+			int isize = pimg->GetWidth()*pimg->GetHeight();
+			ST_DTRESULT stResult;
+			stResult.pData = (ST_RGB *)new char[isize*3];
+			memset(stResult.pData, 0, isize*3);
+			for (int n = 0; n < isize; ++n)
+				stResult.pData[n].r = pdata[n].g;
+			stResult.pLs = new LS_SPOTS;
+			m_lsDtResult.push_back(stResult);
+		}
+		id_spot = 0;
+	}
+    wxImage& imgSrc = *(wxImage*)m_aryImgs.Item(idImg);
+    auto it = m_lsDtResult.begin();
+    for (int i = 0; i < idImg; ++i) ++it;
+    ST_DTRESULT& stResult = *it;
+    if (id_spot < 0)
+		id_spot = stResult.pLs->back().id + 1;
+
+    // find if the rect already thers are some spots
+    // do later
+
+    // draw ellipse in temp image, used for statistic the spot infomation
+    wxBitmap bmp_mem(rect.width, rect.height);
+    wxMemoryDC dc_mem(bmp_mem);
+    dc_mem.SetBackground(*wxBLACK_BRUSH);
+    dc_mem.SetPen(*wxGREEN_PEN);	// edge is gree
+    dc_mem.SetBrush(*wxBLUE_BRUSH);	// inner is blue
+    dc_mem.Clear();
+    dc_mem.DrawEllipse(0, 0, rect.width-1, rect.height-1);
+    dc_mem.SelectObject(wxNullBitmap);
+    wxImage img_spot = bmp_mem.ConvertToImage();
+    // statistic spot's pixs(edge, inner)
+    std::stack<std::pair<int,int>> stk_edge;
+    std::stack<std::pair<int,int>> stk_inner;
+    std::stack<std::pair<int,int>> stk_itra;
+    int x = -1, y = -1, img_w = -1, img_h = -1;
+	std::pair<int, int> coord;
+	ST_RGB *ppix = nullptr, *img_data = (ST_RGB *)img_spot.GetData();
+	auto func_indentify = [&stk_edge, &stk_inner, &stk_itra, &coord, &ppix]{
+		if (ppix->b == 0x0ffu)	// is the inner
+		{
+			stk_inner.push(coord);
+			stk_itra.push(coord);
+			ppix->b = 0x0fu;
+		}
+		else if (ppix->g == 0x0ffu)
+		{
+			stk_edge.push(coord);
+			ppix->g = 0x0fu;
+		}
+	};
+    img_w = img_spot.GetWidth();
+    img_h = img_spot.GetHeight();
+    x = rect.width/2;
+    y = rect.height/2;
+	ppix = img_data + y*img_w + x;
+	coord = std::make_pair(x, y);
+	func_indentify();
+	while (!stk_itra.empty())
+	{
+		coord = stk_itra.top();
+		stk_itra.pop();
+		x = coord.first;
+		y = coord.second;
+
+		if (x-1 >= 0)	// left
+		{
+			ppix = img_data + y*img_w + (x-1);
+			coord = std::make_pair(x-1, y);
+			func_indentify();
+		}
+		if (y-1 >= 0)	// top
+		{
+			ppix = img_data + (y-1)*img_w + x;
+			coord = std::make_pair(x, y-1);
+			func_indentify();
+		}
+		if (x+1 < img_w)	// right
+		{
+			ppix = img_data + y*img_w + (x+1);
+			coord = std::make_pair(x+1, y);
+			func_indentify();
+		}
+		if (y+1 < img_h)	// bottom
+		{
+			ppix = img_data + (y+1)*img_w + x;
+			coord = std::make_pair(x, y+1);
+			func_indentify();
+		}
+	}
+	// add spot in detect-result-image and spots-list
+	if (stk_inner.empty() || stk_edge.empty())
+		bRet = false;
+	else
+	{
+		ST_SPOT_NODE spot;
+		spot.id = id_spot;
+		spot.x = rect.x + rect.width/2;
+		spot.y = rect.y + rect.height/2;
+		spot.xm = spot.x;
+		spot.ym = spot.y;
+		spot.rx = rect.width/2;
+		spot.ry = rect.height/2;
+		spot.perimeter = (int)stk_edge.size();
+		spot.area = (int)stk_inner.size();
+		spot.edge = new int[spot.perimeter];
+		spot.volume = 0;
+		spot.mean = 0.0f;
+		spot.meanBK = 0.0f;
+		spot.meanIN = 0.0f;
+
+		img_data = stResult.pData;
+		img_w = imgSrc.GetWidth();
+		img_h = imgSrc.GetHeight();
+		int counter = 0;
+		int id = 0;
+		while (!stk_inner.empty())
+		{
+			coord = stk_inner.top();
+			stk_inner.pop();
+			x = rect.x + coord.first;
+			y = rect.y + coord.second;
+			id = y*img_w + x;
+			ppix = img_data + id;
+
+			ppix->g = 0x00u;
+			ppix->b = 0x0ffu;
+
+			spot.meanBK += ppix->r;
+		}
+		while (!stk_edge.empty())
+		{
+			coord = stk_edge.top();
+			stk_edge.pop();
+			x = rect.x + coord.first;
+			y = rect.y + coord.second;
+			id = y*img_w + x;
+			ppix = img_data + id;
+
+			ppix->g = 0x0ffu;
+			ppix->b = 0x00u;
+
+			spot.volume += ppix->r;
+			spot.edge[counter++] = id;
+		}
+		spot.mean = spot.volume/(float)spot.area;
+		spot.meanBK /= spot.perimeter;
+		spot.meanIN = spot.meanIN;
+		stResult.pLs->push_back(spot);
+	}
+
+    img_spot.Destroy();
+    return bRet;
+}
+
+/**< delete spots in the rectangle of specified image */
+bool GEIMFrame::DelSopts(int idImg, const wxRect& rect)
+{
+	if (idImg < 0 || idImg >= (int)m_lsDtResult.size())
+		return false;
+	wxImage& imgSrc = *(wxImage*)m_aryImgs.Item(idImg);
+	int img_w = imgSrc.GetWidth(), img_h = imgSrc.GetHeight();
+    auto it_img = m_lsDtResult.begin();
+    for (int i = 0; i < idImg; ++i) ++it_img;
+    ST_DTRESULT& stResult = *it_img;
+
+    // traversing all spot, delete those locate in the rectangle
+    for (auto it_spot = stResult.pLs->begin(); it_spot != stResult.pLs->end();)
+	{
+		ST_SPOT_NODE& spot = *it_spot;
+		if (!rect.Contains(spot.x, spot.y))
+			++it_spot;
+		else
+		{
+			// remove from detect-result-image
+			ST_RGB *ppix = nullptr, *img_mask = stResult.pData;
+			int x = -1, y = -1, id = -1;
+			std::pair<int, int> coord;
+			std::stack<std::pair<int,int>> stk_itra;
+			// remove edge
+			for (int i = 0; i < spot.perimeter; ++i)
+			{
+				id = spot.edge[i];
+				ppix = img_mask + id;
+				ppix->g = 0x00u;
+			}
+			// remove inner
+			auto func_inner = [&stk_itra, &coord, &ppix]{
+				if (ppix->b > 0)
+				{
+					stk_itra.push(coord);
+					ppix->b = 0x00u;
+				}
+			};
+			x = spot.x;
+			y = spot.y;
+			coord = std::make_pair(x, y);
+			ppix = img_mask + y*img_w + x;
+			func_inner();
+			while (!stk_itra.empty())
+			{
+				coord = stk_itra.top();
+				stk_itra.pop();
+				x = coord.first;
+				y = coord.second;
+
+				if (x-1 >= 0)	// left
+				{
+					coord = std::make_pair(x-1, y);
+					ppix = img_mask + y*img_w + (x-1);
+					func_inner();
+				}
+				if (y-1 >= 0)	// top
+				{
+					coord = std::make_pair(x, y-1);
+					ppix = img_mask + (y-1)*img_w + x;
+					func_inner();
+				}
+				if (x+1 < img_w)	// right
+				{
+					coord = std::make_pair(x+1,y);
+					ppix = img_mask + y*img_w + (x+1);
+					func_inner();
+				}
+				if (y+1 < img_h)	// bootom
+				{
+					coord = std::make_pair(x, y+1);
+					ppix = img_mask + (y+1)*img_w + x;
+					func_inner();
+				}
+			}
+			// remove from spots-list
+			delete spot.edge;
+			it_spot = stResult.pLs->erase(it_spot);
+		}
+	}
+
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -706,7 +975,7 @@ void GEIMFrame::OnDelSpot(wxCommandEvent& event)
 		for (size_t i = 0; i < nNum; ++i)
 		{
 			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
-			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+			pPanel->SelTools(IMGPL_CMD::SEL_RECTANGLE);
 		}
 	}
 	else
@@ -756,7 +1025,7 @@ void GEIMFrame::OnDelPair(wxCommandEvent&event)
 		for (size_t i = 0; i < nNum; ++i)
 		{
 			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
-			pPanel->SelTools(IMGPL_CMD::SEL_ELLIPSE);
+			pPanel->SelTools(IMGPL_CMD::SEL_RECTANGLE);
 		}
 	}
 	else
@@ -803,7 +1072,7 @@ void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
 	}
 	else if (id == ID_BMPBTN_DEL_SPOT)
 	{
-		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_RECTANGLE, event);
 		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_DEL_SPOT));
 	}
 	else if (id == ID_BMPBTN_SEL_PAIR)
@@ -813,7 +1082,7 @@ void GEIMFrame::OnBtnsUpdate(wxUpdateUIEvent& event)
 	}
 	else if (id == ID_BMPBTN_DEL_PAIR)
 	{
-		pImgPanel->UpdateUI(IMGPL_CMD::SEL_ELLIPSE, event);
+		pImgPanel->UpdateUI(IMGPL_CMD::SEL_RECTANGLE, event);
 		event.Check(event.GetChecked() && (m_lMouseFunc == ID_BMPBTN_DEL_PAIR));
 	}
 }
@@ -869,7 +1138,7 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 		if (prcSel == nullptr)
 			break;
 
-		// get which selection in which image
+		// get selection in which image
 		int iSel = -1;
 		size_t nNum = m_aryPanels.Count();
 		for (size_t i = 0; i < nNum; ++i)
@@ -886,17 +1155,11 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 
 		if (m_lMouseFunc == ID_BMPBTN_SEL_SPOT)
 		{
-			;
-		}
-		else if (m_lMouseFunc == ID_BMPBTN_DEL_SPOT)
-		{
-			;
+			AddASpot(iSel, *prcSel);
+			DispDtResult();
+			RefreshImgs();
 		}
 		else if (m_lMouseFunc == ID_BMPBTN_SEL_PAIR)
-		{
-			;
-		}
-		else if (m_lMouseFunc == ID_BMPBTN_DEL_PAIR)
 		{
 			;
 		}
@@ -905,7 +1168,39 @@ void GEIMFrame::OnImgplNtfy(wxImgplEvent& event)
 	case IMGPL_CMD::SEL_SQUARE:
 		break;
 	case IMGPL_CMD::SEL_RECTANGLE:
-		break;
+	{
+		wxRect* prcSel = static_cast<wxRect*>(pParam);
+		wxASSERT_MSG(prcSel != nullptr, _T("EVT_IMGPL get SEL_ELLIPSE event param failed."));
+		if (prcSel == nullptr)
+			break;
+
+		// get selection in which image
+		int iSel = -1;
+		size_t nNum = m_aryPanels.Count();
+		for (size_t i = 0; i < nNum; ++i)
+		{
+			ImagePanel* pPanel = static_cast<ImagePanel*>(m_aryPanels.Item(i));
+			if (pPanel->GetId() == id)
+			{
+				iSel = (int)i;
+				break;
+			}
+		}
+		if (iSel == -1)
+			break;
+
+		if (m_lMouseFunc == ID_BMPBTN_DEL_SPOT)
+		{
+			DelSopts(iSel, *prcSel);
+			DispDtResult();
+			RefreshImgs();
+		}
+		else if (m_lMouseFunc == ID_BMPBTN_DEL_PAIR)
+		{
+			;
+		}
+	}
+	break;
 	default:
 		break;
 	}

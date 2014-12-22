@@ -3345,9 +3345,11 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 
 	std::stack<int> exStack;	// 空堆栈 存储为外标记点的标号
 	std::stack<int> ws_stack;	// 空堆栈 存储为分水岭标记点的标号
+	std::stack<int> iw_stack;	// 空堆栈 存储内部区域
 
 	int id = yy*pixWidth + xx;	// 当前像素点的编号
 	exStack.push(id);  			// 将当前点压入堆栈
+	iw_stack.push(id);
 
 	// 统计该蛋白点的信息：内标、内部、边缘、外标
 	while (!exStack.empty())
@@ -3454,7 +3456,10 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 
 				// 标记该蛋白点的标注
 				if ((isStack & 2) == 2)
+				{
+					iw_stack.push(id);
 					image_out[id] = label;
+				}
 				else
 					image_out[id] = -1;
 			}
@@ -3510,6 +3515,12 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 				ws_stack.pop();			// 删除栈顶元素
 				ws_out[id] = false;		// 不是分水岭脊线
 			}
+			while (!iw_stack.empty())
+			{
+				id = iw_stack.top();
+				iw_stack.pop();
+				image_out[id] = -1;		// 不是蛋白点
+			}
 		}
 		else
 		{
@@ -3540,10 +3551,16 @@ bool WaterShed::CalculateLabel(bool *inImg, bool *exImg , bool *wsImg, short *ws
 	}
 	else
 	{
+		// 清空堆栈
 		while (!ws_stack.empty())
 		{
-			id = ws_stack.top();	// 获取栈顶值
-			ws_stack.pop();			// 删除栈顶元素
+			id = ws_stack.top();
+			ws_stack.pop();
+		}
+		while (!iw_stack.empty())
+		{
+			id = iw_stack.top();
+			iw_stack.pop();
 		}
 	}
 
