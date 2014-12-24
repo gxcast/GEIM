@@ -3,6 +3,7 @@
 #include <stack>
 
 #include <wx/wx.h>
+#include <wx/ffile.h>
 
 #include "AboutDlg.h"
 #include "SpotDtDlg.h"
@@ -51,8 +52,8 @@ GEIMFrame::GEIMFrame(wxWindow* parent,wxWindowID id)
 	pMenu = new wxMenu();
 	pMenuItem = new wxMenuItem(pMenu, wxID_OPEN, _("&Open\tCtrl-O"), _("Open Project"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
-	pMenuItem = new wxMenuItem(pMenu, wxID_SAVE, _("&Save\tCtrl-S"), _("Save"), wxITEM_NORMAL);
-	pMenu->Append(pMenuItem);
+	//pMenuItem = new wxMenuItem(pMenu, wxID_SAVE, _("&Save\tCtrl-S"), _("Save"), wxITEM_NORMAL);
+	//pMenu->Append(pMenuItem);
 	pMenuItem = new wxMenuItem(pMenu, wxID_CLOSE, _("&Close\tCtrl-W"), _("Close Project"), wxITEM_NORMAL);
 	pMenu->Append(pMenuItem);
 	pMenu->AppendSeparator();
@@ -588,6 +589,209 @@ bool GEIMFrame::DelSopts(int idImg, const wxRect& rect)
 	return true;
 }
 
+/**< save detection result for each image, file named by <imagename.ext>.dt */
+bool GEIMFrame::SaveDt()
+{
+	if (m_aryImgs.size() != m_lsDtResult.size())
+		return false;
+
+	// traversing all image and its detection-result
+	int img_id = 0;
+	for (auto it_dt = m_lsDtResult.begin(); it_dt != m_lsDtResult.end(); ++it_dt)
+	{
+		wxImage *img_wx = (wxImage *)m_aryImgs.Item(img_id);
+		ST_DTRESULT& img_dt = *it_dt;
+
+		// get image file-name, format <imagename.ext>.dt, then create data file
+		wxString img_pathname = img_wx->GetOption(wxIMAGE_OPTION_FILENAME);
+		int img_w = img_wx->GetWidth();
+		int img_h = img_wx->GetHeight();
+		img_pathname.Append(_(".dt"));
+		wxFFile img_file;
+		if (!img_file.Open(img_pathname, _("wb")))
+			continue;
+		img_file.Seek(0);
+
+		// write data
+		unsigned int flag_head = 0x64746864; // "dthd"
+		unsigned int flag_splite = 0x01020304u; // ""
+		unsigned int flag_tail = 0x6474746cu; // "dttl"
+		unsigned int version = 0x01000100u; // "1.00.01.00"
+		int len_spotls = -1;
+		// head
+		img_file.Write(&flag_head, 4);
+		// version
+		img_file.Write(&version, 4);
+		// image width and height
+		img_file.Write(&img_w, 4);
+		img_file.Write(&img_h, 4);
+		// image flags
+		img_file.Write(img_dt.pData, img_w*img_h*3);
+		// spots count
+		len_spotls = (int)img_dt.pLs->size();
+		img_file.Write(&len_spotls, 4);
+		// each spot
+		for (auto it_spot = img_dt.pLs->begin(); it_spot != img_dt.pLs->end(); ++it_spot)
+		{
+			ST_SPOT_NODE& spot = *it_spot;
+
+			img_file.Write(&spot.id, 4);
+			img_file.Write(&spot.x, 4);
+			img_file.Write(&spot.y, 4);
+			img_file.Write(&spot.xm, 4);
+			img_file.Write(&spot.ym, 4);
+			img_file.Write(&spot.area, 4);
+			img_file.Write(&spot.volume, 4);
+			img_file.Write(&spot.perimeter, 4);
+			img_file.Write(spot.edge, 4*spot.perimeter);
+			img_file.Write(&spot.rx, 4);
+			img_file.Write(&spot.ry, 4);
+			img_file.Write(&spot.mean, 4);
+			img_file.Write(&spot.meanBK, 4);
+			img_file.Write(&spot.meanIN, 4);
+			img_file.Write(&flag_splite, 4);
+		}
+		// tail
+		img_file.Write(&flag_tail, 4);
+
+		img_file.Close();
+
+		// next image
+		++img_id;
+	}
+	return true;
+}
+
+ /**< load detecttion result */
+bool GEIMFrame::LoadDt()
+{
+	bool bRet = true;
+	// release pre result
+	SpotDtThread::DestroyDtResult(&m_lsDtResult);
+
+	// traversing all image and read its detection-result
+	int img_count = (int)m_aryImgs.size();
+	for (int img_id = 0; img_id < img_count; ++img_id)
+	{
+		wxImage *img_wx = (wxImage *)m_aryImgs.Item(img_id);
+		int img_w = img_wx->GetWidth();
+		int img_h = img_wx->GetHeight();
+		int img_n = img_w*img_h*3;
+		ST_DTRESULT img_dt;
+
+		unsigned int flag_head = 0x64746864u; // "dthd"
+		unsigned int flag_splite = 0x01020304u; // ""
+		unsigned int flag_tail = 0x6474746cu; // "dttl"
+		unsigned int version = 0x01000100u;
+		int len_spotls = -1;
+		int temp_i = 0;
+		unsigned int temp_u = 0;
+
+		// get image file-name, format <imagename.ext>.dt, then open data file
+		wxFFile img_file;
+		wxString img_pathname = img_wx->GetOption(wxIMAGE_OPTION_FILENAME);
+		img_pathname.Append(_(".dt"));
+		if (!wxFileName::FileExists(img_pathname))
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		if (!img_file.Open(img_pathname, _("rb")))
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		img_file.Seek(0);
+
+		// write data
+		// head
+		img_file.Read(&temp_u, 4);
+		if (temp_u != flag_head)
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		// version mm.ss.cc
+		img_file.Read(&temp_u, 4);
+		if (temp_u != version)
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		// image width and height
+		img_file.Read(&temp_i, 4);
+		if (temp_i != img_w)
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		img_file.Read(&temp_i, 4);
+		if (temp_i != img_h)
+		{
+			bRet = false;
+			goto _LoadDt_for;
+		}
+		// image flags
+		img_dt.pData = (ST_RGB *)new char[img_n];
+		temp_u = img_file.Read(img_dt.pData, img_n);
+		wxASSERT_MSG((int)temp_u == img_n, _T("Read detection-data error."));
+		// spots count
+		img_file.Read(&len_spotls, 4);
+		// each spot
+		img_dt.pLs = new LS_SPOTS;
+		for (int spot_id = 0; spot_id < len_spotls; ++spot_id)
+		{
+			ST_SPOT_NODE spot;
+
+			img_file.Read(&spot.id, 4);
+			img_file.Read(&spot.x, 4);
+			img_file.Read(&spot.y, 4);
+			img_file.Read(&spot.xm, 4);
+			img_file.Read(&spot.ym, 4);
+			img_file.Read(&spot.area, 4);
+			img_file.Read(&spot.volume, 4);
+			img_file.Read(&spot.perimeter, 4);
+			spot.edge = new int[spot.perimeter];
+			img_file.Read(spot.edge, 4*spot.perimeter);
+			img_file.Read(&spot.rx, 4);
+			img_file.Read(&spot.ry, 4);
+			img_file.Read(&spot.mean, 4);
+			img_file.Read(&spot.meanBK, 4);
+			img_file.Read(&spot.meanIN, 4);
+			img_file.Read(&temp_u, 4);
+			if (temp_u != flag_splite)
+			{
+				delete spot.edge;
+				bRet = false;
+				goto _LoadDt_for;
+			}
+
+			img_dt.pLs->push_back(spot);
+		}
+		// tail
+		img_file.Read(&temp_u, 4);
+		if (temp_u != flag_tail)
+			bRet = false;
+
+_LoadDt_for:
+		if (img_file.IsOpened())
+			img_file.Close();
+		if (bRet)
+			m_lsDtResult.push_back(img_dt);
+		else
+		{
+			delete img_dt.pData;
+			delete img_dt.pLs;
+			goto _LoadDt;
+		}
+	}
+
+_LoadDt:
+	if (!bRet)
+		SpotDtThread::DestroyDtResult(&m_lsDtResult);
+	return bRet;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 /**< invoke when window will close */
 void GEIMFrame::OnClose(wxCloseEvent& event)
@@ -687,11 +891,9 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	for (size_t i = 0; i < nNum; ++i)
 	{
 		wxString& path = aryFiles.Item(i);
-		wxFileName fnm(path);
-		const wxString& nm = fnm.GetFullName();
 		// new image
 		wxImage* pImg = new wxImage(path);
-		pImg->SetOption(wxIMAGE_OPTION_FILENAME, nm);
+		pImg->SetOption(wxIMAGE_OPTION_FILENAME, path);
 		m_aryImgs.Add(pImg);
 
 		// display image
@@ -785,7 +987,10 @@ void GEIMFrame::OnDtUpdate(wxUpdateUIEvent& event)
 
 void GEIMFrame::OnDtSave(wxCommandEvent& event)
 {
-
+	if (SaveDt())
+		wxMessageBox(_("Save detection results SUCCESS."), _("Information"), wxOK|wxICON_INFORMATION|wxCENTER, this);
+	else
+		wxMessageBox(_("Save detection results FAILED."), _("Error"), wxOK|wxICON_ERROR|wxCENTER, this);
 }
 void GEIMFrame::OnDtSaveUpdate(wxUpdateUIEvent& event)
 {
@@ -798,7 +1003,13 @@ void GEIMFrame::OnDtSaveUpdate(wxUpdateUIEvent& event)
 
 void GEIMFrame::OnDtLoad(wxCommandEvent& event)
 {
-
+	if (!LoadDt())
+		wxMessageBox(_("Load detection results FAILED."), _("Error"), wxOK|wxICON_ERROR|wxCENTER, this);
+	else
+	{
+		DispDtResult();
+		RefreshImgs();
+	}
 }
 void GEIMFrame::OnDtLoadUpdate(wxUpdateUIEvent& event)
 {

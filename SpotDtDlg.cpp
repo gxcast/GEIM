@@ -1,9 +1,11 @@
 #include "SpotDtDlg.h"
 
+#include <math.h>
+
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
 #include <wx/busyinfo.h>
-#include <math.h>
+#include <wx/filename.h>
 
 #include "ImagePanel.h"
 #include "EffectPar.h"
@@ -132,8 +134,10 @@ bool SpotDtDlg::Init(const wxArrayPtrVoid* pAryImgs)
 			wxASSERT_MSG(false, _T("The image has no option filename."));
 			continue;
 		}
-		const wxString& nm = pImg->GetOption(wxIMAGE_OPTION_FILENAME);
-		pCI->Append(nm, reinterpret_cast<void*>(i));
+		const wxString& pathname = pImg->GetOption(wxIMAGE_OPTION_FILENAME);
+		wxFileName fnm(pathname);
+		const wxString& name = fnm.GetFullName();
+		pCI->Append(name, reinterpret_cast<void*>(i));
 
 		// default sel the first image
 		if (bFirst)

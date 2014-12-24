@@ -49,6 +49,21 @@ class GEIMFrame: public wxFrame
          *
          */
         bool DelSopts(int idImg, const wxRect& rect);
+        /** \brief save detection result for each image, file named by <imagename.ext>.dt
+         *
+         * \return bool true:success false:add failed
+         *
+         * 4:head(4 char) 4:version(3 uchar)
+         * 4(int):image width 4(int): image height w*h*3(*):image-flag data
+         * 4(int): spot count ?(struct):spot-list
+         */
+        bool SaveDt();
+        /** \brief load detecttion result
+         *
+         * \return bool true:success false:add failed
+         *
+         */
+        bool LoadDt();
 
         void OnClose(wxCloseEvent& event);
         // menu or tool-button command
