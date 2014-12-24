@@ -3,8 +3,10 @@
 
 #include <wx/app.h>
 
+class wxLocale;
 class GEIMApp : public wxApp
 {
+	wxLocale *m_pLocale = nullptr;
 	public:
 		virtual bool OnInit();
 		virtual int OnExit();

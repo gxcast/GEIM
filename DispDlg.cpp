@@ -38,7 +38,7 @@ bool DispDlg::Create(wxWindow* parent,
 	// set extra styles
 	SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
 	// create
-	bRet = wxDialog::Create(parent, id, title, pos, sz, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER, _("DispDlg"));
+	bRet = wxDialog::Create(parent, id, title, pos, sz, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER, _("ImageDisplay"));
 	if (!bRet)
 		return bRet;
 	// create controls

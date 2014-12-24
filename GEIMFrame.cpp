@@ -606,9 +606,9 @@ bool GEIMFrame::SaveDt()
 		wxString img_pathname = img_wx->GetOption(wxIMAGE_OPTION_FILENAME);
 		int img_w = img_wx->GetWidth();
 		int img_h = img_wx->GetHeight();
-		img_pathname.Append(_(".dt"));
+		img_pathname.Append(_T(".dt"));
 		wxFFile img_file;
-		if (!img_file.Open(img_pathname, _("wb")))
+		if (!img_file.Open(img_pathname, _T("wb")))
 			continue;
 		img_file.Seek(0);
 
@@ -690,13 +690,13 @@ bool GEIMFrame::LoadDt()
 		// get image file-name, format <imagename.ext>.dt, then open data file
 		wxFFile img_file;
 		wxString img_pathname = img_wx->GetOption(wxIMAGE_OPTION_FILENAME);
-		img_pathname.Append(_(".dt"));
+		img_pathname.Append(_T(".dt"));
 		if (!wxFileName::FileExists(img_pathname))
 		{
 			bRet = false;
 			goto _LoadDt_for;
 		}
-		if (!img_file.Open(img_pathname, _("rb")))
+		if (!img_file.Open(img_pathname, _T("rb")))
 		{
 			bRet = false;
 			goto _LoadDt_for;
@@ -822,7 +822,7 @@ void GEIMFrame::OnFileOpen(wxCommandEvent& event)
 	size_t nNum = m_aryImgs.Count();
 	if (nNum > 0)
 	{
-		iRet = wxMessageBox(_("A group of images are already opened,\r\n SURE to open a new group of iamges?"),
+		iRet = wxMessageBox(_("A group of images are already opened,\n SURE to open a new group of iamges?"),
 		                    _("Confirm"),
 		                    wxYES_NO|wxICON_QUESTION|wxYES_DEFAULT|wxCENTER,
 		                    this);
@@ -995,9 +995,10 @@ void GEIMFrame::OnDtSave(wxCommandEvent& event)
 void GEIMFrame::OnDtSaveUpdate(wxUpdateUIEvent& event)
 {
 	bool bEn = true;
-	bEn = bEn && (m_aryImgs.Count() > 0);
+	size_t nNum = m_aryImgs.Count();
+	bEn = nNum > 0;
+	bEn = bEn && (nNum == m_lsDtResult.size());
 	bEn = bEn && (m_pBusy == nullptr);
-	bEn = bEn && (m_lsDtResult.size() >= 2);
 	event.Enable(bEn);
 }
 
@@ -1036,7 +1037,8 @@ void GEIMFrame::OnMtUpdate(wxUpdateUIEvent& event)
 {
 	bool bEn = true;
 	size_t nNum = m_aryImgs.Count();
-	bEn = (nNum > 0);
+	bEn = nNum > 0;
+	bEn = bEn && (nNum == m_lsDtResult.size());
 	bEn = bEn && (m_pBusy == nullptr);
 	bEn = bEn && (m_lsDtResult.size() >= 2);
 	event.Enable(bEn);

@@ -196,7 +196,7 @@ bool ImagePanel::ImgZoomRect()
 		// mouse function is image zoom rect
 		m_stMP.emFuc = IMGPL_CMD::IMG_ZRECT;
 		// set mouse cur
-		SetCursor(wxCursor(_("./skin/ZoomRect.cur"), wxBITMAP_TYPE_CUR));
+		SetCursor(wxCursor(_T("./skin/ZoomRect.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{
@@ -418,7 +418,7 @@ bool ImagePanel::ImgMove()
 		// mouse function is image move
 		m_stMP.emFuc = IMGPL_CMD::IMG_MOVE;
 		// set mouse cur
-		SetCursor(wxCursor(_("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
+		SetCursor(wxCursor(_T("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{

@@ -591,7 +591,7 @@ void SpotDtDlg::OnDtFaint(wxCommandEvent& event)
 	{
 		m_lMouseFunc = ID_BMPBTN_DT_FAINT;
 		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
-		                      _("./skin/SelFaint.png"), 7, 7);
+		                      _T("./skin/SelFaint.png"), 7, 7);
 	}
 	else
 	{
@@ -607,7 +607,7 @@ void SpotDtDlg::OnDtMin(wxCommandEvent& event)
 	{
 		m_lMouseFunc = ID_BMPBTN_DT_MIN;
 		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
-		_("./skin/SelMin.png"), 7, 7);
+		_T("./skin/SelMin.png"), 7, 7);
 	}
 	else
 	{
@@ -623,7 +623,7 @@ void SpotDtDlg::OnDtMax(wxCommandEvent& event)
 	{
 		m_lMouseFunc = ID_BMPBTN_DT_MAX;
 		m_pImgPanel->SelTools(IMGPL_CMD::SEL_CIRCLE,
-							_("./skin/SelMax.png"), 7, 7);
+							_T("./skin/SelMax.png"), 7, 7);
 	}
 	else
 	{

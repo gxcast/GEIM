@@ -1,0 +1,365 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-12-24 16:10+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: DispDlg.h:14 DispDlg.h:22
+msgid "Image"
+msgstr ""
+
+#: SpotDtDlg.h:38 SpotDtDlg.h:60
+msgid "Spot Detection"
+msgstr ""
+
+#: AboutDlg.cpp:15
+msgid "About GEIM..."
+msgstr ""
+
+#: DispDlg.cpp:41
+msgid "ImageDisplay"
+msgstr ""
+
+#: DispDlg.cpp:124 GEIMFrame.cpp:108 SpotDtDlg.cpp:175
+msgid "ZoomIn Image"
+msgstr ""
+
+#: DispDlg.cpp:128 GEIMFrame.cpp:112 SpotDtDlg.cpp:179
+msgid "ZoomOut Image"
+msgstr ""
+
+#: DispDlg.cpp:132 GEIMFrame.cpp:116 SpotDtDlg.cpp:183
+msgid "Zoom Sel Rect Image"
+msgstr ""
+
+#: DispDlg.cpp:136 GEIMFrame.cpp:120 SpotDtDlg.cpp:187
+msgid "Fit Image"
+msgstr ""
+
+#: DispDlg.cpp:140 GEIMFrame.cpp:124 SpotDtDlg.cpp:191
+msgid "Actual Image"
+msgstr ""
+
+#: DispDlg.cpp:144 GEIMFrame.cpp:130 SpotDtDlg.cpp:195
+msgid "Move Image"
+msgstr ""
+
+#: GEIMFrame.cpp:43
+msgid "GEIM_Dev"
+msgstr ""
+
+#: GEIMFrame.cpp:53
+msgid "&Open\tCtrl-O"
+msgstr ""
+
+#: GEIMFrame.cpp:53
+msgid "Open Project"
+msgstr ""
+
+#: GEIMFrame.cpp:57
+msgid "&Close\tCtrl-W"
+msgstr ""
+
+#: GEIMFrame.cpp:57
+msgid "Close Project"
+msgstr ""
+
+#: GEIMFrame.cpp:60
+msgid "&Exit\tAlt-F4"
+msgstr ""
+
+#: GEIMFrame.cpp:60
+msgid "Exit Program"
+msgstr ""
+
+#: GEIMFrame.cpp:62
+msgid "&File"
+msgstr ""
+
+#: GEIMFrame.cpp:64
+msgid "&Detect\tCtrl-D"
+msgstr ""
+
+#: GEIMFrame.cpp:64
+msgid "Detect Spots"
+msgstr ""
+
+#: GEIMFrame.cpp:66
+msgid "Save Detect Result(&F)\tCtrl-F"
+msgstr ""
+
+#: GEIMFrame.cpp:66
+msgid "Save Detect"
+msgstr ""
+
+#: GEIMFrame.cpp:68
+msgid "Load Detect Result(&G)\tCtrl-G"
+msgstr ""
+
+#: GEIMFrame.cpp:68
+msgid "Load Detect"
+msgstr ""
+
+#: GEIMFrame.cpp:72
+msgid "&Match\tCtrl-M"
+msgstr ""
+
+#: GEIMFrame.cpp:72
+msgid "Match Spots"
+msgstr ""
+
+#: GEIMFrame.cpp:74
+msgid "Save Match Result(&N)\tCtrl-N"
+msgstr ""
+
+#: GEIMFrame.cpp:74
+msgid "Save Match"
+msgstr ""
+
+#: GEIMFrame.cpp:76
+msgid "Load Match Result(&B)\tCtrl-B"
+msgstr ""
+
+#: GEIMFrame.cpp:76
+msgid "Load Match"
+msgstr ""
+
+#: GEIMFrame.cpp:78
+msgid "&Proc"
+msgstr ""
+
+#: GEIMFrame.cpp:80
+msgid "&About\tF1"
+msgstr ""
+
+#: GEIMFrame.cpp:80
+msgid "About GEIM"
+msgstr ""
+
+#: GEIMFrame.cpp:82
+msgid "Help"
+msgstr ""
+
+#: GEIMFrame.cpp:91
+msgid "Ready"
+msgstr ""
+
+#: GEIMFrame.cpp:136
+msgid "Select Spot"
+msgstr ""
+
+#: GEIMFrame.cpp:140
+msgid "Delete Spot"
+msgstr ""
+
+#: GEIMFrame.cpp:144
+msgid "Select Pair"
+msgstr ""
+
+#: GEIMFrame.cpp:148
+msgid "Delete Pair"
+msgstr ""
+
+#: GEIMFrame.cpp:801
+msgid "Are you sure to close the program?"
+msgstr ""
+
+#: GEIMFrame.cpp:801 GEIMFrame.cpp:826
+msgid "Confirm"
+msgstr ""
+
+#: GEIMFrame.cpp:825
+msgid ""
+"A group of images are already opened,\n"
+" SURE to open a new group of iamges?"
+msgstr ""
+
+#: GEIMFrame.cpp:834
+msgid "Choice Images"
+msgstr ""
+
+#: GEIMFrame.cpp:846
+msgid "Files' number must be 2."
+msgstr ""
+
+#: GEIMFrame.cpp:847 GEIMFrame.cpp:993 GEIMFrame.cpp:1008
+msgid "Error"
+msgstr ""
+
+#: GEIMFrame.cpp:976
+msgid "Create dtect thread failed."
+msgstr ""
+
+#: GEIMFrame.cpp:976 GEIMFrame.cpp:991 GEIMFrame.cpp:1030 GEIMFrame.cpp:1436
+#: GEIMFrame.cpp:1460 SpotDtDlg.cpp:837
+msgid "Information"
+msgstr ""
+
+#: GEIMFrame.cpp:980
+msgid "Please wait, batch detecting..."
+msgstr ""
+
+#: GEIMFrame.cpp:991
+msgid "Save detection results SUCCESS."
+msgstr ""
+
+#: GEIMFrame.cpp:993
+msgid "Save detection results FAILED."
+msgstr ""
+
+#: GEIMFrame.cpp:1008
+msgid "Load detection results FAILED."
+msgstr ""
+
+#: GEIMFrame.cpp:1030
+msgid "Create match thread failed."
+msgstr ""
+
+#: GEIMFrame.cpp:1034
+msgid "Please wait, matching..."
+msgstr ""
+
+#: GEIMFrame.cpp:1436 SpotDtDlg.cpp:837
+msgid "Detect failed!"
+msgstr ""
+
+#: GEIMFrame.cpp:1460
+msgid "Match failed!"
+msgstr ""
+
+#: GEIMFrame.cpp:1471
+msgid "Match Result"
+msgstr ""
+
+#: ImagePanel.cpp:1344
+msgid "&Save Image"
+msgstr ""
+
+#: ImagePanel.cpp:1344
+msgid "Save the Image"
+msgstr ""
+
+#: ImagePanel.cpp:1485
+msgid "Save Image"
+msgstr ""
+
+#: SpotDtDlg.cpp:209
+msgid "Select Image:"
+msgstr ""
+
+#: SpotDtDlg.cpp:223
+msgid "Step 1: Set Param"
+msgstr ""
+
+#: SpotDtDlg.cpp:231
+msgid "Select Faint Spot in Image"
+msgstr ""
+
+#: SpotDtDlg.cpp:233
+msgid "Select Faint Spot"
+msgstr ""
+
+#: SpotDtDlg.cpp:237
+msgid "Select Minimum Spot in Image"
+msgstr ""
+
+#: SpotDtDlg.cpp:239
+msgid "Select Minimum Spot"
+msgstr ""
+
+#: SpotDtDlg.cpp:243
+msgid "Select Maximum Spot in Image"
+msgstr ""
+
+#: SpotDtDlg.cpp:245
+msgid "Select Maximum Spot"
+msgstr ""
+
+#: SpotDtDlg.cpp:250
+msgid "Background Correct"
+msgstr ""
+
+#: SpotDtDlg.cpp:253
+msgid "Median Filter"
+msgstr ""
+
+#: SpotDtDlg.cpp:258
+msgid "3X3"
+msgstr ""
+
+#: SpotDtDlg.cpp:259
+msgid "5X5"
+msgstr ""
+
+#: SpotDtDlg.cpp:260
+msgid "7X7"
+msgstr ""
+
+#: SpotDtDlg.cpp:261 SpotDtDlg.cpp:269
+msgid "Size"
+msgstr ""
+
+#: SpotDtDlg.cpp:265
+msgid "Gauss Filter"
+msgstr ""
+
+#: SpotDtDlg.cpp:275
+msgid "Step 2: Modify Param"
+msgstr ""
+
+#: SpotDtDlg.cpp:281
+msgid "Faint Coord:"
+msgstr ""
+
+#: SpotDtDlg.cpp:288
+msgid ","
+msgstr ""
+
+#: SpotDtDlg.cpp:296
+msgid "&Faint Thre:"
+msgstr ""
+
+#: SpotDtDlg.cpp:302
+msgid "&Min Rad:"
+msgstr ""
+
+#: SpotDtDlg.cpp:308
+msgid "Max Rad:"
+msgstr ""
+
+#: SpotDtDlg.cpp:313
+msgid "Min Aspect:"
+msgstr ""
+
+#: SpotDtDlg.cpp:319
+msgid "Spot Num:"
+msgstr ""
+
+#: SpotDtDlg.cpp:334
+msgid "&Test Param"
+msgstr ""
+
+#: SpotDtDlg.cpp:337
+msgid "&Batch"
+msgstr ""
+
+#: SpotDtDlg.cpp:340
+msgid "&Exit"
+msgstr ""
+
+#: SpotDtDlg.cpp:780
+msgid "Please wait, working..."
+msgstr ""
