@@ -196,7 +196,7 @@ bool ImagePanel::ImgZoomRect()
 		// mouse function is image zoom rect
 		m_stMP.emFuc = IMGPL_CMD::IMG_ZRECT;
 		// set mouse cur
-		SetCursor(wxCursor(_("./skin/ZoomRect.cur"), wxBITMAP_TYPE_CUR));
+		SetCursor(wxCursor(_T("./skin/ZoomRect.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{
@@ -418,7 +418,7 @@ bool ImagePanel::ImgMove()
 		// mouse function is image move
 		m_stMP.emFuc = IMGPL_CMD::IMG_MOVE;
 		// set mouse cur
-		SetCursor(wxCursor(_("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
+		SetCursor(wxCursor(_T("./skin/HandOpen.cur"), wxBITMAP_TYPE_CUR));
 	}
 	else
 	{
@@ -1082,7 +1082,7 @@ bool ImagePanel::MLDSelRectangle(wxMouseEvent& event)
 	m_stMP.ptE.y = event.m_y;
 
 	// calculate the max size
-	CalcuMaxSelSize(true);
+	CalcuMaxSelSize(false);
 
 	// capture mouse
 	CaptureMouse();
@@ -1194,14 +1194,14 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 	// draw image
 	if (m_img.IsOk())
 	{
-		wxMemoryDC dcImg;
 		wxBitmap bmp(m_img);
-		dcImg.SelectObject(bmp);
+		wxMemoryDC dcImg(bmp);
 		m_dcMem.StretchBlit( (wxCoord)m_rcDest.m_x, (wxCoord)m_rcDest.m_y,
 		                     (wxCoord)m_rcDest.m_width, (wxCoord)m_rcDest.m_height,
 		                     (wxDC*)&dcImg,
 		                     (wxCoord)m_rcSrc.m_x, (wxCoord)m_rcSrc.m_y,
 		                     (wxCoord)m_rcSrc.m_width, (wxCoord)m_rcSrc.m_height );
+		dcImg.SelectObject(wxNullBitmap);
 	}
 
 	// draw sel rect fot zoom

@@ -86,7 +86,6 @@ bool SpotDtThread::SpotDtBatch(ST_DTPARAM& stDtParam)
 	{
 		ST_DTRESULT stResult;
 		wxImage* pImg = nullptr;
-		wxImage* pImgDisp = nullptr;
 		// get the origin image
 		pImg = static_cast<wxImage*>(m_aryImgs.Item(i));
 		if (pImg == nullptr)

@@ -1,0 +1,426 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GEIM\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-01-10 15:00+0800\n"
+"PO-Revision-Date: 2015-01-10 15:09+0800\n"
+"Last-Translator: nchu <nchu@gmail.com>\n"
+"Language-Team: nchu <nchu@gmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: AboutDlg.cpp:15
+msgid "About GEIM..."
+msgstr "关于GEIM..."
+
+#: DispDlg.cpp:41
+msgid "ImageDisplay"
+msgstr "图像显示"
+
+#: DispDlg.cpp:124 GEIMFrame.cpp:118 SpotDtDlg.cpp:175
+msgid "ZoomIn Image"
+msgstr "放大图像"
+
+#: DispDlg.cpp:128 GEIMFrame.cpp:122 SpotDtDlg.cpp:179
+msgid "ZoomOut Image"
+msgstr "缩小图像"
+
+#: DispDlg.cpp:132 GEIMFrame.cpp:126 SpotDtDlg.cpp:183
+msgid "Zoom Sel Rect Image"
+msgstr "放大选区图像"
+
+#: DispDlg.cpp:136 GEIMFrame.cpp:130 SpotDtDlg.cpp:187
+msgid "Fit Image"
+msgstr "适合窗口"
+
+#: DispDlg.cpp:140 GEIMFrame.cpp:134 SpotDtDlg.cpp:191
+msgid "Actual Image"
+msgstr "实际大小"
+
+#: DispDlg.cpp:144 GEIMFrame.cpp:140 SpotDtDlg.cpp:195
+msgid "Move Image"
+msgstr "移动图像"
+
+#: GEIMFrame.cpp:49
+msgid "GEIM_Dev"
+msgstr "GEIM_开发版"
+
+#: GEIMFrame.cpp:59
+msgid "&Open\tCtrl-O"
+msgstr "打开(&O)\tCtrl-O"
+
+#: GEIMFrame.cpp:59
+msgid "Open Project"
+msgstr "打开工程"
+
+#: GEIMFrame.cpp:63
+msgid "&Close\tCtrl-W"
+msgstr "关闭(&C)\tCtrl-W"
+
+#: GEIMFrame.cpp:63
+msgid "Close Project"
+msgstr "关闭工程"
+
+#: GEIMFrame.cpp:66
+msgid "&Exit\tAlt-F4"
+msgstr "退出(&E)\tAlt-F4"
+
+#: GEIMFrame.cpp:66
+msgid "Exit Program"
+msgstr "退出程序"
+
+#: GEIMFrame.cpp:68
+msgid "&File"
+msgstr "文件(&F)"
+
+#: GEIMFrame.cpp:70
+msgid "&Detect\tCtrl-D"
+msgstr "蛋白点检测(&D)\tCtrl-D"
+
+#: GEIMFrame.cpp:70
+msgid "Detect Spots"
+msgstr "蛋白点检测"
+
+#: GEIMFrame.cpp:72
+msgid "Save Detect Result(&F)\tCtrl-F"
+msgstr "保存检测结果(&F)\tCtrl-F"
+
+#: GEIMFrame.cpp:72
+msgid "Save Detect"
+msgstr "保存检测结果"
+
+#: GEIMFrame.cpp:74
+msgid "Load Detect Result(&G)\tCtrl-G"
+msgstr "加载检测结果(&G)\tCtrl-G"
+
+#: GEIMFrame.cpp:74
+msgid "Load Detect"
+msgstr "加载检测结果"
+
+#: GEIMFrame.cpp:78
+msgid "&Match\tCtrl-M"
+msgstr "蛋白点匹配(&M)\tCtrl-M"
+
+#: GEIMFrame.cpp:78
+msgid "Match Spots"
+msgstr "蛋白点匹配("
+
+#: GEIMFrame.cpp:80
+msgid "Save Match Result(&N)\tCtrl-N"
+msgstr "保存匹配结果(&N)\tCtrl-N"
+
+#: GEIMFrame.cpp:80
+msgid "Save Match"
+msgstr "保存匹配结果"
+
+#: GEIMFrame.cpp:82
+msgid "Load Match Result(&B)\tCtrl-B"
+msgstr "加载匹配结果(&B)\tCtrl-B"
+
+#: GEIMFrame.cpp:82
+msgid "Load Match"
+msgstr "加载匹配结果"
+
+#: GEIMFrame.cpp:84
+msgid "Save Match Text(&N)"
+msgstr "导出为文本"
+
+#: GEIMFrame.cpp:84
+msgid "Save Match as Text"
+msgstr "导出为文本"
+
+#: GEIMFrame.cpp:86
+msgid "Load Match Text(&B)"
+msgstr "从文本导入"
+
+#: GEIMFrame.cpp:86
+msgid "Load Match from Text"
+msgstr "从文本导入"
+
+#: GEIMFrame.cpp:88
+msgid "&Proc"
+msgstr "处理(&P)"
+
+#: GEIMFrame.cpp:90
+msgid "&About\tF1"
+msgstr "关于(&A)\tF1"
+
+#: GEIMFrame.cpp:90
+msgid "About GEIM"
+msgstr "关于 GEIM"
+
+#: GEIMFrame.cpp:92
+msgid "Help"
+msgstr "帮助"
+
+#: GEIMFrame.cpp:101 GEIMFrame.cpp:261
+msgid "Ready"
+msgstr "就绪"
+
+#: GEIMFrame.cpp:146
+msgid "Select Spot"
+msgstr "添选蛋白点"
+
+#: GEIMFrame.cpp:150
+msgid "Delete Spot"
+msgstr "删选蛋白点"
+
+#: GEIMFrame.cpp:154
+msgid "Select Pair"
+msgstr "添选点对"
+
+#: GEIMFrame.cpp:158
+msgid "Delete Pair"
+msgstr "删选点对"
+
+#: GEIMFrame.cpp:1296
+msgid "Are you sure to close the program?"
+msgstr "确定关闭程序?"
+
+#: GEIMFrame.cpp:1296 GEIMFrame.cpp:1327
+msgid "Confirm"
+msgstr "确认"
+
+#: GEIMFrame.cpp:1326
+msgid ""
+"A group of images are already opened,\n"
+" SURE to open a new group of iamges?"
+msgstr "已经打开一组图像, 确认新打开一组图像么?"
+
+#: GEIMFrame.cpp:1335
+msgid "Choice Images"
+msgstr "选择图像"
+
+#: GEIMFrame.cpp:1347
+msgid "Files' number must be 2."
+msgstr "图像文件的个数必须为2"
+
+#: GEIMFrame.cpp:1348 GEIMFrame.cpp:1494 GEIMFrame.cpp:1509 GEIMFrame.cpp:1553
+#: GEIMFrame.cpp:1570 GEIMFrame.cpp:1593 GEIMFrame.cpp:1598
+msgid "Error"
+msgstr "错误"
+
+#: GEIMFrame.cpp:1477
+msgid "Create dtect thread failed."
+msgstr "创建检测线程失败."
+
+#: GEIMFrame.cpp:1477 GEIMFrame.cpp:1492 GEIMFrame.cpp:1531 GEIMFrame.cpp:1551
+#: GEIMFrame.cpp:1591 GEIMFrame.cpp:1998 GEIMFrame.cpp:2022 SpotDtDlg.cpp:837
+msgid "Information"
+msgstr "信息"
+
+#: GEIMFrame.cpp:1481
+msgid "Please wait, batch detecting..."
+msgstr "请稍后, 检测处理中..."
+
+#: GEIMFrame.cpp:1492
+msgid "Save detection results SUCCESS."
+msgstr "成功保存检测结果."
+
+#: GEIMFrame.cpp:1494
+msgid "Save detection results FAILED."
+msgstr "保存检测结果失败."
+
+#: GEIMFrame.cpp:1509
+msgid "Load detection results FAILED."
+msgstr "成功加载检测结果."
+
+#: GEIMFrame.cpp:1531
+msgid "Create match thread failed."
+msgstr "创建匹配线程失败."
+
+#: GEIMFrame.cpp:1535
+msgid "Please wait, matching..."
+msgstr "请稍后, 匹配中..."
+
+#: GEIMFrame.cpp:1551 GEIMFrame.cpp:1591
+msgid "Save match results SUCCESS."
+msgstr "成功保存匹配结果."
+
+#: GEIMFrame.cpp:1553 GEIMFrame.cpp:1593
+msgid "Save match results FAILED."
+msgstr "保存匹配结果失败."
+
+#: GEIMFrame.cpp:1570 GEIMFrame.cpp:1598
+msgid "Load match results FAILED."
+msgstr "加载匹配结果失败."
+
+#: GEIMFrame.cpp:1913
+msgid "Add spot success."
+msgstr "成功添加蛋白点."
+
+#: GEIMFrame.cpp:1915
+msgid "Add spot failed."
+msgstr "添加蛋白点失败."
+
+#: GEIMFrame.cpp:1948
+#, fuzzy
+msgid "Delete spot success."
+msgstr "删选蛋白点"
+
+#: GEIMFrame.cpp:1950
+#, fuzzy
+msgid "Delete spot failed."
+msgstr "检测失败."
+
+#: GEIMFrame.cpp:1958
+msgid "Add a pair failed."
+msgstr "添加点对失败."
+
+#: GEIMFrame.cpp:1961
+msgid "Add a pair success."
+msgstr "成功添加点对."
+
+#: GEIMFrame.cpp:1966
+#, c-format
+msgid "Add pair: in image %d, select a spot(%d)."
+msgstr "添加点对: 图像%d选中一个蛋白点(%d)."
+
+#: GEIMFrame.cpp:1971
+#, fuzzy
+msgid "Delete pairs success."
+msgstr "成功删选点对"
+
+#: GEIMFrame.cpp:1973
+#, fuzzy
+msgid "Delete pairs failed."
+msgstr "删除点对失败."
+
+#: GEIMFrame.cpp:1998 SpotDtDlg.cpp:837
+msgid "Detect failed!"
+msgstr "检测失败."
+
+#: GEIMFrame.cpp:2022
+msgid "Match failed!"
+msgstr "匹配失败."
+
+#: GEIMFrame.cpp:2033
+msgid "Match Result"
+msgstr "匹配结果"
+
+#: ImagePanel.cpp:1343
+msgid "&Save Image"
+msgstr "保存图像(&S)"
+
+#: ImagePanel.cpp:1343
+msgid "Save the Image"
+msgstr "保存该图像"
+
+#: ImagePanel.cpp:1484
+msgid "Save Image"
+msgstr "保存图像"
+
+#: SpotDtDlg.cpp:209
+msgid "Select Image:"
+msgstr "选择图像:"
+
+#: SpotDtDlg.cpp:223
+msgid "Step 1: Set Param"
+msgstr "第1步: 设置参数"
+
+#: SpotDtDlg.cpp:231
+msgid "Select Faint Spot in Image"
+msgstr "在图像中选择弱点"
+
+#: SpotDtDlg.cpp:233
+msgid "Select Faint Spot"
+msgstr "选择弱点"
+
+#: SpotDtDlg.cpp:237
+msgid "Select Minimum Spot in Image"
+msgstr "在图像中选择最小点"
+
+#: SpotDtDlg.cpp:239
+msgid "Select Minimum Spot"
+msgstr "选择最小点"
+
+#: SpotDtDlg.cpp:243
+msgid "Select Maximum Spot in Image"
+msgstr "在图像中选择最大点"
+
+#: SpotDtDlg.cpp:245
+msgid "Select Maximum Spot"
+msgstr "选择最大点"
+
+#: SpotDtDlg.cpp:250
+msgid "Background Correct"
+msgstr "背景校正"
+
+#: SpotDtDlg.cpp:253
+msgid "Median Filter"
+msgstr "中值滤波"
+
+#: SpotDtDlg.cpp:258
+msgid "3X3"
+msgstr "3×3"
+
+#: SpotDtDlg.cpp:259
+msgid "5X5"
+msgstr "5×5"
+
+#: SpotDtDlg.cpp:260
+msgid "7X7"
+msgstr "7×7"
+
+#: SpotDtDlg.cpp:261 SpotDtDlg.cpp:269
+msgid "Size"
+msgstr "大小"
+
+#: SpotDtDlg.cpp:265
+msgid "Gauss Filter"
+msgstr "高斯滤波"
+
+#: SpotDtDlg.cpp:275
+msgid "Step 2: Modify Param"
+msgstr "第2步: 修改参数"
+
+#: SpotDtDlg.cpp:281
+msgid "Faint Coord:"
+msgstr "弱点坐标:"
+
+#: SpotDtDlg.cpp:288
+msgid ","
+msgstr ","
+
+#: SpotDtDlg.cpp:296
+msgid "&Faint Thre:"
+msgstr "弱点阈值(&F):"
+
+#: SpotDtDlg.cpp:302
+msgid "&Min Rad:"
+msgstr "最小半径(&M):"
+
+#: SpotDtDlg.cpp:308
+msgid "Max Rad:"
+msgstr "最大半径:"
+
+#: SpotDtDlg.cpp:313
+msgid "Min Aspect:"
+msgstr "最小宽高比:"
+
+#: SpotDtDlg.cpp:319
+msgid "Spot Num:"
+msgstr "蛋白点数量:"
+
+#: SpotDtDlg.cpp:334
+msgid "&Test Param"
+msgstr "测试参数(&T)"
+
+#: SpotDtDlg.cpp:337
+msgid "&Batch"
+msgstr "处理图像(&B)"
+
+#: SpotDtDlg.cpp:340
+msgid "&Exit"
+msgstr "退出(&E)"
+
+#: SpotDtDlg.cpp:780
+msgid "Please wait, working..."
+msgstr "请稍后, 处理中..."
