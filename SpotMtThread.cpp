@@ -4,6 +4,7 @@
 #include "Graying.h"
 // match class
 #include "CharactVect.h"
+#include "GCI.h"
 
 /**< event id */
 const long SpotMtThread::ID = wxNewId();
@@ -111,13 +112,18 @@ bool SpotMtThread::SpotMatch()
 	InitParam(stParamB, 1);
 
 	// match
-	CharactVect cvt;
-	if (cvt.CVMain(std::make_pair(stParamA, stParamB), &m_stMtResult))
+//	CharactVect cvt;
+//	if (cvt.CVMain(std::make_pair(stParamA, stParamB), &m_stMtResult))
+//	{
+//		//DispMtResult_crt(stParamA, stParamB);
+//		DispMtResult_icp(stParamA, stParamB);
+//		DispMtResult_vec(stParamA, stParamB);
+//
+//		bRet = true;
+//	}
+	GCI gci;
+	if (gci.Main(std::make_pair(stParamA, stParamB), &m_stMtResult))
 	{
-		//DispMtResult_crt(stParamA, stParamB);
-		DispMtResult_icp(stParamA, stParamB);
-		DispMtResult_vec(stParamA, stParamB);
-
 		bRet = true;
 	}
 

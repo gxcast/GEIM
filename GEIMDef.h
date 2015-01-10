@@ -29,6 +29,8 @@
 /**< threshold on squared ratio of distances between NN and 2nd NN  */
 #define NN_SQ_DIST_RATIO_THR 0.49
 
+constexpr double pi = 3.1415926535897932384626433832795;
+
 
 /**< pixel struct */
 typedef struct _ST_RGB_
@@ -109,6 +111,8 @@ typedef struct _ST_SPOT_CHARACT_
 	double base = 0.0;		// 背景灰度
 	double deep = 0.0;		// 深度
 	double plump = 0.0;		// 饱满度
+	double scat = 0.0;		// 稀疏度
+	int level = -1;			// 层级
 } ST_SPOT_CHARACT, *PST_SPOT_CHARACT;
 
 // 蛋白点原始属性+表征向量
@@ -202,26 +206,7 @@ typedef struct _ST_GSNODE_
 // gs_node set
 typedef std::vector<ST_GSNODE> VT_GS;
 
-/**< GCI spot */
-typedef struct _ST_GCINODE_
-{
-	int iOrder = -1;	/**< the index in attribute vector */
 
-	int level = -1;		/**< stratification: 0, 1, 2 */
-
-	double tran_x = 0.0;	/**< x-coord after transform */
-	double tran_y = 0.0;	/**< y-coord after transform */
-
-	bool match = false;	/**< if find partner, is the last result */
-
-	_ST_GCINODE_ * partner = nullptr;	/**< the partner */
-	double ovlp = 0.0;	/**< overlap with partner */
-	double itst = 0.0;	/**< intensity similarity with partner*/
-	double crct = 0.0;	/**< charact similarity with partner */
-	double simi = 0.0;	/**< synthetical similarity */
-} ST_GCINODE, *PST_GCINODE;
-// gs_node set
-typedef std::vector<ST_GCINODE> VT_GCI;
 
 /** \brief Calculates the squared Euclidian distance between two feature descriptors.
  *

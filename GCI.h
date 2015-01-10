@@ -3,8 +3,27 @@
 
 #include "GEIMDef.h"
 
-// the number of stratification
-#define NUM_STRATIFY	3
+template<typename _T, typename _Tx, typename _Ty> class GEIMMatrix;
+
+/**< GCI Similarity Matric Index */
+struct ST_GCI_SMD
+{
+	int order = -1;
+	ST_SPOT_ATTR * spot_attr = nullptr;
+};
+
+/**< GCI Similarity Matrix Item*/
+struct ST_GCI_SMI
+{
+	double ovlp = 0.0;	/**< overlap */
+	double patn = 0.0;	/**< pattern */
+	double stct = 0.0;	/**< structral */
+	double spct = 0.0;	/**< shape contex */
+};
+
+// similarity function format
+class GCI;
+typedef bool (GCI::*_func_simi)(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
 
 class GCI
 {
@@ -17,47 +36,135 @@ public:
 protected:
 
 private:
-	bool Stratify();
-	bool stratify_one(ST_MTPARAM &param, int *scale, VT_GCI &vt_gci);
+	/** \brief normalization the image
+	 *
+	 * \param stParam ST_MTPARAM&	[IN] the image's param
+	 * \return bool	true:success false:failed
+	 *
+	 */
+	bool Normalize(ST_MTPARAM& stParam);
+	/** \brief calculate charact-vector for the image's spotd
+	 *
+	 * \param stParam ST_MTPARAM&
+	 * \return bool
+	 *
+	 * level: 0强 1中 2弱
+	 */
+	bool CalcuPattern(ST_MTPARAM& stParam);
+	/** \brief traverse one spot's pixels
+	 *
+	 * \param stParam ST_MTPARAM&	[IN] image
+	 * \param spot ST_SPOT_NODE&	[IN] spot
+	 * \param __f _Func				[IN] the callback function
+	 * \return bool
+	 *
+	 * _Func: bool XXX(int id);
+	 *
+	 */
+	template<typename _Func> bool SpotPixs(ST_MTPARAM& stParam, ST_SPOT_NODE& spot, _Func __f);
+    /** \brief calculate which level spot located in
+     *
+     * \param stParam ST_MTPARAM&
+     * \return bool
+     *
+     */
+	bool CalcuLevel(ST_MTPARAM& stParam);
+    /** \brief calculate spots normalize coordnation by all spots
+     *
+     * \param stParam ST_MTPARAM&
+     * \return bool
+     *
+     */
+	bool CalcuCoord_all(ST_MTPARAM& stParam);
+    /** \brief calculate spots normalize coordnation by mathed spots
+     *
+     * \param stParam ST_MTPARAM&
+     * \return bool
+     *
+     */
+	bool CalcuCoord_match(ST_MTPARAM& stParam);
+    /** \brief calculate shpae-contex similarity
+     *
+     * \param pt_set const int*		[IN] points set
+     * \param pt_num int			[IN] points' count
+     * \param mean double&			[INOUT] mean distance
+     * \param bins_radius int		[IN] radius merotomy
+     * \param bins_theta int		[IN] theta-angled merotomy
+     * \param histogram double *const	[OUT] the shape-contex histogram
+     * \return bool
+     *
+     */
+	bool calcu_sc(const int * pt_set, int pt_num, double &mean, int bins_radius, int bins_theta, double *const histogram);
+    /** \brief calculate distance-diagram of the points' set
+     *
+     * \param pt_set const int*		[IN] points set
+     * \param pt_num int			[IN] points' count
+     * \param mean double&			[INOUT] mean distance
+     * \param bins_radius int		[IN] radius merotomy
+     * \param distgram int *const	[OUT] the distance diagram
+     * \return bool
+     *
+     */
+	bool calcu_sc_radiu(const int * pt_set, int pt_num, double &mean, int bins_radius, int *const distgram);
+    /** \brief calculate theta-diagram of the points' set
+     *
+     * \param pt_set const int*		[IN] points set
+     * \param pt_num int			[IN] points' count
+     * \param bins_theta int		[IN] theta-angled merotomy
+     * \param thetagram int *const	[OUT] the theta-angle diagram
+     * \return bool
+     *
+     */
+	bool calcu_sc_theta(const int * pt_set, int pt_num, int bins_theta, int *const thetagram);
 
-	bool CoarseMT();
+
+    /** \brief initial the similarity matrix
+     *
+     * \return bool
+     *
+     */
+	bool simi_init();
+    /** \brief iterate all spots in two images, invoke __f do process
+     *
+     * \param __f _Func		[IN] two spots process function
+     * \return bool
+     *
+     * __f: bool xxx(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+     *      if __f return true, continue ietral, else terminate
+     */
+	bool simi_it(_func_simi __f);
+    /** \brief claculate spots overlap similarity
+     *
+     * \param spot_a ST_SPOT_ATTR*	[IN] attribution of a spot in image A
+     * \param id_a int				[IN] the index(order) of  a spot in image A
+     * \param spot_b ST_SPOT_ATTR*	[IN] attribution of a spot in image B
+     * \param id_b int				[IN] the index(order) of  a spot in image B
+     * \return bool
+     *
+     */
+	bool simi_overlap();
+	bool simi_overlap(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+    /** \brief claculate spots pattern  similarity
+     *
+     */
+	bool simi_pattern();
+	bool simi_pattern(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+    /** \brief claculate spots structural similarity
+     *
+     */
+	bool simi_structral();
+	bool simi_structral(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+    /** \brief claculate spots shpe-contex similarity
+     *
+     */
+	bool simi_shapecontex();
+	bool simi_shapecontex(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+
+	bool Match();
+	bool mt_cull();
 
 	bool InitThresold();
-	int least_pair_num();
 
-	/** \brief match use clp method,
-	 *
-	 * \param mode int	[IN] bit-filed, 0x01 multi-layer, 0x02 mean-center
-	 * \return bool true ; false;
-	 *
-	 * pair-number is the m_nPair.
-	 */
-	bool LayerMT(int mode);
-
-	/** \brief get a mean center positon in the specified method
-	 *
-	 * \param global bool true: all the spots in the center 2/3 of the iamge; false: the matched pair
-	 * \return bool true
-	 *
-	 */
-	bool GetCenter(bool global);
-	bool center_global(wxPoint2DDouble &pt, ST_MTPARAM &param);
-	bool center_mp(wxPoint2DDouble &pt, ST_MTPARAM &param, VT_GCI &vt_gci);
-
-	double Similary(ST_GCINODE &gci_a, ST_GCINODE &gci_b, bool mean_center);
-	double simi_overlap(ST_GCINODE &gci_a, ST_GCINODE &gci_b, bool mean_center);
-	double simi_intensity(ST_GCINODE &gci_a, ST_GCINODE &gci_b);
-
-	bool adjoining_distance();
-
-	/** \brief clear all the match-flag in gci-vector and the pair-num
-	 *
-	 * \return bool true;
-	 *
-	 */
-	bool clean_mt_result();
-
-	bool cull_mt_result();
 
 	/** \brief export the last result, release temporary match result
 	 *
@@ -66,29 +173,19 @@ private:
 	 */
 	bool Release();
 
-	/**< number of match pair */
-	int m_nPair = 0;
+	/**< level count */
+	static constexpr int m_iLevelNum = 3;
 
-	/**< center of image */
-	wxPoint2DDouble m_ptCenterA;
-	wxPoint2DDouble m_ptCenterB;
-
-	/**< thresold of every character */
-	double m_dFactor = 0.0;
-	double m_trdOvlp = 0.0;
-	double m_trdItst = 0.0;
-	double m_trdSimi = 0.0;
-
-	/**< stratified infomation */
-	int m_aScaleA[NUM_STRATIFY] = {0};
-	VT_GCI m_vtGciA;
-	int m_aScaleB[NUM_STRATIFY] = {0};
-	VT_GCI m_vtGciB;
+	/**< similarity matrix, w:num_b h:num_a */
+	GEIMMatrix<ST_GCI_SMI, ST_GCI_SMD, ST_GCI_SMD> * m_pmxSimi = nullptr;
 
 	/**< param for image A */
 	ST_MTPARAM m_stParamA;
 	/**< param for image B */
 	ST_MTPARAM m_stParamB;
+	/**< shap context array */
+	int m_sc_num = 0;
+	double * m_sc_histogram[2] = {nullptr, nullptr};
 
 	/**< match result */
 	ST_MTRESULT* m_pstMtRet = nullptr;

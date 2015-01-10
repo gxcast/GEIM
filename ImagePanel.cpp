@@ -1194,9 +1194,8 @@ void ImagePanel::OnPaint(wxPaintEvent& event)
 	// draw image
 	if (m_img.IsOk())
 	{
-		wxMemoryDC dcImg;
 		wxBitmap bmp(m_img);
-		dcImg.SelectObject(bmp);
+		wxMemoryDC dcImg(bmp);
 		m_dcMem.StretchBlit( (wxCoord)m_rcDest.m_x, (wxCoord)m_rcDest.m_y,
 		                     (wxCoord)m_rcDest.m_width, (wxCoord)m_rcDest.m_height,
 		                     (wxDC*)&dcImg,

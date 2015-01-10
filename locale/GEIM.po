@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-12-24 16:10+0800\n"
+"POT-Creation-Date: 2015-01-10 15:00+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,14 +16,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-#: DispDlg.h:14 DispDlg.h:22
-msgid "Image"
-msgstr ""
-
-#: SpotDtDlg.h:38 SpotDtDlg.h:60
-msgid "Spot Detection"
-msgstr ""
 
 #: AboutDlg.cpp:15
 msgid "About GEIM..."
@@ -33,226 +25,292 @@ msgstr ""
 msgid "ImageDisplay"
 msgstr ""
 
-#: DispDlg.cpp:124 GEIMFrame.cpp:108 SpotDtDlg.cpp:175
+#: DispDlg.cpp:124 GEIMFrame.cpp:118 SpotDtDlg.cpp:175
 msgid "ZoomIn Image"
 msgstr ""
 
-#: DispDlg.cpp:128 GEIMFrame.cpp:112 SpotDtDlg.cpp:179
+#: DispDlg.cpp:128 GEIMFrame.cpp:122 SpotDtDlg.cpp:179
 msgid "ZoomOut Image"
 msgstr ""
 
-#: DispDlg.cpp:132 GEIMFrame.cpp:116 SpotDtDlg.cpp:183
+#: DispDlg.cpp:132 GEIMFrame.cpp:126 SpotDtDlg.cpp:183
 msgid "Zoom Sel Rect Image"
 msgstr ""
 
-#: DispDlg.cpp:136 GEIMFrame.cpp:120 SpotDtDlg.cpp:187
+#: DispDlg.cpp:136 GEIMFrame.cpp:130 SpotDtDlg.cpp:187
 msgid "Fit Image"
 msgstr ""
 
-#: DispDlg.cpp:140 GEIMFrame.cpp:124 SpotDtDlg.cpp:191
+#: DispDlg.cpp:140 GEIMFrame.cpp:134 SpotDtDlg.cpp:191
 msgid "Actual Image"
 msgstr ""
 
-#: DispDlg.cpp:144 GEIMFrame.cpp:130 SpotDtDlg.cpp:195
+#: DispDlg.cpp:144 GEIMFrame.cpp:140 SpotDtDlg.cpp:195
 msgid "Move Image"
 msgstr ""
 
-#: GEIMFrame.cpp:43
+#: GEIMFrame.cpp:49
 msgid "GEIM_Dev"
 msgstr ""
 
-#: GEIMFrame.cpp:53
+#: GEIMFrame.cpp:59
 msgid "&Open\tCtrl-O"
 msgstr ""
 
-#: GEIMFrame.cpp:53
+#: GEIMFrame.cpp:59
 msgid "Open Project"
 msgstr ""
 
-#: GEIMFrame.cpp:57
+#: GEIMFrame.cpp:63
 msgid "&Close\tCtrl-W"
 msgstr ""
 
-#: GEIMFrame.cpp:57
+#: GEIMFrame.cpp:63
 msgid "Close Project"
 msgstr ""
 
-#: GEIMFrame.cpp:60
+#: GEIMFrame.cpp:66
 msgid "&Exit\tAlt-F4"
 msgstr ""
 
-#: GEIMFrame.cpp:60
+#: GEIMFrame.cpp:66
 msgid "Exit Program"
 msgstr ""
 
-#: GEIMFrame.cpp:62
+#: GEIMFrame.cpp:68
 msgid "&File"
 msgstr ""
 
-#: GEIMFrame.cpp:64
+#: GEIMFrame.cpp:70
 msgid "&Detect\tCtrl-D"
 msgstr ""
 
-#: GEIMFrame.cpp:64
+#: GEIMFrame.cpp:70
 msgid "Detect Spots"
 msgstr ""
 
-#: GEIMFrame.cpp:66
+#: GEIMFrame.cpp:72
 msgid "Save Detect Result(&F)\tCtrl-F"
 msgstr ""
 
-#: GEIMFrame.cpp:66
+#: GEIMFrame.cpp:72
 msgid "Save Detect"
 msgstr ""
 
-#: GEIMFrame.cpp:68
+#: GEIMFrame.cpp:74
 msgid "Load Detect Result(&G)\tCtrl-G"
 msgstr ""
 
-#: GEIMFrame.cpp:68
+#: GEIMFrame.cpp:74
 msgid "Load Detect"
 msgstr ""
 
-#: GEIMFrame.cpp:72
+#: GEIMFrame.cpp:78
 msgid "&Match\tCtrl-M"
 msgstr ""
 
-#: GEIMFrame.cpp:72
+#: GEIMFrame.cpp:78
 msgid "Match Spots"
 msgstr ""
 
-#: GEIMFrame.cpp:74
+#: GEIMFrame.cpp:80
 msgid "Save Match Result(&N)\tCtrl-N"
 msgstr ""
 
-#: GEIMFrame.cpp:74
+#: GEIMFrame.cpp:80
 msgid "Save Match"
 msgstr ""
 
-#: GEIMFrame.cpp:76
+#: GEIMFrame.cpp:82
 msgid "Load Match Result(&B)\tCtrl-B"
 msgstr ""
 
-#: GEIMFrame.cpp:76
+#: GEIMFrame.cpp:82
 msgid "Load Match"
 msgstr ""
 
-#: GEIMFrame.cpp:78
+#: GEIMFrame.cpp:84
+msgid "Save Match Text(&N)"
+msgstr ""
+
+#: GEIMFrame.cpp:84
+msgid "Save Match as Text"
+msgstr ""
+
+#: GEIMFrame.cpp:86
+msgid "Load Match Text(&B)"
+msgstr ""
+
+#: GEIMFrame.cpp:86
+msgid "Load Match from Text"
+msgstr ""
+
+#: GEIMFrame.cpp:88
 msgid "&Proc"
 msgstr ""
 
-#: GEIMFrame.cpp:80
+#: GEIMFrame.cpp:90
 msgid "&About\tF1"
 msgstr ""
 
-#: GEIMFrame.cpp:80
+#: GEIMFrame.cpp:90
 msgid "About GEIM"
 msgstr ""
 
-#: GEIMFrame.cpp:82
+#: GEIMFrame.cpp:92
 msgid "Help"
 msgstr ""
 
-#: GEIMFrame.cpp:91
+#: GEIMFrame.cpp:101 GEIMFrame.cpp:261
 msgid "Ready"
 msgstr ""
 
-#: GEIMFrame.cpp:136
+#: GEIMFrame.cpp:146
 msgid "Select Spot"
 msgstr ""
 
-#: GEIMFrame.cpp:140
+#: GEIMFrame.cpp:150
 msgid "Delete Spot"
 msgstr ""
 
-#: GEIMFrame.cpp:144
+#: GEIMFrame.cpp:154
 msgid "Select Pair"
 msgstr ""
 
-#: GEIMFrame.cpp:148
+#: GEIMFrame.cpp:158
 msgid "Delete Pair"
 msgstr ""
 
-#: GEIMFrame.cpp:801
+#: GEIMFrame.cpp:1296
 msgid "Are you sure to close the program?"
 msgstr ""
 
-#: GEIMFrame.cpp:801 GEIMFrame.cpp:826
+#: GEIMFrame.cpp:1296 GEIMFrame.cpp:1327
 msgid "Confirm"
 msgstr ""
 
-#: GEIMFrame.cpp:825
+#: GEIMFrame.cpp:1326
 msgid ""
 "A group of images are already opened,\n"
 " SURE to open a new group of iamges?"
 msgstr ""
 
-#: GEIMFrame.cpp:834
+#: GEIMFrame.cpp:1335
 msgid "Choice Images"
 msgstr ""
 
-#: GEIMFrame.cpp:846
+#: GEIMFrame.cpp:1347
 msgid "Files' number must be 2."
 msgstr ""
 
-#: GEIMFrame.cpp:847 GEIMFrame.cpp:993 GEIMFrame.cpp:1008
+#: GEIMFrame.cpp:1348 GEIMFrame.cpp:1494 GEIMFrame.cpp:1509 GEIMFrame.cpp:1553
+#: GEIMFrame.cpp:1570 GEIMFrame.cpp:1593 GEIMFrame.cpp:1598
 msgid "Error"
 msgstr ""
 
-#: GEIMFrame.cpp:976
+#: GEIMFrame.cpp:1477
 msgid "Create dtect thread failed."
 msgstr ""
 
-#: GEIMFrame.cpp:976 GEIMFrame.cpp:991 GEIMFrame.cpp:1030 GEIMFrame.cpp:1436
-#: GEIMFrame.cpp:1460 SpotDtDlg.cpp:837
+#: GEIMFrame.cpp:1477 GEIMFrame.cpp:1492 GEIMFrame.cpp:1531 GEIMFrame.cpp:1551
+#: GEIMFrame.cpp:1591 GEIMFrame.cpp:1998 GEIMFrame.cpp:2022 SpotDtDlg.cpp:837
 msgid "Information"
 msgstr ""
 
-#: GEIMFrame.cpp:980
+#: GEIMFrame.cpp:1481
 msgid "Please wait, batch detecting..."
 msgstr ""
 
-#: GEIMFrame.cpp:991
+#: GEIMFrame.cpp:1492
 msgid "Save detection results SUCCESS."
 msgstr ""
 
-#: GEIMFrame.cpp:993
+#: GEIMFrame.cpp:1494
 msgid "Save detection results FAILED."
 msgstr ""
 
-#: GEIMFrame.cpp:1008
+#: GEIMFrame.cpp:1509
 msgid "Load detection results FAILED."
 msgstr ""
 
-#: GEIMFrame.cpp:1030
+#: GEIMFrame.cpp:1531
 msgid "Create match thread failed."
 msgstr ""
 
-#: GEIMFrame.cpp:1034
+#: GEIMFrame.cpp:1535
 msgid "Please wait, matching..."
 msgstr ""
 
-#: GEIMFrame.cpp:1436 SpotDtDlg.cpp:837
+#: GEIMFrame.cpp:1551 GEIMFrame.cpp:1591
+msgid "Save match results SUCCESS."
+msgstr ""
+
+#: GEIMFrame.cpp:1553 GEIMFrame.cpp:1593
+msgid "Save match results FAILED."
+msgstr ""
+
+#: GEIMFrame.cpp:1570 GEIMFrame.cpp:1598
+msgid "Load match results FAILED."
+msgstr ""
+
+#: GEIMFrame.cpp:1913
+msgid "Add spot success."
+msgstr ""
+
+#: GEIMFrame.cpp:1915
+msgid "Add spot failed."
+msgstr ""
+
+#: GEIMFrame.cpp:1948
+msgid "Delete spot success."
+msgstr ""
+
+#: GEIMFrame.cpp:1950
+msgid "Delete spot failed."
+msgstr ""
+
+#: GEIMFrame.cpp:1958
+msgid "Add a pair failed."
+msgstr ""
+
+#: GEIMFrame.cpp:1961
+msgid "Add a pair success."
+msgstr ""
+
+#: GEIMFrame.cpp:1966
+#, c-format
+msgid "Add pair: in image %d, select a spot(%d)."
+msgstr ""
+
+#: GEIMFrame.cpp:1971
+msgid "Delete pairs success."
+msgstr ""
+
+#: GEIMFrame.cpp:1973
+msgid "Delete pairs failed."
+msgstr ""
+
+#: GEIMFrame.cpp:1998 SpotDtDlg.cpp:837
 msgid "Detect failed!"
 msgstr ""
 
-#: GEIMFrame.cpp:1460
+#: GEIMFrame.cpp:2022
 msgid "Match failed!"
 msgstr ""
 
-#: GEIMFrame.cpp:1471
+#: GEIMFrame.cpp:2033
 msgid "Match Result"
 msgstr ""
 
-#: ImagePanel.cpp:1344
+#: ImagePanel.cpp:1343
 msgid "&Save Image"
 msgstr ""
 
-#: ImagePanel.cpp:1344
+#: ImagePanel.cpp:1343
 msgid "Save the Image"
 msgstr ""
 
-#: ImagePanel.cpp:1485
+#: ImagePanel.cpp:1484
 msgid "Save Image"
 msgstr ""
 
