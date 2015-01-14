@@ -598,75 +598,12 @@ _tag_simi_it_end:
 	return bRet;
 }
 
-/**< claculate spots overlap similarity */
-bool GCI::simi_overlap()
-{
-	CalcuCoord_all(m_stParamA);
-	CalcuCoord_all(m_stParamB);
-
-	return simi_it(&GCI::simi_overlap);
-}
-bool GCI::simi_overlap(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
-{
-	double simi = (1.0 - fabs(spot_a->pCrt->x - spot_b->pCrt->x))*
-		(1.0 - fabs(spot_a->pCrt->y - spot_b->pCrt->y));
-	if (simi < 0.0)
-		simi = 0.0;
-	else if (simi > 1.0)
-		simi = 1.0;
-	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
-	smi.ovlp = simi;
-	return true;
-}
-
-/**< claculate spots pattern  similarity */
-bool GCI::simi_pattern()
-{
-	bool bRet = true;
-
-	// caculate spot pattern-parameter
-	bRet = bRet && CalcuPattern(m_stParamA);
-	bRet = bRet && CalcuPattern(m_stParamB);
-	// calculate spot level
-	bRet = bRet && CalcuLevel(m_stParamA);
-	bRet = bRet && CalcuLevel(m_stParamB);
-
-	bRet = bRet && simi_it(&GCI::simi_pattern);
-
-	return bRet;
-}
-bool GCI::simi_pattern(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
-{
-	static int debug_count = 0;
-	++debug_count;
-
-	double temp = 0.0;
-	double simi = 0.0;
-	temp = spot_a->pCrt->area - spot_b->pCrt->area;
-	simi += temp*temp;
-	temp = spot_a->pCrt->base - spot_b->pCrt->base;
-	simi += temp*temp;
-	temp = spot_a->pCrt->deep - spot_b->pCrt->deep;
-	simi += temp*temp;
-	temp = spot_a->pCrt->mean - spot_b->pCrt->mean;
-	simi += temp*temp;
-	temp = spot_a->pCrt->plump - spot_b->pCrt->plump;
-	simi += temp*temp;
-	simi = sqrt(simi);
-	simi = 1.0 - 2*simi/(sqrt(5.0) + simi);
-	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
-	smi.patn = simi;
-	return true;
-}
-
-/**< claculate spots structural similarity */
-bool GCI::simi_structral()
-{
-	return simi_it(&GCI::simi_structral);
-}
-bool GCI::simi_structral(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
+/**< get two spot-images, invoke _func_simi_img with mean[2], variance[2], cross-correlation */
+template<typename _func>
+bool GCI::simi_spot_img(ST_SPOT_ATTR* spot_a,int id_a, ST_SPOT_ATTR* spot_b, int id_b, _func _func_simi_img)
 {
 	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
+	double mean[2] = {0.0}, var[2] = {0.0}, cov = 0.0;
 	// spot valid rectangle in origin image: left top right bottom, and the wanted common rectangle
 	int rc_a[4] = {0}, rc_b[4] = {0}, rc_t[4] = {0};
 	double r_a[2] = {1.0, 1.0}, r_b[2] = {1.0, 1.0};	// zoom ratio (w, h)
@@ -694,7 +631,8 @@ bool GCI::simi_structral(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, i
 		if (rc2_a[0] >= rc2_b[2] || rc2_a[1] >= rc2_b[3] || rc2_a[2] <= rc2_b[0] || rc2_a[3] <= rc2_b[1])	// not intersecte
 		{
 			smi.stct = 0.0;
-			return true;
+			var[0]  = -1;
+			return _func_simi_img(smi, mean, var, cov);
 		}
 		if (rc2_a[0] < rc2_b[0]) rc2_a[0] = rc2_b[0];
 		if (rc2_a[1] < rc2_b[1]) rc2_a[1] = rc2_b[1];
@@ -801,16 +739,97 @@ bool GCI::simi_structral(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, i
 		cov /= img_num -1;
 		return cov;
 	};
-	double simi = 0.0, mean[2] = {0.0}, var[2] = {0.0}, cov = 0.0;
-	constexpr double c_1 = (0.01*255)*(0.01*255), c_2 = (0.03*255)*(0.03*255);
 	mean[0] = _func_mean(subimg_num, subimg_a);
 	mean[1] = _func_mean(subimg_num, subimg_b);
 	var[0] = _func_varial(subimg_num, subimg_a, mean[0]);
 	var[1] = _func_varial(subimg_num, subimg_b, mean[1]);
 	cov = _func_cov(subimg_num, subimg_a, subimg_b, mean);
-	simi = 0.5 + (2*mean[0]*mean[1] + c_1)*(2*cov + c_2)/(2*(mean[0]*mean[0] + mean[1]*mean[1] + c_1)*(var[0]*var[0] + var[1]*var[1] + c_2));
-	smi.stct = simi;
+
+	return _func_simi_img(smi, mean, var, cov);
+}
+
+/**< claculate spots overlap similarity */
+bool GCI::simi_overlap()
+{
+	CalcuCoord_all(m_stParamA);
+	CalcuCoord_all(m_stParamB);
+
+	return simi_it(&GCI::simi_overlap);
+}
+bool GCI::simi_overlap(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
+{
+	double simi = (1.0 - fabs(spot_a->pCrt->x - spot_b->pCrt->x))*
+		(1.0 - fabs(spot_a->pCrt->y - spot_b->pCrt->y));
+	if (simi < 0.0)
+		simi = 0.0;
+	else if (simi > 1.0)
+		simi = 1.0;
+	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
+	smi.ovlp = simi;
 	return true;
+}
+
+/**< claculate spots pattern  similarity */
+bool GCI::simi_pattern()
+{
+	bool bRet = true;
+
+	// caculate spot pattern-parameter
+	bRet = bRet && CalcuPattern(m_stParamA);
+	bRet = bRet && CalcuPattern(m_stParamB);
+	// calculate spot level
+	bRet = bRet && CalcuLevel(m_stParamA);
+	bRet = bRet && CalcuLevel(m_stParamB);
+
+	bRet = bRet && simi_it(&GCI::simi_pattern);
+
+	return bRet;
+}
+bool GCI::simi_pattern(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
+{
+	static int debug_count = 0;
+	++debug_count;
+
+	double temp = 0.0;
+	double simi = 0.0;
+	temp = spot_a->pCrt->area - spot_b->pCrt->area;
+	simi += temp*temp;
+	temp = spot_a->pCrt->base - spot_b->pCrt->base;
+	simi += temp*temp;
+	temp = spot_a->pCrt->deep - spot_b->pCrt->deep;
+	simi += temp*temp;
+	temp = spot_a->pCrt->mean - spot_b->pCrt->mean;
+	simi += temp*temp;
+	temp = spot_a->pCrt->plump - spot_b->pCrt->plump;
+	simi += temp*temp;
+	simi = sqrt(simi);
+	simi = 1.0 - 2*simi/(sqrt(5.0) + simi);
+	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
+	smi.patn = simi;
+	return true;
+}
+
+/**< claculate spots structural similarity */
+bool GCI::simi_structral()
+{
+	return simi_it(&GCI::simi_structral);
+}
+bool GCI::simi_structral(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
+{
+	auto _func_simi_img = [](ST_GCI_SMI& smi, double mean[2], double var[2], double cov) -> bool {
+		constexpr double c_1 = (0.01*255)*(0.01*255), c_2 = (0.03*255)*(0.03*255);
+		if (var[0] < 0.0)
+		{
+			smi.stct = 0.0;
+			return true;
+		}
+		smi.stct = 0.5
+			+ (2*mean[0]*mean[1] + c_1)*(2*cov + c_2)
+			/(2*(mean[0]*mean[0] + mean[1]*mean[1] + c_1)
+			*(var[0]*var[0] + var[1]*var[1] + c_2));
+		return true;
+	};
+	return simi_spot_img(spot_a, id_a, spot_b, id_b, _func_simi_img);
 }
 
 /**< claculate spots shpe-contex similarity */
@@ -882,6 +901,25 @@ bool GCI::simi_shapecontex(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b,
 	return true;
 }
 
+/**< calculate spots cross-correlation */
+bool GCI::simi_correlation()
+{
+	return simi_it(&GCI::simi_correlation);
+}
+bool GCI::simi_correlation(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)
+{
+	auto _func_simi_img = [](ST_GCI_SMI& smi, double mean[2], double var[2], double cov) -> bool {
+		if (var[0] < 0.0)
+		{
+			smi.corr = 0.0;
+			return true;
+		}
+		smi.corr = 0.5 + cov/(2*var[0]*var[1] + 1e-6);
+		return true;
+	};
+	return simi_spot_img(spot_a, id_a, spot_b, id_b, _func_simi_img);
+}
+
 bool GCI::Match()
 {
 	simi_init();
@@ -891,6 +929,7 @@ bool GCI::Match()
 	simi_pattern();
 	simi_structral();
 	simi_shapecontex();
+	simi_correlation();
 
 	// output similarity
 	mt_cull();
@@ -906,13 +945,14 @@ bool GCI::mt_cull()
 
 	int smi_a = m_pmxSimi->Height(), smi_b = m_pmxSimi->Width();
 	int smi_num = smi_a*smi_b;
-	str_out.Printf(_T("%d.0000 %d.0000 %lf %lf\r"), smi_a, smi_b, 0.0, 0.0);
+	str_out.Printf(_T("%d.0000 %d.0000 %lf %lf %lf\r"), smi_a, smi_b, 0.0, 0.0, 0.0);
 	file_out.Write(str_out);
 
 	ST_GCI_SMI *smi_ary = (*m_pmxSimi)[0];
 	for (int smi_it = 0; smi_it < smi_num; ++smi_it)
 	{
-		str_out.Printf(_T("%lf %lf %lf %lf\r"), smi_ary->ovlp, smi_ary->patn, smi_ary->stct, smi_ary->spct);
+		str_out.Printf(_T("%lf %lf %lf %lf %lf\r"),
+			smi_ary->ovlp, smi_ary->patn, smi_ary->stct, smi_ary->spct, smi_ary->corr);
 		++smi_ary;
 		file_out.Write(str_out);
 	}

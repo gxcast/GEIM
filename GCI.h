@@ -19,6 +19,7 @@ struct ST_GCI_SMI
 	double patn = 0.0;	/**< pattern */
 	double stct = 0.0;	/**< structral */
 	double spct = 0.0;	/**< shape contex */
+	double corr = 0.0;	/**< gray cross-correlation */
 };
 
 // similarity function format
@@ -133,6 +134,19 @@ private:
      *      if __f return true, continue ietral, else terminate
      */
 	bool simi_it(_func_simi __f);
+    /** \brief get two spot-images, invoke _func_simi_img with mean[2], variance[2], cross-correlation
+     *
+     * \param spot_a ST_SPOT_ATTR*
+     * \param id_a int
+     * \param spot_b ST_SPOT_ATTR*
+     * \param id_b int
+     * \param _func_simi_img		[IN] function get image similarity
+     * \return bool
+     *
+     * _func_simi_img(ST_GCI_SMI& smi, double mean[2], double var[2], double cov)
+     */
+	template<typename _func>
+	bool simi_spot_img(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b, _func _func_simi_img);
     /** \brief claculate spots overlap similarity
      *
      * \param spot_a ST_SPOT_ATTR*	[IN] attribution of a spot in image A
@@ -159,6 +173,12 @@ private:
      */
 	bool simi_shapecontex();
 	bool simi_shapecontex(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+    /** \brief calculate spots cross-correlation
+     *
+     */
+	bool simi_correlation();
+	bool simi_correlation(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b);
+
 
 	bool Match();
 	bool mt_cull();
