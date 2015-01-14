@@ -982,7 +982,7 @@ bool ImagePanel::MLUSelEllipse(wxMouseEvent& event)
 		m_stMP.ptE.x = event.m_x;
 		m_stMP.ptE.y = event.m_y;
 		// calculate the rectangle
-		RegulaSelRect(true, false, true);
+		RegulaSelRect(true, false, false);
 		// Notify Parent: SEL_ELLIPSE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
 		evt.SetCMD(IMGPL_CMD::SEL_ELLIPSE);
@@ -1005,7 +1005,7 @@ bool ImagePanel::MMVSelEllipse(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 	// calculate the rectangle
-	RegulaSelRect(false, false, true);
+	RegulaSelRect(false, false, false);
 	// draw the ellipse
 	Refresh(false);
 
@@ -1041,7 +1041,7 @@ bool ImagePanel::MLUSelSquare(wxMouseEvent& event)
 		m_stMP.ptE.x = event.m_x;
 		m_stMP.ptE.y = event.m_y;
 		// calculate the rectangle
-		RegulaSelRect(true, true, true);
+		RegulaSelRect(true, true, false);
 		// Notify Parent: SEL_SQUARE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
 		evt.SetCMD(IMGPL_CMD::SEL_SQUARE);
@@ -1064,7 +1064,7 @@ bool ImagePanel::MMVSelSquare(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 	// calculate the rectangle
-	RegulaSelRect(false, true, true);
+	RegulaSelRect(false, true, false);
 	// draw the square
 	Refresh(false);
 
@@ -1100,7 +1100,7 @@ bool ImagePanel::MLUSelRectangle(wxMouseEvent& event)
 		m_stMP.ptE.x = event.m_x;
 		m_stMP.ptE.y = event.m_y;
 		// calculate the rectangle
-		RegulaSelRect(true, false, true);
+		RegulaSelRect(true, false, false);
 		// Notify Parent: SEL_RECTANGLE
 		wxImgplEvent evt(wxEVT_IMGPL, GetId());
 		evt.SetCMD(IMGPL_CMD::SEL_RECTANGLE);
@@ -1123,7 +1123,7 @@ bool ImagePanel::MMVSelRectangle(wxMouseEvent& event)
 	m_stMP.ptE.x = event.m_x;
 	m_stMP.ptE.y = event.m_y;
 	// calculate the rectangle
-	RegulaSelRect(false, false, true);
+	RegulaSelRect(false, false, false);
 	// draw the square
 	Refresh(false);
 

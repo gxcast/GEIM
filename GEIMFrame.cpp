@@ -433,7 +433,7 @@ bool GEIMFrame::DispMtResult(int id_img /*= -1*/)
 	memdc.SetFont(id_font);
 	memdc.SetPen(*wxRED_PEN);
 	//memdc.SetTextBackground(wxColour(0,0,0,255));
-	memdc.SetTextForeground(*wxYELLOW);
+	memdc.SetTextForeground(*wxGREEN);
 	wxPoint point;
 	wxString str;
 	int img_w = img_disp->GetWidth();
