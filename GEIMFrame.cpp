@@ -327,12 +327,12 @@ bool GEIMFrame::DispDtResult()
 				pDest[1] = 255u;
 				pDest[2] = 0u;
 			}
-			else if(pFlag->b > 0)	// inner
+			/*else if(pFlag->b > 0)	// inner
 			{
 				pDest[0] = 0u;
 				pDest[1] = 0u;
 				pDest[2] = 255u;
-			}
+			}*/
 			else	// image
 			{
 				pDest[0] = pFlag->r;

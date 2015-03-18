@@ -791,21 +791,22 @@ bool GCI::simi_pattern(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int
 	++debug_count;
 
 	double temp = 0.0;
-	double simi = 0.0;
+	double simi = 0.0, simi_t = 1.0;
 	temp = spot_a->pCrt->area - spot_b->pCrt->area;
-	simi += temp*temp;
+	simi += temp*temp; simi_t *= 1 - fabs(temp);
 	temp = spot_a->pCrt->base - spot_b->pCrt->base;
-	simi += temp*temp;
+	simi += temp*temp; simi_t *= 1 - fabs(temp);
 	temp = spot_a->pCrt->deep - spot_b->pCrt->deep;
-	simi += temp*temp;
+	simi += temp*temp; simi_t *= 1 - fabs(temp);
 	temp = spot_a->pCrt->mean - spot_b->pCrt->mean;
-	simi += temp*temp;
+	simi += temp*temp; simi_t *= 1 - fabs(temp);
 	temp = spot_a->pCrt->plump - spot_b->pCrt->plump;
-	simi += temp*temp;
-	simi = sqrt(simi);
+	simi += temp*temp; simi_t *= 1 - fabs(temp);
+	simi = sqrt(simi); simi_t = pow(simi_t, 1.0/5);
 	simi = 1.0 - 2*simi/(sqrt(5.0) + simi);
 	ST_GCI_SMI& smi = (*m_pmxSimi)[id_a][id_b];
-	smi.patn = simi;
+	//smi.patn = simi;
+	smi.patn = simi_t;
 	return true;
 }
 
@@ -873,7 +874,9 @@ bool GCI::simi_shapecontex()
 
 	m_sc_num = 0;
 	delete m_sc_histogram[0];
+	m_sc_histogram[0] = nullptr;
 	delete m_sc_histogram[1];
+	m_sc_histogram[1] = nullptr;
 	return bRet;
 }
 bool GCI::simi_shapecontex(ST_SPOT_ATTR* spot_a, int id_a, ST_SPOT_ATTR* spot_b, int id_b)

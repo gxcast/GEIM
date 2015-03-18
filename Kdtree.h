@@ -38,7 +38,7 @@ public:
 	 */
 	bool build( ST_FEATURE *features, int n );
 
-	/** \briefFinds an image feature's approximate k nearest neighbors in a kd tree using
+	/** \brief Finds an image feature's approximate k nearest neighbors in a kd tree using
 	 *	  Best Bin First search.
 	 *
 	 * \param feat ST_FEATURE*		image feature for whose neighbors to search
